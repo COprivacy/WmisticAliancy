@@ -79,7 +79,20 @@ export default function Rankings() {
   const myRank = myPlayer ? sortedPlayers.indexOf(myPlayer) + 1 : "-";
 
   return (
-    <div className="max-w-6xl mx-auto space-y-10 py-6">
+    <div className="max-w-6xl mx-auto space-y-10 py-6 relative">
+      {/* Immersive Arena Background */}
+      <div
+        className="fixed inset-0 z-[-1] opacity-20 pointer-events-none"
+        style={{
+          backgroundImage: 'url("/images/arena-bg.png")',
+          backgroundSize: 'cover',
+          backgroundPosition: 'center',
+          filter: 'grayscale(0.5) contrast(1.2)'
+        }}
+      />
+
+      {/* Top Gradient Fade */}
+      <div className="fixed inset-0 z-[-1] bg-gradient-to-b from-[#020617] via-transparent to-[#020617] pointer-events-none" />
       {/* Hero Stats Section */}
       <section className="grid grid-cols-1 md:grid-cols-3 gap-6">
         <motion.div initial={{ opacity: 0, x: -20 }} animate={{ opacity: 1, x: 0 }}>

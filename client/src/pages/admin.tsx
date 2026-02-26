@@ -53,7 +53,19 @@ export default function Admin() {
   }
 
   return (
-    <div className="max-w-5xl mx-auto space-y-10 py-6">
+    <div className="max-w-5xl mx-auto space-y-10 py-6 relative">
+      <div
+        className="fixed inset-0 z-[-1] opacity-20 pointer-events-none"
+        style={{
+          backgroundImage: 'url("/images/arena-bg.png")',
+          backgroundSize: 'cover',
+          backgroundPosition: 'center',
+          filter: 'grayscale(0.5) contrast(1.2)'
+        }}
+      />
+
+      {/* Top Gradient Fade */}
+      <div className="fixed inset-0 z-[-1] bg-gradient-to-b from-[#020617] via-transparent to-[#020617] pointer-events-none" />
       <div className="relative p-12 rounded-[2rem] border border-primary/20 bg-gradient-to-br from-primary/10 via-transparent to-blue-500/10 overflow-hidden">
         <div className="absolute top-0 right-0 p-8 opacity-5">
           <Gavel className="w-64 h-64" />

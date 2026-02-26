@@ -67,9 +67,20 @@ export default function Profile() {
         : 0;
 
     return (
-        <div className="min-h-screen bg-[#020617] text-white pb-20">
+        <div className="min-h-screen bg-[#020617] text-white pb-20 relative">
+            {/* Cinematic Hero Background */}
+            <div
+                className="fixed inset-0 z-[-1] opacity-30 pointer-events-none"
+                style={{
+                    backgroundImage: 'url("/images/login-bg.png")',
+                    backgroundSize: 'cover',
+                    backgroundPosition: 'center',
+                    filter: 'grayscale(0.3) contrast(1.1) brightness(0.6)'
+                }}
+            />
+
             {/* Background Decor */}
-            <div className="fixed top-0 left-0 w-full h-full pointer-events-none opacity-20">
+            <div className="fixed top-0 left-0 w-full h-full pointer-events-none opacity-20 z-[-1]">
                 <div className="absolute top-[-10%] left-[-10%] w-[50%] h-[50%] bg-primary/20 blur-[150px] rounded-full" />
                 <div className="absolute bottom-[-10%] right-[-10%] w-[50%] h-[50%] bg-blue-500/20 blur-[150px] rounded-full" />
             </div>
