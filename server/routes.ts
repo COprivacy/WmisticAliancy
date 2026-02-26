@@ -27,7 +27,7 @@ export async function registerRoutes(
     const matchesList = await storage.getMatchesByPlayerId(accountId as string, zoneId as string);
     const playersList = await storage.getPlayers();
 
-    const history = matchesList.map(m => {
+    const matchesWithNames = matchesList.map(m => {
       const winner = playersList.find(p => p.accountId === m.winnerId && p.zoneId === m.winnerZone);
       const loser = playersList.find(p => p.accountId === m.loserId && p.zoneId === m.loserZone);
       return {
@@ -37,7 +37,16 @@ export async function registerRoutes(
       };
     });
 
-    res.json({ player, history });
+    // Mock live MLBB data to complement internal storage
+    const liveStats = {
+      totalMatches: Math.floor(Math.random() * 5000) + 1000,
+      overallWinrate: (Math.random() * 20 + 45).toFixed(1) + "%",
+      mainRole: ["Jungler", "Exp Lane", "Mid Lane", "Gold Lane", "Roamer"][Math.floor(Math.random() * 5)],
+      favoriteHero: ["Lancelot", "Fanny", "Gusion", "Chou", "Ling", "Paquito"][Math.floor(Math.random() * 6)],
+      rankIcon: "https://vignette.wikia.nocookie.net/mobile-legends/images/c/c2/Rank_Mythic.png"
+    };
+
+    res.json({ player, history: matchesWithNames, liveStats });
   }));
 
   // MLBB Account Info Proxy (Validation)
