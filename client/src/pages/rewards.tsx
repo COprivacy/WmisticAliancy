@@ -107,8 +107,8 @@ export default function Rewards() {
 
                                     <div className="mt-8 pt-6 border-t border-white/5 flex items-center justify-between">
                                         <div className="flex gap-1">
-                                            {[1, 2, 3].map((s) => (
-                                                <Star key={s} className={`w-3 h-3 ${index < (5 - (reward.rarity === 'mythic' ? 0 : reward.rarity === 'legendary' ? 1 : 2)) ? 'fill-primary text-primary' : 'text-white/10'}`} />
+                                            {Array.from({ length: reward.rarity === 'mythic' ? 7 : reward.rarity === 'legendary' ? 5 : reward.rarity === 'epic' ? 3 : 1 }).map((_, s) => (
+                                                <Star key={s} className="w-3 h-3 fill-primary text-primary" />
                                             ))}
                                         </div>
                                         <span className="text-[9px] uppercase font-bold tracking-[0.2em] text-muted-foreground">Recompensa Exclusiva</span>
