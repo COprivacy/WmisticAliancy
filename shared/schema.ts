@@ -29,6 +29,7 @@ export const matches = sqliteTable("matches", {
   winnerZone: text("winner_zone_id").notNull(),
   loserId: text("loser_id").notNull(),
   loserZone: text("loser_zone_id").notNull(),
+  proofImage: text("proof_image"), // URL to the screenshot proof
   status: text("status").notNull().default("pending"), // pending, approved, rejected
   createdAt: integer("created_at", { mode: "timestamp" }).notNull().default(sql`CURRENT_TIMESTAMP`),
 });

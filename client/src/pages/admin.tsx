@@ -5,7 +5,8 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/com
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { useToast } from "@/hooks/use-toast";
-import { ShieldCheck, Check, X, Gavel, Users, Info, Loader2 } from "lucide-react";
+import { Dialog, DialogTrigger, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { ShieldCheck, Check, X, Gavel, Users, Info, Loader2, Swords, ExternalLink, Image as ImageIcon } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import { useQuery, useMutation } from "@tanstack/react-query";
 import { apiRequest, queryClient } from "@/lib/queryClient";
@@ -125,26 +126,52 @@ export default function Admin() {
                       </div>
                     </div>
 
-                    <div className="flex items-center gap-3 mt-6 md:mt-0">
-                      <Button
-                        variant="outline"
-                        size="lg"
-                        disabled={verditMutation.isPending}
-                        className="rounded-full px-8 border-red-500/20 text-red-500 hover:bg-red-500 hover:text-white transition-all"
-                        onClick={() => verditMutation.mutate({ id: match.id, action: "reject" })}
-                      >
-                        <X className="w-4 h-4 mr-2" />
-                        Rejeitar
-                      </Button>
-                      <Button
-                        size="lg"
-                        disabled={verditMutation.isPending}
-                        className="rounded-full px-8 bg-green-600 hover:bg-green-500 text-white shadow-lg shadow-green-500/20"
-                        onClick={() => verditMutation.mutate({ id: match.id, action: "approve" })}
-                      >
-                        <Check className="w-4 h-4 mr-2" />
-                        Validar
-                      </Button>
+                    <div className="flex flex-col md:flex-row items-center gap-6 mt-6 md:mt-0">
+                      {match.proofImage && (
+                        <Dialog>
+                          <DialogTrigger asChild>
+                            <Button variant="ghost" className="group flex flex-col items-center gap-1 hover:bg-white/5 h-auto py-2">
+                              <div className="relative w-16 h-16 rounded-xl border border-white/10 overflow-hidden shadow-lg group-hover:border-primary/50 transition-colors">
+                                <img src={match.proofImage} className="w-full h-full object-cover" alt="Prova" />
+                                <div className="absolute inset-0 bg-primary/20 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
+                                  <ExternalLink className="w-4 h-4 text-white" />
+                                </div>
+                              </div>
+                              <span className="text-[8px] font-bold uppercase tracking-widest text-muted-foreground group-hover:text-primary transition-colors">Ver Prova</span>
+                            </Button>
+                          </DialogTrigger>
+                          <DialogContent className="max-w-4xl border-primary/20 bg-[#020617]/95 backdrop-blur-3xl p-2">
+                            <DialogHeader className="p-4 border-b border-white/5">
+                              <DialogTitle className="font-serif uppercase tracking-widest text-primary">Evidência de Vitória</DialogTitle>
+                            </DialogHeader>
+                            <div className="relative aspect-video w-full overflow-hidden rounded-xl bg-black/40">
+                              <img src={match.proofImage} className="w-full h-full object-contain" alt="Print da Vitória" />
+                            </div>
+                          </DialogContent>
+                        </Dialog>
+                      )}
+
+                      <div className="flex items-center gap-3">
+                        <Button
+                          variant="outline"
+                          size="lg"
+                          disabled={verditMutation.isPending}
+                          className="rounded-full px-8 border-red-500/20 text-red-500 hover:bg-red-500 hover:text-white transition-all h-14"
+                          onClick={() => verditMutation.mutate({ id: match.id, action: "reject" })}
+                        >
+                          <X className="w-4 h-4 mr-2" />
+                          Rejeitar
+                        </Button>
+                        <Button
+                          size="lg"
+                          disabled={verditMutation.isPending}
+                          className="rounded-full px-8 bg-emerald-600 hover:bg-emerald-500 text-white shadow-lg shadow-emerald-500/20 transition-all h-14"
+                          onClick={() => verditMutation.mutate({ id: match.id, action: "approve" })}
+                        >
+                          <Check className="w-4 h-4 mr-2" />
+                          Aprovar
+                        </Button>
+                      </div>
                     </div>
                   </motion.div>
                 ))

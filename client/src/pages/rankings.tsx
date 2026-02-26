@@ -6,6 +6,8 @@ import { Badge } from "@/components/ui/badge";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Label } from "@/components/ui/label";
+import { Input } from "@/components/ui/input";
+import { ImageIcon, X } from "lucide-react";
 import { useAuth } from "@/lib/auth";
 import { useToast } from "@/hooks/use-toast";
 import { Trophy, Swords, Crown, Target, Zap, TrendingUp, ChevronRight, Loader2 } from "lucide-react";
@@ -19,13 +21,15 @@ export default function Rankings() {
   const { toast } = useToast();
   const [reportOpponentId, setReportOpponentId] = useState<number | null>(null);
   const [isReportOpen, setIsReportOpen] = useState(false);
+  const [proofFile, setProofFile] = useState<File | null>(null);
+  const [isUploading, setIsUploading] = useState(false);
 
   const { data: players, isLoading } = useQuery<Player[]>({
     queryKey: ["/api/players"],
   });
 
   const reportMutation = useMutation({
-    mutationFn: async (data: { winnerId: string; winnerZone: string; loserId: string; loserZone: string }) => {
+    mutationFn: async (data: { winnerId: string; winnerZone: string; loserId: string; loserZone: string, proofImage?: string }) => {
       await apiRequest("POST", "/api/matches", data);
     },
     onSuccess: () => {
@@ -36,6 +40,7 @@ export default function Rankings() {
       });
       setIsReportOpen(false);
       setReportOpponentId(null);
+      setProofFile(null);
     },
     onError: () => {
       toast({
@@ -46,16 +51,41 @@ export default function Rankings() {
     }
   });
 
-  const handleReportWin = () => {
+  const handleReportWin = async () => {
     if (!reportOpponentId || !user) return;
     const loser = players?.find(p => p.id === reportOpponentId);
     if (!loser) return;
+
+    let proofUrl = "";
+    if (proofFile) {
+      setIsUploading(true);
+      try {
+        const formData = new FormData();
+        formData.append("file", proofFile);
+        const res = await fetch("/api/upload", {
+          method: "POST",
+          body: formData,
+        });
+        const data = await res.json();
+        proofUrl = data.url;
+      } catch (err) {
+        toast({
+          title: "Erro no Upload",
+          description: "Não foi possível enviar a imagem de prova.",
+          variant: "destructive",
+        });
+        setIsUploading(false);
+        return;
+      }
+      setIsUploading(false);
+    }
 
     reportMutation.mutate({
       winnerId: user.id,
       winnerZone: user.zoneId,
       loserId: loser.accountId,
-      loserZone: loser.zoneId
+      loserZone: loser.zoneId,
+      proofImage: proofUrl
     });
   };
 
@@ -162,10 +192,55 @@ export default function Rankings() {
                       </SelectContent>
                     </Select>
                   </div>
+
+                  <div className="space-y-3">
+                    <Label className="text-[10px] uppercase tracking-[0.2em] font-bold text-primary/70">Prova da Vitória (Screenshot)</Label>
+                    <div className="relative">
+                      {!proofFile ? (
+                        <div className="flex flex-col items-center justify-center border-2 border-dashed border-primary/20 bg-white/5 rounded-2xl p-6 transition-all hover:bg-white/10 group cursor-pointer">
+                          <Input
+                            type="file"
+                            accept="image/*"
+                            onChange={(e) => setProofFile(e.target.files?.[0] || null)}
+                            className="absolute inset-0 opacity-0 cursor-pointer"
+                          />
+                          <ImageIcon className="w-8 h-8 text-primary/40 group-hover:scale-110 transition-transform mb-2" />
+                          <p className="text-[10px] uppercase tracking-widest text-muted-foreground">Clique para anexar o print</p>
+                        </div>
+                      ) : (
+                        <div className="relative rounded-2xl border border-primary/20 overflow-hidden group">
+                          <img
+                            src={URL.createObjectURL(proofFile)}
+                            className="w-full h-32 object-cover opacity-60"
+                            alt="Preview"
+                          />
+                          <div className="absolute inset-0 flex items-center justify-center bg-black/40">
+                            <span className="text-[10px] font-bold uppercase tracking-widest">{proofFile.name}</span>
+                          </div>
+                          <Button
+                            variant="destructive"
+                            size="icon"
+                            className="absolute top-2 right-2 rounded-full w-6 h-6"
+                            onClick={() => setProofFile(null)}
+                          >
+                            <X className="w-3 h-3" />
+                          </Button>
+                        </div>
+                      )}
+                    </div>
+                  </div>
                 </div>
                 <DialogFooter>
-                  <Button onClick={handleReportWin} disabled={!reportOpponentId} className="w-full h-14 bg-primary text-primary-foreground font-bold uppercase tracking-widest">
-                    Confirmar Destino
+                  <Button
+                    onClick={handleReportWin}
+                    disabled={!reportOpponentId || isUploading || reportMutation.isPending}
+                    className="w-full h-14 bg-primary text-primary-foreground font-black uppercase tracking-widest shadow-lg shadow-primary/20"
+                  >
+                    {isUploading ? (
+                      <><Loader2 className="w-5 h-5 mr-2 animate-spin" /> ENVIANDO PROVA...</>
+                    ) : (
+                      "Confirmar Destino do Oponente"
+                    )}
                   </Button>
                 </DialogFooter>
               </DialogContent>

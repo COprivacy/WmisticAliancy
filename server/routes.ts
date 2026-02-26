@@ -4,6 +4,25 @@ import { storage } from "./storage";
 import { insertPlayerSchema, insertMatchSchema } from "@shared/schema";
 import { getHeroDetails } from "./mlbb-api";
 import asyncHandler from "express-async-handler";
+import multer from "multer";
+import path from "path";
+import fs from "fs";
+
+const storageMulter = multer.diskStorage({
+  destination: function (_req, _file, cb) {
+    const uploadDir = 'client/public/uploads';
+    if (!fs.existsSync(uploadDir)) {
+      fs.mkdirSync(uploadDir, { recursive: true });
+    }
+    cb(null, uploadDir);
+  },
+  filename: function (_req, file, cb) {
+    const uniqueSuffix = Date.now() + '-' + Math.round(Math.random() * 1E9);
+    cb(null, 'proof-' + uniqueSuffix + path.extname(file.originalname));
+  }
+});
+
+const upload = multer({ storage: storageMulter });
 
 export async function registerRoutes(
   httpServer: Server,
@@ -99,6 +118,15 @@ export async function registerRoutes(
     const match = await storage.createMatch(result.data);
     res.json(match);
   }));
+
+  // Image Upload Route
+  app.post("/api/upload", upload.single('file'), (req, res) => {
+    if (!req.file) {
+      return res.status(400).json({ message: "Nenhum arquivo enviado." });
+    }
+    const filePath = `/uploads/${req.file.filename}`;
+    res.json({ url: filePath });
+  });
 
   // Admin Actions: Approve or Reject
   app.post("/api/matches/:id/:action", asyncHandler(async (req, res) => {
