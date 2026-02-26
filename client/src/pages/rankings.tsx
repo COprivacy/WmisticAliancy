@@ -242,7 +242,7 @@ export default function Rankings() {
                       {sortedPlayers[0].gameName}
                     </h3>
                     <p className="text-primary text-center font-black text-2xl">{sortedPlayers[0].points} pts</p>
-                    <Badge className="mt-2 mx-auto block w-fit bg-primary text-primary-foreground animate-pulse">GRÃO MESTRE</Badge>
+                    <Badge className="mt-2 mx-auto block w-fit bg-primary text-primary-foreground animate-pulse">GRANDE MESTRE</Badge>
                   </Link>
                 </motion.div>
               )}

@@ -1,4 +1,4 @@
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { Link, useParams, useLocation } from "wouter";
 import { Player, Match, Reward } from "@shared/schema";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -14,10 +14,12 @@ import {
     Calendar,
     Flame,
     Award,
-    Gamepad
+    Camera
 } from "lucide-react";
 import { motion } from "framer-motion";
 import { Loader2 } from "lucide-react";
+import { useRef, useState } from "react";
+import { useToast } from "@/hooks/use-toast";
 
 type ProfileData = {
     player: Player;
@@ -34,6 +36,10 @@ type ProfileData = {
 export default function Profile() {
     const { accountId, zoneId } = useParams();
     const [, setLocation] = useLocation();
+    const queryClient = useQueryClient();
+    const { toast } = useToast();
+    const fileInputRef = useRef<HTMLInputElement>(null);
+    const [uploadingAvatar, setUploadingAvatar] = useState(false);
 
     const { data, isLoading, error } = useQuery<ProfileData>({
         queryKey: [`/api/players/${accountId}/${zoneId}`],
@@ -102,12 +108,48 @@ export default function Profile() {
                     className="relative p-8 rounded-[2.5rem] border border-white/10 bg-white/5 backdrop-blur-xl mb-8 overflow-hidden"
                 >
                     <div className="flex flex-col md:flex-row items-center gap-8 relative z-10">
-                        <div className="relative">
+                        <div className="relative group cursor-pointer" onClick={() => fileInputRef.current?.click()}>
                             <div className="absolute -inset-2 bg-gradient-to-tr from-primary to-blue-500 rounded-full blur opacity-40 animate-pulse" />
                             <img
                                 src={player.avatar || `https://api.dicebear.com/7.x/avataaars/svg?seed=${player.gameName}`}
-                                className="w-32 h-32 rounded-full border-4 border-white/10 relative z-10 bg-[#0c1120]"
+                                className="w-32 h-32 rounded-full border-4 border-white/10 relative z-10 bg-[#0c1120] object-cover"
                                 alt={player.gameName}
+                            />
+                            <div className="absolute inset-0 flex items-center justify-center bg-black/50 rounded-full opacity-0 group-hover:opacity-100 transition-opacity z-20">
+                                {uploadingAvatar ? (
+                                    <Loader2 className="w-8 h-8 text-white animate-spin" />
+                                ) : (
+                                    <Camera className="w-8 h-8 text-white" />
+                                )}
+                            </div>
+                            <input
+                                ref={fileInputRef}
+                                type="file"
+                                accept="image/*"
+                                className="hidden"
+                                onChange={async (e) => {
+                                    const file = e.target.files?.[0];
+                                    if (!file) return;
+                                    setUploadingAvatar(true);
+                                    try {
+                                        const formData = new FormData();
+                                        formData.append('avatar', file);
+                                        const res = await fetch(`/api/players/${player.id}/avatar`, {
+                                            method: 'POST',
+                                            body: formData,
+                                        });
+                                        if (res.ok) {
+                                            toast({ title: "📸 Foto atualizada!", description: "Sua nova foto de perfil está ativa." });
+                                            queryClient.invalidateQueries({ queryKey: [`/api/players/${accountId}/${zoneId}`] });
+                                        } else {
+                                            toast({ title: "Erro ao enviar foto", variant: "destructive" });
+                                        }
+                                    } catch {
+                                        toast({ title: "Erro de conexão", variant: "destructive" });
+                                    } finally {
+                                        setUploadingAvatar(false);
+                                    }
+                                }}
                             />
                             {player.streak >= 3 && (
                                 <div className="absolute -top-2 -right-2 bg-orange-500 text-white p-2 rounded-full shadow-lg z-20">

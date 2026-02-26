@@ -170,6 +170,18 @@ export async function registerRoutes(
     res.json({ url: filePath });
   });
 
+  // Avatar Upload Route
+  app.post("/api/players/:id/avatar", upload.single('avatar'), asyncHandler(async (req, res) => {
+    const playerId = parseInt(req.params.id);
+    if (!req.file) {
+      res.status(400).json({ message: "Nenhum arquivo enviado." });
+      return;
+    }
+    const avatarUrl = `/uploads/${req.file.filename}`;
+    const player = await storage.updatePlayer(playerId, { avatar: avatarUrl });
+    res.json({ avatar: player.avatar });
+  }));
+
   // Rewards Routes
   app.get("/api/rewards", asyncHandler(async (_req, res) => {
     const allRewards = await storage.getRewards();
