@@ -34,6 +34,21 @@ export const matches = sqliteTable("matches", {
   createdAt: integer("created_at", { mode: "timestamp" }).notNull().default(sql`CURRENT_TIMESTAMP`),
 });
 
+export const rewards = sqliteTable("rewards", {
+  id: integer("id").primaryKey({ autoIncrement: true }),
+  name: text("name").notNull(),
+  description: text("description").notNull(),
+  rarity: text("rarity").notNull(), // mythic, legendary, epic, rare
+  icon: text("icon").notNull(),
+});
+
+export const playerRewards = sqliteTable("player_rewards", {
+  id: integer("id").primaryKey({ autoIncrement: true }),
+  playerId: integer("player_id").notNull(),
+  rewardId: integer("reward_id").notNull(),
+  assignedAt: integer("assigned_at", { mode: "timestamp" }).notNull().default(sql`CURRENT_TIMESTAMP`),
+});
+
 export const insertUserSchema = createInsertSchema(users).pick({
   username: true,
   password: true,
@@ -55,5 +70,10 @@ export type InsertPlayer = z.infer<typeof insertPlayerSchema>;
 export type Player = typeof players.$inferSelect;
 export type InsertMatch = z.infer<typeof insertMatchSchema>;
 export type Match = typeof matches.$inferSelect;
+
+export const insertRewardSchema = createInsertSchema(rewards).omit({ id: true });
+export type InsertReward = z.infer<typeof insertRewardSchema>;
+export type Reward = typeof rewards.$inferSelect;
+export type PlayerReward = typeof playerRewards.$inferSelect;
 
 

@@ -1,4 +1,4 @@
-import { users, players, matches, type User, type InsertUser, type Player, type InsertPlayer, type Match, type InsertMatch } from "@shared/schema";
+import { users, players, matches, rewards, playerRewards, type User, type InsertUser, type Player, type InsertPlayer, type Match, type InsertMatch, type Reward, type InsertReward } from "@shared/schema";
 import { db } from "./db";
 import { eq, and, sql } from "drizzle-orm";
 
@@ -20,12 +20,40 @@ export interface IStorage {
   updateMatchStatus(id: number, status: string): Promise<Match>;
   getMatchesByPlayerId(accountId: string, zoneId: string): Promise<Match[]>;
 
-
   // Search
   searchPlayers(query: string): Promise<Player[]>;
+
+  // Reward methods
+  getRewards(): Promise<Reward[]>;
+  createReward(reward: InsertReward): Promise<Reward>;
+  assignReward(playerId: number, rewardId: number): Promise<void>;
+  getPlayerRewards(playerId: number): Promise<Reward[]>;
 }
 
 export class DatabaseStorage implements IStorage {
+  constructor() {
+    this.seedRewards();
+  }
+
+  async seedRewards() {
+    try {
+      const existing = await this.getRewards();
+      if (existing.length === 0) {
+        const initialRewards = [
+          { name: "Espada Suprema da Aliança", description: "Campeão absoluto da temporada (Top 1).", rarity: "mythic", icon: "/images/rewards/mythic-sword.png" },
+          { name: "Cajado do Arcanista", description: "Top 3 da arena por 3 temporadas seguidas.", rarity: "legendary", icon: "/images/rewards/legendary-staff.png" },
+          { name: "Asas da Vitória", description: "Mais de 100 vitórias na temporada.", rarity: "epic", icon: "/images/rewards/epic-wings.png" },
+          { name: "Medalha de Honra", description: "Participação em mais de 50 duelos.", rarity: "rare", icon: "/images/rewards/rare-medal.png" }
+        ];
+        for (const reward of initialRewards) {
+          await this.createReward(reward);
+        }
+      }
+    } catch (e) {
+      console.error("Failed to seed rewards:", e);
+    }
+  }
+
   async getUser(id: number): Promise<User | undefined> {
     const [user] = await db.select().from(users).where(eq(users.id, id));
     return user;
@@ -110,7 +138,29 @@ export class DatabaseStorage implements IStorage {
       )
       .orderBy(sql`${matches.createdAt} DESC`);
   }
+
+  async getRewards(): Promise<Reward[]> {
+    return await db.select().from(rewards);
+  }
+
+  async createReward(insertReward: InsertReward): Promise<Reward> {
+    const [reward] = await db.insert(rewards).values(insertReward).returning();
+    return reward;
+  }
+
+  async assignReward(playerId: number, rewardId: number): Promise<void> {
+    await db.insert(playerRewards).values({ playerId, rewardId });
+  }
+
+  async getPlayerRewards(playerId: number): Promise<Reward[]> {
+    const results = await db.select({
+      reward: rewards
+    }).from(playerRewards)
+      .innerJoin(rewards, eq(playerRewards.rewardId, rewards.id))
+      .where(eq(playerRewards.playerId, playerId));
+
+    return results.map(r => r.reward);
+  }
 }
 
 export const storage = new DatabaseStorage();
-

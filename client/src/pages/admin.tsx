@@ -6,11 +6,13 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { useToast } from "@/hooks/use-toast";
 import { Dialog, DialogTrigger, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
-import { ShieldCheck, Check, X, Gavel, Users, Info, Loader2, Swords, ExternalLink, Image as ImageIcon } from "lucide-react";
+import { ShieldCheck, Check, X, Gavel, Users, Info, Loader2, Swords, ExternalLink, Image as ImageIcon, Gift } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import { useQuery, useMutation } from "@tanstack/react-query";
 import { apiRequest, queryClient } from "@/lib/queryClient";
-import { Match } from "@shared/schema";
+import { Match, Player, Reward } from "@shared/schema";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 
 type MatchWithNames = Match & { winnerName: string; loserName: string };
 
@@ -19,9 +21,20 @@ export default function Admin() {
   const [, setLocation] = useLocation();
   const { toast } = useToast();
 
-  const { data: pendingMatches, isLoading } = useQuery<MatchWithNames[]>({
+  const { data: pendingMatches, isLoading: loadingMatches } = useQuery<MatchWithNames[]>({
     queryKey: ["/api/matches"],
   });
+
+  const { data: playersList } = useQuery<Player[]>({
+    queryKey: ["/api/players"],
+  });
+
+  const { data: rewardsList } = useQuery<Reward[]>({
+    queryKey: ["/api/rewards"],
+  });
+
+  const [selectedPlayerId, setSelectedPlayerId] = useState<number | null>(null);
+  const [selectedRewardId, setSelectedRewardId] = useState<number | null>(null);
 
   const verditMutation = useMutation({
     mutationFn: async ({ id, action }: { id: number; action: "approve" | "reject" }) => {
@@ -40,12 +53,32 @@ export default function Admin() {
     }
   });
 
+  const assignRewardMutation = useMutation({
+    mutationFn: async ({ playerId, rewardId }: { playerId: number; rewardId: number }) => {
+      await apiRequest("POST", `/api/players/${playerId}/rewards`, { rewardId });
+    },
+    onSuccess: () => {
+      toast({
+        title: "Relíquia Concedida!",
+        description: "O item agora brilha na vitrine do jogador.",
+      });
+      setSelectedRewardId(null);
+    },
+    onError: () => {
+      toast({
+        title: "Falha na Distribuição",
+        description: "Ocorreu um erro ao entregar o prêmio.",
+        variant: "destructive",
+      });
+    }
+  });
+
   if (user && !user.isAdmin) {
     setLocation("/rankings");
     return null;
   }
 
-  if (isLoading) {
+  if (loadingMatches) {
     return (
       <div className="flex items-center justify-center min-h-[60vh]">
         <Loader2 className="w-10 h-10 animate-spin text-primary" />
@@ -203,6 +236,62 @@ export default function Admin() {
               </div>
             </CardContent>
           </Card>
+        </div>
+      </div>
+
+      {/* --- NOVA SEÇÃO: DISTRIBUIÇÃO DE RECOMPENSAS --- */}
+      <div className="relative group">
+        <div className="absolute inset-x-0 -top-px h-px bg-gradient-to-r from-transparent via-yellow-500/50 to-transparent" />
+        <div className="p-8 rounded-[2rem] border border-yellow-500/20 bg-yellow-500/5 backdrop-blur-3xl">
+          <div className="flex flex-col md:flex-row items-center justify-between gap-8">
+            <div className="space-y-2">
+              <div className="flex items-center gap-3">
+                <div className="p-2 rounded-xl bg-yellow-500/20 text-yellow-500">
+                  <Gift className="w-5 h-5" />
+                </div>
+                <h3 className="text-xl font-serif uppercase tracking-widest text-yellow-400">Entrega de Relíquias</h3>
+              </div>
+              <p className="text-muted-foreground text-xs uppercase tracking-widest font-bold">Distribua prêmios miticos e raros para os heróis da guilda</p>
+            </div>
+
+            <div className="flex flex-col sm:flex-row gap-4 w-full md:w-auto">
+              <Select value={selectedPlayerId?.toString()} onValueChange={(val) => setSelectedPlayerId(parseInt(val))}>
+                <SelectTrigger className="w-full sm:w-64 bg-black/40 border-white/10 h-14 rounded-2xl">
+                  <SelectValue placeholder="Escolher Jogador..." />
+                </SelectTrigger>
+                <SelectContent className="bg-slate-900 border-white/10 max-h-64">
+                  {playersList?.map(p => (
+                    <SelectItem key={p.id} value={p.id.toString()}>{p.gameName}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+
+              <Select value={selectedRewardId?.toString()} onValueChange={(val) => setSelectedRewardId(parseInt(val))}>
+                <SelectTrigger className="w-full sm:w-64 bg-black/40 border-white/10 h-14 rounded-2xl text-yellow-500/80">
+                  <SelectValue placeholder="Escolher Relíquia..." />
+                </SelectTrigger>
+                <SelectContent className="bg-slate-900 border-white/10">
+                  {rewardsList?.map(r => (
+                    <SelectItem key={r.id} value={r.id.toString()} className="capitalize text-xs">
+                      <span className="font-bold">{r.name}</span> <span className="text-[8px] opacity-40 ml-2">({r.rarity})</span>
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+
+              <Button
+                onClick={() => {
+                  if (selectedPlayerId && selectedRewardId) {
+                    assignRewardMutation.mutate({ playerId: selectedPlayerId, rewardId: selectedRewardId });
+                  }
+                }}
+                disabled={!selectedPlayerId || !selectedRewardId || assignRewardMutation.isPending}
+                className="h-14 px-8 bg-yellow-500 text-yellow-950 font-black uppercase tracking-widest hover:bg-yellow-400 shadow-lg shadow-yellow-500/20"
+              >
+                {assignRewardMutation.isPending ? <Loader2 className="w-4 h-4 animate-spin" /> : "Conceder"}
+              </Button>
+            </div>
+          </div>
         </div>
       </div>
     </div>

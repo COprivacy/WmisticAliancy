@@ -37,35 +37,37 @@ export async function registerRoutes(
   // Get single player details
   app.get("/api/players/:accountId/:zoneId", asyncHandler(async (req, res) => {
     const { accountId, zoneId } = req.params;
-    const player = await storage.getPlayerByAccountId(accountId as string, zoneId as string);
+    const [player, history] = await Promise.all([
+      storage.getPlayerByAccountId(accountId, zoneId),
+      storage.getMatchesByPlayerId(accountId, zoneId),
+    ]);
+
     if (!player) {
-      res.status(404).json({ message: "Jogador não encontrado." });
+      res.status(404).json({ message: "Player not found" });
       return;
     }
 
-    const matchesList = await storage.getMatchesByPlayerId(accountId as string, zoneId as string);
-    const playersList = await storage.getPlayers();
+    const playerRewards = await storage.getPlayerRewards(player.id);
 
-    const matchesWithNames = matchesList.map(m => {
-      const winner = playersList.find(p => p.accountId === m.winnerId && p.zoneId === m.winnerZone);
-      const loser = playersList.find(p => p.accountId === m.loserId && p.zoneId === m.loserZone);
+    // Mock live data (Total MLBB stats)
+    const liveStats = {
+      totalMatches: 1245 + Math.floor(Math.random() * 500),
+      winRate: (60 + Math.random() * 15).toFixed(1) + "%",
+      mainRole: "Jungle / Assassino",
+      favoriteHero: "Gusion",
+      officialRank: "https://static.wikia.nocookie.net/mobile-legends/images/c/c2/Rank_Mythic.png"
+    };
+
+    const matchesWithNames = history.map(m => {
+      const isWinner = m.winnerId === accountId && m.winnerZone === zoneId;
       return {
         ...m,
-        winnerName: winner?.gameName || "Soldado",
-        loserName: loser?.gameName || "Soldado"
+        opponentName: isWinner ? "Inimigo" : "Vencedor",
+        result: isWinner ? "win" : "loss"
       };
     });
 
-    // Mock live MLBB data to complement internal storage
-    const liveStats = {
-      totalMatches: Math.floor(Math.random() * 5000) + 1000,
-      overallWinrate: (Math.random() * 20 + 45).toFixed(1) + "%",
-      mainRole: ["Jungler", "Exp Lane", "Mid Lane", "Gold Lane", "Roamer"][Math.floor(Math.random() * 5)],
-      favoriteHero: ["Lancelot", "Fanny", "Gusion", "Chou", "Ling", "Paquito"][Math.floor(Math.random() * 6)],
-      rankIcon: "https://vignette.wikia.nocookie.net/mobile-legends/images/c/c2/Rank_Mythic.png"
-    };
-
-    res.json({ player, history: matchesWithNames, liveStats });
+    res.json({ player, history: matchesWithNames, liveStats, rewards: playerRewards });
   }));
 
   // MLBB Account Info Proxy (Validation)
@@ -128,6 +130,19 @@ export async function registerRoutes(
     res.json({ url: filePath });
   });
 
+  // Rewards Routes
+  app.get("/api/rewards", asyncHandler(async (_req, res) => {
+    const allRewards = await storage.getRewards();
+    res.json(allRewards);
+  }));
+
+  app.post("/api/players/:id/rewards", asyncHandler(async (req, res) => {
+    const playerId = parseInt(req.params.id);
+    const { rewardId } = req.body;
+    await storage.assignReward(playerId, rewardId);
+    res.json({ success: true });
+  }));
+
   // Admin Actions: Approve or Reject
   app.post("/api/matches/:id/:action", asyncHandler(async (req, res) => {
     const id = parseInt(req.params.id as string);
@@ -178,4 +193,3 @@ export async function registerRoutes(
 
   return httpServer;
 }
-

@@ -10,7 +10,7 @@ import { Input } from "@/components/ui/input";
 import { ImageIcon, X } from "lucide-react";
 import { useAuth } from "@/lib/auth";
 import { useToast } from "@/hooks/use-toast";
-import { Trophy, Swords, Crown, Target, Zap, TrendingUp, ChevronRight, Loader2 } from "lucide-react";
+import { Trophy, Swords, Crown, Target, Zap, TrendingUp, ChevronRight, Loader2, Gift } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import { useQuery, useMutation } from "@tanstack/react-query";
 import { queryClient, apiRequest } from "@/lib/queryClient";
@@ -271,8 +271,8 @@ export default function Rankings() {
           <div className="h-full flex flex-col gap-4">
             <Dialog open={isReportOpen} onOpenChange={setIsReportOpen}>
               <DialogTrigger asChild>
-                <Button className="flex-1 bg-primary text-primary-foreground hover:bg-yellow-400 font-black uppercase tracking-[0.2em] shadow-lg shadow-primary/20 group h-full">
-                  <Swords className="w-6 h-6 mr-3 group-hover:rotate-12 transition-transform" />
+                <Button className="flex-1 bg-yellow-500 text-yellow-950 hover:bg-yellow-400 font-extrabold uppercase tracking-[0.2em] shadow-lg shadow-yellow-500/20 group h-14">
+                  <Swords className="w-5 h-5 mr-3 group-hover:rotate-12 transition-transform" />
                   Registrar Combate
                 </Button>
               </DialogTrigger>
@@ -352,6 +352,13 @@ export default function Rankings() {
                 </DialogFooter>
               </DialogContent>
             </Dialog>
+
+            <Link href="/rewards">
+              <Button variant="outline" className="w-full h-14 border-primary/20 bg-primary/5 hover:bg-primary/10 text-primary font-bold uppercase tracking-widest group">
+                <Gift className="w-5 h-5 mr-3 group-hover:bounce" />
+                Santuário de Prêmios
+              </Button>
+            </Link>
           </div>
         </motion.div>
       </section>

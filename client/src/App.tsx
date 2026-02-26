@@ -10,6 +10,7 @@ import Login from "@/pages/login";
 import Rankings from "@/pages/rankings";
 import Admin from "@/pages/admin";
 import Profile from "@/pages/profile";
+import Rewards from "@/pages/rewards"; // Added import for Rewards
 import Layout from "@/components/layout";
 
 function Router() {
@@ -32,6 +33,12 @@ function Router() {
       <Route path="/player/:accountId/:zoneId">
         <Layout>
           <Profile />
+        </Layout>
+      </Route>
+
+      <Route path="/rewards">
+        <Layout>
+          <Rewards />
         </Layout>
       </Route>
 

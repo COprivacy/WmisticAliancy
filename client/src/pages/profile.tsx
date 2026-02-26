@@ -1,6 +1,6 @@
 import { useQuery } from "@tanstack/react-query";
-import { useParams, useLocation } from "wouter";
-import { Player, Match } from "@shared/schema";
+import { Link, useParams, useLocation } from "wouter";
+import { Player, Match, Reward } from "@shared/schema";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -29,6 +29,7 @@ type ProfileData = {
         favoriteHero: string;
         rankIcon: string;
     };
+    rewards?: Reward[];
 };
 
 export default function Profile() {
@@ -61,7 +62,7 @@ export default function Profile() {
         );
     }
 
-    const { player, history, liveStats } = data;
+    const { player, history, liveStats, rewards } = data;
     const winRate = player.wins + player.losses > 0
         ? Math.round((player.wins / (player.wins + player.losses)) * 100)
         : 0;
@@ -162,6 +163,61 @@ export default function Profile() {
                         </div>
                     </div>
                 </div>
+
+                {/* --- NOVA SEÇÃO: VITRINE DE CONQUISTAS --- */}
+                <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.2 }} className="mb-12">
+                    <div className="flex items-center gap-4 mb-8">
+                        <Trophy className="w-8 h-8 text-yellow-500 animate-pulse" />
+                        <h2 className="text-3xl font-serif font-black uppercase tracking-widest text-glow">Vitrine de Relíquias</h2>
+                        <div className="h-0.5 flex-1 bg-gradient-to-r from-yellow-500/30 to-transparent" />
+                    </div>
+
+                    {rewards && rewards.length > 0 ? (
+                        <div className="grid grid-cols-2 md:grid-cols-4 gap-6">
+                            {rewards.map((reward, i) => (
+                                <motion.div
+                                    key={i}
+                                    whileHover={{ scale: 1.05 }}
+                                    className="group relative"
+                                >
+                                    <div className={`absolute inset-0 rounded-3xl blur-2xl opacity-20 group-hover:opacity-40 transition-opacity ${reward.rarity === 'mythic' ? 'bg-purple-500' :
+                                        reward.rarity === 'legendary' ? 'bg-yellow-500' :
+                                            reward.rarity === 'epic' ? 'bg-green-500' : 'bg-blue-500'
+                                        }`} />
+                                    <Card className="bg-[#020617]/40 border-white/5 backdrop-blur-3xl overflow-hidden h-full rounded-3xl group-hover:border-primary/30 transition-all shadow-2xl">
+                                        <div className="aspect-square relative overflow-hidden flex items-center justify-center p-4">
+                                            <img
+                                                src={reward.icon}
+                                                className="w-full h-full object-contain filter drop-shadow-[0_0_15px_rgba(255,255,255,0.2)]"
+                                                alt={reward.name}
+                                                onError={(e) => {
+                                                    (e.target as HTMLImageElement).src = "https://images.unsplash.com/photo-1550684848-fac1c5b4e853?w=500&q=80";
+                                                }}
+                                            />
+                                            <Badge className={`absolute bottom-2 left-1/2 -translate-x-1/2 uppercase text-[8px] font-black ${reward.rarity === 'mythic' ? 'bg-purple-600' :
+                                                reward.rarity === 'legendary' ? 'bg-yellow-600' :
+                                                    reward.rarity === 'epic' ? 'bg-green-600' : 'bg-blue-600'
+                                                }`}>
+                                                {reward.rarity}
+                                            </Badge>
+                                        </div>
+                                        <div className="p-4 text-center">
+                                            <span className="text-xs font-black uppercase tracking-tighter truncate block">{reward.name}</span>
+                                        </div>
+                                    </Card>
+                                </motion.div>
+                            ))}
+                        </div>
+                    ) : (
+                        <Card className="bg-white/5 border-dashed border-white/10 p-12 text-center rounded-3xl">
+                            <p className="text-muted-foreground italic text-sm tracking-widest uppercase mb-4">A vitrine está vazia... por enquanto.</p>
+                            <Link href="/rankings">
+                                <Button variant="outline" className="text-[10px] font-black uppercase tracking-widest border-primary/20 hover:bg-primary/5">Buscar Glória</Button>
+                            </Link>
+                        </Card>
+                    )}
+                </motion.div>
+                {/* --- FIM DA SEÇÃO: VITRINE --- */}
 
                 {/* Stats Grid - League Stats */}
                 <div className="mb-4">
