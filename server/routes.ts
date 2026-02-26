@@ -31,7 +31,26 @@ export async function registerRoutes(
   // Get all players for rankings
   app.get("/api/players", asyncHandler(async (_req, res) => {
     const playersList = await storage.getPlayers();
-    res.json(playersList);
+    const playersWithRewards = await Promise.all(playersList.map(async (p) => {
+      const rewards = await storage.getPlayerRewards(p.id);
+      return { ...p, rewards };
+    }));
+    res.json(playersWithRewards);
+  }));
+
+  // Season Info Route
+  app.get("/api/season", asyncHandler(async (_req, res) => {
+    // Hardcoded for now, can be moved to storage later
+    const seasonEnd = new Date("2026-03-26T00:00:00Z");
+    res.json({
+      name: "Temporada de Abertura: O Despertar da Aliança",
+      endsAt: seasonEnd.toISOString(),
+      prizes: [
+        { rank: "Top 1", prize: "Espada Suprema da Aliança (Mítica) + 1000 Diamantes" },
+        { rank: "Top 3", prize: "Cajado do Arcanista (Lendário) + 500 Diamantes" },
+        { rank: "Top 10", prize: "Asas da Vitória (Épica)" }
+      ]
+    });
   }));
 
   // Get single player details

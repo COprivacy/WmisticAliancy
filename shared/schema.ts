@@ -47,6 +47,7 @@ export const playerRewards = sqliteTable("player_rewards", {
   playerId: integer("player_id").notNull(),
   rewardId: integer("reward_id").notNull(),
   assignedAt: integer("assigned_at", { mode: "timestamp" }).notNull().default(sql`CURRENT_TIMESTAMP`),
+  expiresAt: integer("expires_at", { mode: "timestamp" }), // Null means permanent
 });
 
 export const insertUserSchema = createInsertSchema(users).pick({
