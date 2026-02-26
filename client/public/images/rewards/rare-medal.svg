@@ -1,0 +1,140 @@
+<svg width="512" height="512" viewBox="0 0 512 512" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <radialGradient id="bgGlow" cx="50%" cy="45%" r="55%">
+      <stop offset="0%" stop-color="#1e3a5f" stop-opacity="0.7"/>
+      <stop offset="50%" stop-color="#0c1e3a" stop-opacity="0.4"/>
+      <stop offset="100%" stop-color="#000000" stop-opacity="1"/>
+    </radialGradient>
+    <linearGradient id="ribbonLeft" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#3b82f6"/>
+      <stop offset="50%" stop-color="#2563eb"/>
+      <stop offset="100%" stop-color="#1d4ed8"/>
+    </linearGradient>
+    <linearGradient id="ribbonRight" x1="100%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%" stop-color="#60a5fa"/>
+      <stop offset="50%" stop-color="#3b82f6"/>
+      <stop offset="100%" stop-color="#2563eb"/>
+    </linearGradient>
+    <linearGradient id="medalBody" x1="30%" y1="0%" x2="70%" y2="100%">
+      <stop offset="0%" stop-color="#93c5fd"/>
+      <stop offset="20%" stop-color="#60a5fa"/>
+      <stop offset="50%" stop-color="#3b82f6"/>
+      <stop offset="80%" stop-color="#2563eb"/>
+      <stop offset="100%" stop-color="#1d4ed8"/>
+    </linearGradient>
+    <linearGradient id="medalRim" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#bfdbfe"/>
+      <stop offset="50%" stop-color="#93c5fd"/>
+      <stop offset="100%" stop-color="#60a5fa"/>
+    </linearGradient>
+    <linearGradient id="starGrad" x1="50%" y1="0%" x2="50%" y2="100%">
+      <stop offset="0%" stop-color="#ffffff"/>
+      <stop offset="40%" stop-color="#e0f2fe"/>
+      <stop offset="100%" stop-color="#bae6fd"/>
+    </linearGradient>
+    <linearGradient id="ribbonShadow" x1="50%" y1="0%" x2="50%" y2="100%">
+      <stop offset="0%" stop-color="#1e40af"/>
+      <stop offset="100%" stop-color="#1e3a8a"/>
+    </linearGradient>
+    <filter id="medalGlow">
+      <feGaussianBlur stdDeviation="10" result="blur"/>
+      <feFlood flood-color="#3b82f6" flood-opacity="0.5" result="color"/>
+      <feComposite in="color" in2="blur" operator="in" result="glow"/>
+      <feMerge>
+        <feMergeNode in="glow"/>
+        <feMergeNode in="glow"/>
+        <feMergeNode in="SourceGraphic"/>
+      </feMerge>
+    </filter>
+    <filter id="starGlow">
+      <feGaussianBlur stdDeviation="5" result="blur"/>
+      <feFlood flood-color="#bfdbfe" flood-opacity="0.6" result="color"/>
+      <feComposite in="color" in2="blur" operator="in" result="glow"/>
+      <feMerge>
+        <feMergeNode in="glow"/>
+        <feMergeNode in="SourceGraphic"/>
+      </feMerge>
+    </filter>
+    <filter id="softShadow">
+      <feGaussianBlur stdDeviation="4"/>
+    </filter>
+  </defs>
+
+  <!-- Background -->
+  <rect width="512" height="512" fill="#030712"/>
+  <rect width="512" height="512" fill="url(#bgGlow)"/>
+
+  <!-- Ambient particles -->
+  <circle cx="90" cy="100" r="1.5" fill="#60a5fa" opacity="0.5"/>
+  <circle cx="420" cy="80" r="1" fill="#93c5fd" opacity="0.4"/>
+  <circle cx="70" cy="400" r="2" fill="#3b82f6" opacity="0.3"/>
+  <circle cx="440" cy="420" r="1.5" fill="#60a5fa" opacity="0.5"/>
+  <circle cx="160" cy="460" r="1" fill="#93c5fd" opacity="0.4"/>
+  <circle cx="350" cy="70" r="1.5" fill="#3b82f6" opacity="0.3"/>
+
+  <!-- Ribbon Left - Shadow -->
+  <path d="M210 100 L170 80 L180 200 L220 280 L240 280 L225 200 Z" fill="#0f172a" opacity="0.3" filter="url(#softShadow)"/>
+
+  <!-- Ribbon Left -->
+  <path d="M205 95 L165 75 L175 195 L218 275 L238 272 L222 198 Z" fill="url(#ribbonLeft)"/>
+  <path d="M205 95 L185 85 L192 170 L222 198 L222 188 L200 165 Z" fill="url(#ribbonShadow)" opacity="0.4"/>
+  <!-- Ribbon Left fold detail -->
+  <path d="M175 195 L168 215 L185 205 Z" fill="#1d4ed8"/>
+  <line x1="195" y1="120" x2="218" y2="250" stroke="#93c5fd" stroke-width="0.8" opacity="0.3"/>
+
+  <!-- Ribbon Right - Shadow -->
+  <path d="M302 100 L342 80 L332 200 L292 280 L272 280 L287 200 Z" fill="#0f172a" opacity="0.3" filter="url(#softShadow)"/>
+
+  <!-- Ribbon Right -->
+  <path d="M307 95 L347 75 L337 195 L294 275 L274 272 L290 198 Z" fill="url(#ribbonRight)"/>
+  <path d="M307 95 L327 85 L320 170 L290 198 L290 188 L312 165 Z" fill="#60a5fa" opacity="0.2"/>
+  <!-- Ribbon Right fold detail -->
+  <path d="M337 195 L344 215 L327 205 Z" fill="#2563eb"/>
+  <line x1="317" y1="120" x2="294" y2="250" stroke="#bfdbfe" stroke-width="0.8" opacity="0.3"/>
+
+  <!-- Ribbon V-tails -->
+  <path d="M165 75 L150 50 L170 65 Z" fill="#3b82f6"/>
+  <path d="M205 95 L195 60 L210 80 Z" fill="#2563eb"/>
+  <path d="M347 75 L362 50 L342 65 Z" fill="#60a5fa"/>
+  <path d="M307 95 L317 60 L302 80 Z" fill="#3b82f6"/>
+
+  <!-- Medal Shadow -->
+  <ellipse cx="260" cy="345" rx="85" ry="20" fill="#000" opacity="0.3" filter="url(#softShadow)"/>
+
+  <!-- Medal - Outer Ring -->
+  <g filter="url(#medalGlow)">
+    <circle cx="256" cy="310" r="105" fill="#0c4a6e" stroke="url(#medalRim)" stroke-width="6"/>
+    <circle cx="256" cy="310" r="98" fill="none" stroke="#1e3a8a" stroke-width="2"/>
+    <!-- Notched rim details -->
+    <circle cx="256" cy="310" r="105" fill="none" stroke="#93c5fd" stroke-width="1" stroke-dasharray="8 12" opacity="0.4"/>
+  </g>
+
+  <!-- Medal - Inner Face -->
+  <circle cx="256" cy="310" r="88" fill="url(#medalBody)"/>
+  <circle cx="256" cy="310" r="82" fill="none" stroke="#93c5fd" stroke-width="1.5" opacity="0.3"/>
+  <circle cx="256" cy="310" r="75" fill="none" stroke="#60a5fa" stroke-width="0.5" opacity="0.2"/>
+
+  <!-- Engraved decorative ring -->
+  <circle cx="256" cy="310" r="70" fill="none" stroke="#bfdbfe" stroke-width="0.8" stroke-dasharray="3 5" opacity="0.3"/>
+
+  <!-- Central Star -->
+  <g filter="url(#starGlow)">
+    <path d="M256 250 L270 290 L312 290 L278 315 L290 355 L256 332 L222 355 L234 315 L200 290 L242 290 Z" fill="url(#starGrad)"/>
+  </g>
+  <!-- Star inner highlight -->
+  <path d="M256 260 L265 288 L295 288 L272 308 L280 338 L256 322 L232 338 L240 308 L217 288 L247 288 Z" fill="white" opacity="0.15"/>
+
+  <!-- Specular highlight on medal -->
+  <ellipse cx="230" cy="280" rx="30" ry="20" fill="white" opacity="0.08" transform="rotate(-20, 230, 280)"/>
+
+  <!-- Small decorative dots around star -->
+  <circle cx="256" cy="240" r="3" fill="#bfdbfe" opacity="0.5"/>
+  <circle cx="200" cy="310" r="2.5" fill="#93c5fd" opacity="0.4"/>
+  <circle cx="312" cy="310" r="2.5" fill="#93c5fd" opacity="0.4"/>
+  <circle cx="230" cy="370" r="2" fill="#60a5fa" opacity="0.3"/>
+  <circle cx="282" cy="370" r="2" fill="#60a5fa" opacity="0.3"/>
+
+  <!-- Hanging ring at top -->
+  <circle cx="256" cy="200" r="15" fill="none" stroke="url(#medalRim)" stroke-width="5"/>
+  <circle cx="256" cy="200" r="8" fill="#0c4a6e"/>
+</svg>

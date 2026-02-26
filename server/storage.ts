@@ -42,8 +42,8 @@ export class DatabaseStorage implements IStorage {
         const initialRewards = [
           { name: "Espada Suprema da Aliança", description: "Campeão absoluto da temporada (Top 1).", rarity: "mythic", icon: "/images/rewards/mythic-sword.png" },
           { name: "Cajado do Arcanista", description: "Top 3 da arena por 3 temporadas seguidas.", rarity: "legendary", icon: "/images/rewards/legendary-staff.png" },
-          { name: "Asas da Vitória", description: "Mais de 100 vitórias na temporada.", rarity: "epic", icon: "/images/rewards/epic-wings.png" },
-          { name: "Medalha de Honra", description: "Participação em mais de 50 duelos.", rarity: "rare", icon: "/images/rewards/rare-medal.png" }
+          { name: "Asas da Vitória", description: "Mais de 100 vitórias na temporada.", rarity: "epic", icon: "/images/rewards/epic-wings.svg" },
+          { name: "Medalha de Honra", description: "Participação em mais de 50 duelos.", rarity: "rare", icon: "/images/rewards/rare-medal.svg" }
         ];
         for (const reward of initialRewards) {
           await this.createReward(reward);

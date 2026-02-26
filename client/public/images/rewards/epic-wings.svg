@@ -1,0 +1,110 @@
+<svg width="512" height="512" viewBox="0 0 512 512" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <radialGradient id="bgGlow" cx="50%" cy="50%" r="50%">
+      <stop offset="0%" stop-color="#134e4a" stop-opacity="0.8"/>
+      <stop offset="50%" stop-color="#064e3b" stop-opacity="0.4"/>
+      <stop offset="100%" stop-color="#000000" stop-opacity="1"/>
+    </radialGradient>
+    <linearGradient id="wingLeft" x1="0%" y1="30%" x2="100%" y2="70%">
+      <stop offset="0%" stop-color="#4ade80"/>
+      <stop offset="30%" stop-color="#22c55e"/>
+      <stop offset="60%" stop-color="#16a34a"/>
+      <stop offset="100%" stop-color="#166534"/>
+    </linearGradient>
+    <linearGradient id="wingRight" x1="100%" y1="30%" x2="0%" y2="70%">
+      <stop offset="0%" stop-color="#4ade80"/>
+      <stop offset="30%" stop-color="#22c55e"/>
+      <stop offset="60%" stop-color="#16a34a"/>
+      <stop offset="100%" stop-color="#166534"/>
+    </linearGradient>
+    <linearGradient id="innerGlow" x1="50%" y1="0%" x2="50%" y2="100%">
+      <stop offset="0%" stop-color="#86efac"/>
+      <stop offset="50%" stop-color="#4ade80"/>
+      <stop offset="100%" stop-color="#22c55e"/>
+    </linearGradient>
+    <linearGradient id="gemGrad" x1="30%" y1="0%" x2="70%" y2="100%">
+      <stop offset="0%" stop-color="#ffffff"/>
+      <stop offset="30%" stop-color="#bbf7d0"/>
+      <stop offset="70%" stop-color="#22c55e"/>
+      <stop offset="100%" stop-color="#166534"/>
+    </linearGradient>
+    <filter id="outerGlow">
+      <feGaussianBlur stdDeviation="12" result="blur"/>
+      <feFlood flood-color="#22c55e" flood-opacity="0.6" result="color"/>
+      <feComposite in="color" in2="blur" operator="in" result="glow"/>
+      <feMerge>
+        <feMergeNode in="glow"/>
+        <feMergeNode in="glow"/>
+        <feMergeNode in="SourceGraphic"/>
+      </feMerge>
+    </filter>
+    <filter id="softGlow">
+      <feGaussianBlur stdDeviation="6" result="blur"/>
+      <feFlood flood-color="#4ade80" flood-opacity="0.4" result="color"/>
+      <feComposite in="color" in2="blur" operator="in" result="glow"/>
+      <feMerge>
+        <feMergeNode in="glow"/>
+        <feMergeNode in="SourceGraphic"/>
+      </feMerge>
+    </filter>
+    <filter id="coreGlow">
+      <feGaussianBlur stdDeviation="20" result="blur"/>
+      <feFlood flood-color="#86efac" flood-opacity="0.5" result="color"/>
+      <feComposite in="color" in2="blur" operator="in" result="glow"/>
+      <feMerge>
+        <feMergeNode in="glow"/>
+        <feMergeNode in="glow"/>
+        <feMergeNode in="SourceGraphic"/>
+      </feMerge>
+    </filter>
+  </defs>
+
+  <!-- Background -->
+  <rect width="512" height="512" fill="#030712"/>
+  <rect width="512" height="512" fill="url(#bgGlow)"/>
+
+  <!-- Ambient particles -->
+  <circle cx="80" cy="120" r="2" fill="#4ade80" opacity="0.6"/>
+  <circle cx="430" cy="90" r="1.5" fill="#86efac" opacity="0.5"/>
+  <circle cx="60" cy="350" r="1" fill="#22c55e" opacity="0.4"/>
+  <circle cx="450" cy="380" r="2" fill="#4ade80" opacity="0.3"/>
+  <circle cx="150" cy="450" r="1.5" fill="#86efac" opacity="0.5"/>
+  <circle cx="370" cy="440" r="1" fill="#22c55e" opacity="0.6"/>
+  <circle cx="100" cy="250" r="1.5" fill="#4ade80" opacity="0.4"/>
+  <circle cx="410" cy="200" r="2" fill="#86efac" opacity="0.3"/>
+
+  <!-- Left Wing - Main -->
+  <g filter="url(#outerGlow)">
+    <path d="M245 256 C230 230 180 170 120 130 C90 112 55 108 40 128 C25 148 35 180 60 200 C90 225 140 240 170 248 C130 235 70 218 45 235 C25 248 30 275 55 285 C85 297 140 290 180 270 C150 280 100 295 85 315 C72 332 80 355 105 355 C130 355 165 335 195 310 C175 330 150 365 155 385 C158 405 180 415 200 400 C220 385 235 350 240 320 C238 350 235 395 250 410 C260 420 275 415 275 395 C275 370 265 330 256 300 Z" fill="url(#wingLeft)"/>
+  </g>
+
+  <!-- Right Wing - Main -->
+  <g filter="url(#outerGlow)">
+    <path d="M267 256 C282 230 332 170 392 130 C422 112 457 108 472 128 C487 148 477 180 452 200 C422 225 372 240 342 248 C382 235 442 218 467 235 C487 248 482 275 457 285 C427 297 372 290 332 270 C362 280 412 295 427 315 C440 332 432 355 407 355 C382 355 347 335 317 310 C337 330 362 365 357 385 C354 405 332 415 312 400 C292 385 277 350 272 320 C274 350 277 395 262 410 C252 420 237 415 237 395 C237 370 247 330 256 300 Z" fill="url(#wingRight)"/>
+  </g>
+
+  <!-- Left Wing - Inner glow feathers -->
+  <path d="M240 258 C225 235 185 185 140 155 C115 140 90 142 82 158 C75 172 85 192 105 208 C130 228 170 242 200 250 Z" fill="url(#innerGlow)" opacity="0.3"/>
+  <path d="M238 262 C220 250 160 238 110 248 C85 254 78 272 92 285 C108 300 145 298 185 280 Z" fill="url(#innerGlow)" opacity="0.25"/>
+
+  <!-- Right Wing - Inner glow feathers -->
+  <path d="M272 258 C287 235 327 185 372 155 C397 140 422 142 430 158 C437 172 427 192 407 208 C382 228 342 242 312 250 Z" fill="url(#innerGlow)" opacity="0.3"/>
+  <path d="M274 262 C292 250 352 238 402 248 C427 254 434 272 420 285 C404 300 367 298 327 280 Z" fill="url(#innerGlow)" opacity="0.25"/>
+
+  <!-- Central Core -->
+  <g filter="url(#coreGlow)">
+    <circle cx="256" cy="256" r="28" fill="#030712" stroke="url(#innerGlow)" stroke-width="3"/>
+    <circle cx="256" cy="256" r="18" fill="url(#gemGrad)"/>
+    <ellipse cx="250" cy="248" rx="6" ry="4" fill="white" opacity="0.7"/>
+  </g>
+
+  <!-- Energy lines from center -->
+  <line x1="228" y1="256" x2="180" y2="240" stroke="#4ade80" stroke-width="1" opacity="0.4"/>
+  <line x1="284" y1="256" x2="332" y2="240" stroke="#4ade80" stroke-width="1" opacity="0.4"/>
+  <line x1="240" y1="240" x2="200" y2="200" stroke="#22c55e" stroke-width="0.5" opacity="0.3"/>
+  <line x1="272" y1="240" x2="312" y2="200" stroke="#22c55e" stroke-width="0.5" opacity="0.3"/>
+
+  <!-- Decorative runes around core -->
+  <circle cx="256" cy="256" r="40" stroke="#4ade80" stroke-width="0.5" fill="none" opacity="0.3" stroke-dasharray="4 6"/>
+  <circle cx="256" cy="256" r="50" stroke="#22c55e" stroke-width="0.3" fill="none" opacity="0.2" stroke-dasharray="2 8"/>
+</svg>
