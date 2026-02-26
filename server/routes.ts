@@ -1,16 +1,144 @@
 import type { Express } from "express";
 import { createServer, type Server } from "http";
 import { storage } from "./storage";
+import { insertPlayerSchema, insertMatchSchema } from "@shared/schema";
+import { getHeroDetails } from "./mlbb-api";
+import asyncHandler from "express-async-handler";
 
 export async function registerRoutes(
   httpServer: Server,
   app: Express
 ): Promise<Server> {
-  // put application routes here
-  // prefix all routes with /api
+  // Get all players for rankings
+  app.get("/api/players", asyncHandler(async (_req, res) => {
+    const playersList = await storage.getPlayers();
+    res.json(playersList);
+  }));
 
-  // use storage to perform CRUD operations on the storage interface
-  // e.g. storage.insertUser(user) or storage.getUserByUsername(username)
+  // Get single player details
+  app.get("/api/players/:accountId/:zoneId", asyncHandler(async (req, res) => {
+    const { accountId, zoneId } = req.params;
+    const player = await storage.getPlayerByAccountId(accountId as string, zoneId as string);
+    if (!player) {
+      res.status(404).json({ message: "Jogador não encontrado." });
+      return;
+    }
+
+    const matchesList = await storage.getMatchesByPlayerId(accountId as string, zoneId as string);
+    const playersList = await storage.getPlayers();
+
+    const history = matchesList.map(m => {
+      const winner = playersList.find(p => p.accountId === m.winnerId && p.zoneId === m.winnerZone);
+      const loser = playersList.find(p => p.accountId === m.loserId && p.zoneId === m.loserZone);
+      return {
+        ...m,
+        winnerName: winner?.gameName || "Soldado",
+        loserName: loser?.gameName || "Soldado"
+      };
+    });
+
+    res.json({ player, history });
+  }));
+
+  // MLBB Account Info Proxy (Validation)
+  app.get("/api/mlbb/account/:id/:zone", asyncHandler(async (req, res) => {
+    const { id, zone } = req.params;
+    if (!id || id.length < 5) {
+      res.status(400).json({ message: "ID Inválido" });
+      return;
+    }
+
+    res.json({
+      name: `Soldado_${id.slice(-4)}`,
+      rank: "Mythical Glory",
+      avatarImage: `https://api.dicebear.com/7.x/avataaars/svg?seed=${id}${zone}&backgroundColor=b6e3f4`
+    });
+  }));
+
+  // Get pending matches (Admin)
+  app.get("/api/matches", asyncHandler(async (_req, res) => {
+    const pending = await storage.getPendingMatches();
+    res.json(pending);
+  }));
+
+  // Register or Claim a spot
+  app.post("/api/players", asyncHandler(async (req, res) => {
+    const result = insertPlayerSchema.safeParse(req.body);
+    if (!result.success) {
+      res.status(400).json({ error: result.error });
+      return;
+    }
+
+    const existing = await storage.getPlayerByAccountId(result.data.accountId, result.data.zoneId);
+    if (existing) {
+      res.status(400).json({ message: "ID de conta já registrado nesta zona." });
+      return;
+    }
+
+    const player = await storage.createPlayer(result.data);
+    res.json(player);
+  }));
+
+  // Report a combat
+  app.post("/api/matches", asyncHandler(async (req, res) => {
+    const result = insertMatchSchema.safeParse(req.body);
+    if (!result.success) {
+      res.status(400).json({ error: result.error });
+      return;
+    }
+
+    const match = await storage.createMatch(result.data);
+    res.json(match);
+  }));
+
+  // Admin Actions: Approve or Reject
+  app.post("/api/matches/:id/:action", asyncHandler(async (req, res) => {
+    const id = parseInt(req.params.id as string);
+    const action = req.params.action;
+
+    if (action === "approve") {
+      const matches_list = await storage.getPendingMatches();
+      const match = matches_list.find(m => m.id === id);
+      if (!match) {
+        res.status(404).json({ message: "Combate não encontrado." });
+        return;
+      }
+
+      // Update Winner
+      const winner = await storage.getPlayerByAccountId(match.winnerId, match.winnerZone);
+      if (winner) {
+        await storage.updatePlayer(winner.id, {
+          points: winner.points + 50,
+          wins: winner.wins + 1,
+          streak: winner.streak + 1
+        });
+      }
+
+      // Update Loser
+      const loser = await storage.getPlayerByAccountId(match.loserId, match.loserZone);
+      if (loser) {
+        await storage.updatePlayer(loser.id, {
+          points: Math.max(0, loser.points - 20),
+          losses: loser.losses + 1,
+          streak: 0
+        });
+      }
+
+      await storage.updateMatchStatus(id, "approved");
+      res.json({ message: "Combate aprovado e pontos atualizados." });
+    } else {
+      await storage.updateMatchStatus(id, "rejected");
+      res.json({ message: "Combate rejeitado." });
+    }
+  }));
+
+  // Example proxy to MLBB API for hero data
+  app.get("/api/mlbb/hero/:id", async (req, res) => {
+    const hero = await getHeroDetails(req.params.id);
+    if (!hero) return res.status(404).json({ message: "Hero não encontrado." });
+    res.json(hero);
+  });
 
   return httpServer;
 }
+

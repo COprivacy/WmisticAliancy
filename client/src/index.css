@@ -100,3 +100,12 @@
     box-shadow: 0 0 15px rgba(234, 179, 8, 0.1);
   }
 }
+
+@layer utilities {
+  @media (max-width: 640px) {
+    .container {
+      padding-left: 1rem;
+      padding-right: 1rem;
+    }
+  }
+}

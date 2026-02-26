@@ -9,25 +9,33 @@ import NotFound from "@/pages/not-found";
 import Login from "@/pages/login";
 import Rankings from "@/pages/rankings";
 import Admin from "@/pages/admin";
+import Profile from "@/pages/profile";
 import Layout from "@/components/layout";
 
 function Router() {
   return (
     <Switch>
       <Route path="/" component={Login} />
-      
+
       <Route path="/rankings">
         <Layout>
           <Rankings />
         </Layout>
       </Route>
-      
+
       <Route path="/admin">
         <Layout>
           <Admin />
         </Layout>
       </Route>
-      
+
+      <Route path="/player/:accountId/:zoneId">
+        <Layout>
+          <Profile />
+        </Layout>
+      </Route>
+
+
       <Route component={NotFound} />
     </Switch>
   );
