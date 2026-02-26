@@ -198,15 +198,28 @@ export default function Login() {
                 )}
               </AnimatePresence>
 
-              <div className="space-y-3">
-                <Label htmlFor="username" className="text-[10px] uppercase tracking-[0.2em] font-bold text-primary/70 ml-1">Nickname na Guilda</Label>
-                <Input
-                  id="username"
-                  placeholder="Nome de Batalha"
-                  value={username}
-                  onChange={(e) => setUsername(e.target.value)}
-                  className="bg-white/5 border-primary/10 h-12 rounded-xl"
-                />
+              <div className="space-y-4 pt-4 border-t border-white/5">
+                <div className="flex items-center justify-between">
+                  <Label htmlFor="username" className="text-[10px] uppercase tracking-[0.2em] font-black text-primary flex items-center gap-2">
+                    <Sparkles className="w-3 h-3" /> Nickname na Guilda
+                  </Label>
+                  <span className="text-[9px] text-muted-foreground uppercase tracking-widest animate-pulse">Recomendado: Nome do Jogo</span>
+                </div>
+                <div className="relative group">
+                  <Input
+                    id="username"
+                    placeholder="Ex: SeuNickMLBB"
+                    value={username}
+                    onChange={(e) => setUsername(e.target.value)}
+                    className="bg-primary/5 border-primary/30 h-14 rounded-2xl text-lg font-bold tracking-wide focus-visible:ring-primary focus-visible:border-primary transition-all group-hover:bg-primary/10 pl-12"
+                  />
+                  <div className="absolute left-4 top-1/2 -translate-y-1/2 text-primary/40 group-hover:text-primary transition-colors">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="lucide lucide-pencil-line"><path d="M12 20h9" /><path d="M16.5 3.5a2.12 2.12 0 0 1 3 3L7 19l-4 1 1-4Z" /><path d="m15 5 3 3" /></svg>
+                  </div>
+                </div>
+                <p className="text-[10px] text-center text-muted-foreground italic px-4">
+                  "Este é o nome que brilhará no alto do palanque quando você conquistar a glória."
+                </p>
               </div>
 
               <Button

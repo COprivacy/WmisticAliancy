@@ -13,7 +13,7 @@ export const players = sqliteTable("players", {
   id: integer("id").primaryKey({ autoIncrement: true }),
   gameName: text("game_name").notNull(),
   accountId: text("account_id").notNull(),
-  zoneId: text("zone_id").notNull(),
+  zoneId: text("zone_id").notNull().default(""),
   points: integer("points").notNull().default(100), // Start with 100 points
   wins: integer("wins").notNull().default(0),
   losses: integer("losses").notNull().default(0),
@@ -26,9 +26,9 @@ export const players = sqliteTable("players", {
 export const matches = sqliteTable("matches", {
   id: integer("id").primaryKey({ autoIncrement: true }),
   winnerId: text("winner_id").notNull(),
-  winnerZone: text("winner_zone_id").notNull(),
+  winnerZone: text("winner_zone_id").notNull().default(""),
   loserId: text("loser_id").notNull(),
-  loserZone: text("loser_zone_id").notNull(),
+  loserZone: text("loser_zone_id").notNull().default(""),
   proofImage: text("proof_image"), // URL to the screenshot proof
   status: text("status").notNull().default("pending"), // pending, approved, rejected
   createdAt: integer("created_at", { mode: "timestamp" }).notNull().default(sql`CURRENT_TIMESTAMP`),
