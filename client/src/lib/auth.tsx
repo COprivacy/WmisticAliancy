@@ -1,0 +1,68 @@
+import { createContext, useContext, useState, ReactNode, useEffect } from "react";
+
+type User = {
+  id: string;
+  username: string;
+  isAdmin: boolean;
+  avatar?: string;
+  rank?: string;
+};
+
+type AuthContextType = {
+  user: User | null;
+  login: (username: string, id: string) => Promise<void>;
+  logout: () => void;
+  isLoading: boolean;
+};
+
+const AuthContext = createContext<AuthContextType | null>(null);
+
+export function AuthProvider({ children }: { children: ReactNode }) {
+  const [user, setUser] = useState<User | null>(null);
+  const [isLoading, setIsLoading] = useState(false);
+
+  useEffect(() => {
+    const saved = localStorage.getItem("wmythic_auth");
+    if (saved) {
+      setUser(JSON.parse(saved));
+    }
+  }, []);
+
+  const login = async (username: string, id: string) => {
+    setIsLoading(true);
+    // Simulating API call to ridwaanhall/api-mobilelegends
+    await new Promise((resolve) => setTimeout(resolve, 1500));
+    
+    // Check if it's the admin
+    const isAdmin = username.toLowerCase() === "sempaigam" && id === "1792001576";
+    
+    const newUser = {
+      username,
+      id,
+      isAdmin,
+      avatar: `https://api.dicebear.com/7.x/avataaars/svg?seed=${username}&backgroundColor=b6e3f4`,
+      rank: isAdmin ? "Mythical Glory" : "Legend",
+    };
+    
+    setUser(newUser);
+    localStorage.setItem("wmythic_auth", JSON.stringify(newUser));
+    setIsLoading(false);
+  };
+
+  const logout = () => {
+    setUser(null);
+    localStorage.removeItem("wmythic_auth");
+  };
+
+  return (
+    <AuthContext.Provider value={{ user, login, logout, isLoading }}>
+      {children}
+    </AuthContext.Provider>
+  );
+}
+
+export function useAuth() {
+  const context = useContext(AuthContext);
+  if (!context) throw new Error("useAuth must be used within AuthProvider");
+  return context;
+}
