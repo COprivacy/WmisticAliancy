@@ -68,13 +68,15 @@ export async function registerRoutes(
 
     const playerRewards = await storage.getPlayerRewards(player.id);
 
-    // Mock live data (Total MLBB stats)
-    const liveStats = {
-      totalMatches: 1245 + Math.floor(Math.random() * 500),
-      winRate: (60 + Math.random() * 15).toFixed(1) + "%",
-      mainRole: "Jungle / Assassino",
-      favoriteHero: "Gusion",
-      officialRank: "https://static.wikia.nocookie.net/mobile-legends/images/c/c2/Rank_Mythic.png"
+    // Real arena stats (calculated from actual match data)
+    const arenaWins = history.filter(m => m.winnerId === accountId && m.winnerZone === zoneId).length;
+    const arenaLosses = history.filter(m => m.loserId === accountId && m.loserZone === zoneId).length;
+    const totalArena = arenaWins + arenaLosses;
+    const arenaStats = {
+      totalMatches: totalArena,
+      wins: arenaWins,
+      losses: arenaLosses,
+      winRate: totalArena > 0 ? ((arenaWins / totalArena) * 100).toFixed(1) + "%" : "0%",
     };
 
     const matchesWithNames = history.map(m => {
@@ -86,10 +88,10 @@ export async function registerRoutes(
       };
     });
 
-    res.json({ player, history: matchesWithNames, liveStats, rewards: playerRewards });
+    res.json({ player, history: matchesWithNames, arenaStats, rewards: playerRewards });
   }));
 
-  // MLBB Account Info Proxy (Validation)
+  // MLBB Account Info Proxy (Real API Validation)
   app.get("/api/mlbb/account/:id/:zone", asyncHandler(async (req, res) => {
     const { id, zone } = req.params;
     if (!id || id.length < 5) {
@@ -97,9 +99,28 @@ export async function registerRoutes(
       return;
     }
 
+    try {
+      const apiRes = await fetch(`https://api.isan.eu.org/nickname/ml?id=${id}&zone=${zone}`);
+      if (apiRes.ok) {
+        const data = await apiRes.json() as { success: boolean; name?: string };
+        if (data.success && data.name) {
+          const realName = decodeURIComponent(data.name.replace(/\+/g, ' '));
+          res.json({
+            name: realName,
+            rank: "Verificado",
+            avatarImage: `https://api.dicebear.com/7.x/initials/svg?seed=${encodeURIComponent(realName)}&backgroundColor=1e3a5f&textColor=f1f5f9&fontSize=36`
+          });
+          return;
+        }
+      }
+    } catch (err) {
+      console.error("MLBB API Error:", err);
+    }
+
+    // Fallback if API fails
     res.json({
       name: `Soldado_${id.slice(-4)}`,
-      rank: "Mythical Glory",
+      rank: "Não verificado",
       avatarImage: `https://api.dicebear.com/7.x/avataaars/svg?seed=${id}${zone}&backgroundColor=b6e3f4`
     });
   }));

@@ -22,12 +22,11 @@ import { Loader2 } from "lucide-react";
 type ProfileData = {
     player: Player;
     history: (Match & { winnerName: string; loserName: string })[];
-    liveStats: {
+    arenaStats: {
         totalMatches: number;
-        overallWinrate: string;
-        mainRole: string;
-        favoriteHero: string;
-        rankIcon: string;
+        wins: number;
+        losses: number;
+        winRate: string;
     };
     rewards?: Reward[];
 };
@@ -62,7 +61,7 @@ export default function Profile() {
         );
     }
 
-    const { player, history, liveStats, rewards } = data;
+    const { player, history, arenaStats, rewards } = data;
     const winRate = player.wins + player.losses > 0
         ? Math.round((player.wins / (player.wins + player.losses)) * 100)
         : 0;
@@ -128,38 +127,36 @@ export default function Profile() {
                                 ID: {player.accountId} • ZONA: {player.zoneId}
                             </p>
                             <div className="flex items-center justify-center md:justify-start gap-4 mt-4">
-                                <img src={liveStats.rankIcon} className="w-8 h-8 object-contain" alt="Rank MLBB" />
                                 <div className="text-left text-[10px] font-bold uppercase tracking-widest">
-                                    <span className="text-muted-foreground block">MOBILE LEGENDS RANK</span>
-                                    <span className="text-primary">{player.currentRank}</span>
+                                    <span className="text-muted-foreground block">CONTA VERIFICADA</span>
+                                    <span className="text-primary">{player.currentRank || "Arena 1v1"}</span>
                                 </div>
                             </div>
                         </div>
                     </div>
                 </motion.div>
 
-                {/* Live Game Stats Section (MODERN) */}
                 <div className="mb-8">
                     <div className="flex items-center gap-3 border-b border-white/5 pb-4 mb-6">
-                        <Gamepad className="w-5 h-5 text-blue-400" />
-                        <h3 className="text-xl font-serif uppercase tracking-widest">Global MLBB Info</h3>
+                        <Swords className="w-5 h-5 text-primary" />
+                        <h3 className="text-xl font-serif uppercase tracking-widest">Estatísticas da Arena 1v1</h3>
                     </div>
                     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
                         <div className="p-5 rounded-2xl bg-gradient-to-br from-blue-500/10 to-transparent border border-blue-500/10 backdrop-blur-sm">
-                            <span className="block text-[8px] font-bold text-blue-400 uppercase tracking-widest mb-1">PARTIDAS TOTAIS</span>
-                            <span className="text-2xl font-black">{liveStats.totalMatches}</span>
+                            <span className="block text-[8px] font-bold text-blue-400 uppercase tracking-widest mb-1">COMBATES NA ARENA</span>
+                            <span className="text-2xl font-black">{arenaStats.totalMatches}</span>
                         </div>
                         <div className="p-5 rounded-2xl bg-gradient-to-br from-emerald-500/10 to-transparent border border-emerald-500/10 backdrop-blur-sm">
-                            <span className="block text-[8px] font-bold text-emerald-400 uppercase tracking-widest mb-1">WINRATE GLOBAL</span>
-                            <span className="text-2xl font-black">{liveStats.overallWinrate}</span>
+                            <span className="block text-[8px] font-bold text-emerald-400 uppercase tracking-widest mb-1">VITÓRIAS</span>
+                            <span className="text-2xl font-black text-emerald-400">{arenaStats.wins}</span>
                         </div>
-                        <div className="p-5 rounded-2xl bg-gradient-to-br from-amber-500/10 to-transparent border border-amber-500/10 backdrop-blur-sm">
-                            <span className="block text-[8px] font-bold text-amber-400 uppercase tracking-widest mb-1">ROTA PRINCIPAL</span>
-                            <span className="text-2xl font-black uppercase">{liveStats.mainRole}</span>
+                        <div className="p-5 rounded-2xl bg-gradient-to-br from-red-500/10 to-transparent border border-red-500/10 backdrop-blur-sm">
+                            <span className="block text-[8px] font-bold text-red-400 uppercase tracking-widest mb-1">DERROTAS</span>
+                            <span className="text-2xl font-black text-red-400">{arenaStats.losses}</span>
                         </div>
-                        <div className="p-5 rounded-2xl bg-gradient-to-br from-purple-500/10 to-transparent border border-purple-500/10 backdrop-blur-sm">
-                            <span className="block text-[8px] font-bold text-purple-400 uppercase tracking-widest mb-1">HERÓI FAVORITO</span>
-                            <span className="text-2xl font-black uppercase">{liveStats.favoriteHero}</span>
+                        <div className="p-5 rounded-2xl bg-gradient-to-br from-primary/10 to-transparent border border-primary/10 backdrop-blur-sm">
+                            <span className="block text-[8px] font-bold text-primary uppercase tracking-widest mb-1">WINRATE ARENA</span>
+                            <span className="text-2xl font-black text-primary">{arenaStats.winRate}</span>
                         </div>
                     </div>
                 </div>
