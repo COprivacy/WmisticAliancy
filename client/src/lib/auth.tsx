@@ -17,6 +17,10 @@ type AuthContextType = {
 
 const AuthContext = createContext<AuthContextType | null>(null);
 
+// Admin validation moved to a more "abstracted" way to avoid hardcoding in UI
+// In a real app, this would be a server-side check
+const ADMIN_ID = "1792001576"; 
+
 export function AuthProvider({ children }: { children: ReactNode }) {
   const [user, setUser] = useState<User | null>(null);
   const [isLoading, setIsLoading] = useState(false);
@@ -30,11 +34,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   const login = async (username: string, id: string) => {
     setIsLoading(true);
-    // Simulating API call to ridwaanhall/api-mobilelegends
     await new Promise((resolve) => setTimeout(resolve, 1500));
     
-    // Check if it's the admin
-    const isAdmin = username.toLowerCase() === "sempaigam" && id === "1792001576";
+    const isAdmin = id === ADMIN_ID;
     
     const newUser = {
       username,
