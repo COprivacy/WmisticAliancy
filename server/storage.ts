@@ -43,6 +43,11 @@ export interface IStorage {
   createActivity(type: string, playerId?: number, playerGameName?: string, data?: any): Promise<void>;
   getLatestActivities(limit?: number): Promise<any[]>;
   toggleReaction(activityId: number, userId: string, emoji: string): Promise<void>;
+
+  // Clear methods
+  clearActivities(): Promise<void>;
+  clearMatches(): Promise<void>;
+  clearChallenges(): Promise<void>;
 }
 
 export class DatabaseStorage implements IStorage {
@@ -53,14 +58,17 @@ export class DatabaseStorage implements IStorage {
   async seedRewards() {
     try {
       const existing = await this.getRewards();
-      if (existing.length === 0) {
-        const initialRewards = [
-          { name: "Espada Suprema da Aliança", description: "Campeão absoluto da temporada (Top 1).", rarity: "mythic", icon: "/images/rewards/mythic-sword.png" },
-          { name: "Cajado do Arcanista", description: "Top 3 da arena por 3 temporadas seguidas.", rarity: "legendary", icon: "/images/rewards/legendary-staff.png" },
-          { name: "Asas da Vitória", description: "Mais de 100 vitórias na temporada.", rarity: "epic", icon: "/images/rewards/epic-wings.svg" },
-          { name: "Medalha de Honra", description: "Participação em mais de 50 duelos.", rarity: "rare", icon: "/images/rewards/rare-medal.svg" }
-        ];
-        for (const reward of initialRewards) {
+      const initialRewards = [
+        { name: "Espada Suprema da Aliança", description: "Campeão absoluto da temporada (Top 1).", rarity: "mythic", stars: 7, icon: "/images/rewards/mythic-sword.png" },
+        { name: "Cajado do Arcanista", description: "Top 3 da arena por 3 temporadas seguidas.", rarity: "legendary", stars: 6, icon: "/images/rewards/legendary-staff.png" },
+        { name: "Asas da Vitória", description: "Mais de 100 vitórias na temporada.", rarity: "epic", stars: 5, icon: "/images/rewards/epic-wings.svg" },
+        { name: "Medalha de Honra", description: "Participação em mais de 50 duelos.", rarity: "rare", stars: 3, icon: "/images/rewards/rare-medal.svg" },
+        { name: "Selo de Sangue da Aliança", description: "Concedida a todo guerreiro que inicia sua jornada na guilda.", rarity: "rare", stars: 2, icon: "/images/rewards/recruit-badge.png" }
+      ];
+
+      for (const reward of initialRewards) {
+        const alreadyExists = existing.find(r => r.name === reward.name);
+        if (!alreadyExists) {
           await this.createReward(reward);
         }
       }
@@ -101,6 +109,18 @@ export class DatabaseStorage implements IStorage {
 
   async createPlayer(insertPlayer: InsertPlayer): Promise<Player> {
     const [player] = await db.insert(players).values(insertPlayer).returning();
+
+    // Auto-assign Welcome Relic
+    try {
+      const allRewards = await this.getRewards();
+      const welcomeRelic = allRewards.find(r => r.name === "Selo de Sangue da Aliança");
+      if (welcomeRelic) {
+        await this.assignReward(player.id, welcomeRelic.id);
+      }
+    } catch (err) {
+      console.error("Failed to assign welcome relic:", err);
+    }
+
     return player;
   }
 
@@ -133,7 +153,10 @@ export class DatabaseStorage implements IStorage {
   }
 
   async createMatch(insertMatch: InsertMatch): Promise<Match> {
-    const [match] = await db.insert(matches).values(insertMatch).returning();
+    const [match] = await db.insert(matches).values({
+      ...insertMatch,
+      createdAt: new Date()
+    }).returning();
     return match;
   }
 
@@ -170,7 +193,11 @@ export class DatabaseStorage implements IStorage {
   }
 
   async assignReward(playerId: number, rewardId: number): Promise<void> {
-    await db.insert(playerRewards).values({ playerId, rewardId });
+    await db.insert(playerRewards).values({
+      playerId,
+      rewardId,
+      assignedAt: new Date()
+    });
   }
 
   async getPlayerRewards(playerId: number): Promise<Reward[]> {
@@ -195,7 +222,8 @@ export class DatabaseStorage implements IStorage {
       challengedZone,
       status: "pending",
       message: message || null,
-      scheduledAt: scheduledAt || null
+      scheduledAt: scheduledAt || null,
+      createdAt: new Date()
     }).returning();
     return challenge;
   }
@@ -235,7 +263,8 @@ export class DatabaseStorage implements IStorage {
       type,
       playerId,
       playerGameName,
-      data: data ? JSON.stringify(data) : null
+      data: data ? JSON.stringify(data) : null,
+      createdAt: new Date()
     });
   }
 
@@ -275,9 +304,23 @@ export class DatabaseStorage implements IStorage {
       await db.insert(reactions).values({
         activityId,
         userId,
-        emoji
+        emoji,
+        createdAt: new Date()
       });
     }
+  }
+
+  async clearActivities(): Promise<void> {
+    await db.delete(activities);
+    await db.delete(reactions);
+  }
+
+  async clearMatches(): Promise<void> {
+    await db.delete(matches);
+  }
+
+  async clearChallenges(): Promise<void> {
+    await db.delete(challenges);
   }
 }
 

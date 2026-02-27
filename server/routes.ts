@@ -405,6 +405,21 @@ export async function registerRoutes(
     res.json({ success: true, message: "Temporada resetada com sucesso!" });
   }));
 
+  app.post("/api/admin/reset/activities", requireAdmin, asyncHandler(async (_req, res) => {
+    await storage.clearActivities();
+    res.json({ success: true, message: "Radar da Arena resetado!" });
+  }));
+
+  app.post("/api/admin/reset/matches", requireAdmin, asyncHandler(async (_req, res) => {
+    await storage.clearMatches();
+    res.json({ success: true, message: "Histórico de Partidas resetado!" });
+  }));
+
+  app.post("/api/admin/reset/challenges", requireAdmin, asyncHandler(async (_req, res) => {
+    await storage.clearChallenges();
+    res.json({ success: true, message: "War Room (Desafios) resetado!" });
+  }));
+
   // Rewards Routes
   app.get("/api/rewards", asyncHandler(async (_req, res) => {
     const allRewards = await storage.getRewards();

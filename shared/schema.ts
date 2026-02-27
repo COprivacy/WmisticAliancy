@@ -50,6 +50,7 @@ export const rewards = sqliteTable("rewards", {
   name: text("name").notNull(),
   description: text("description").notNull(),
   rarity: text("rarity").notNull(), // mythic, legendary, epic, rare
+  stars: integer("stars").notNull().default(1),
   icon: text("icon").notNull(),
 });
 
@@ -57,7 +58,7 @@ export const playerRewards = sqliteTable("player_rewards", {
   id: integer("id").primaryKey({ autoIncrement: true }),
   playerId: integer("player_id").notNull(),
   rewardId: integer("reward_id").notNull(),
-  assignedAt: integer("assigned_at", { mode: "timestamp" }).notNull().default(sql`CURRENT_TIMESTAMP`),
+  assignedAt: integer("assigned_at", { mode: "timestamp" }).notNull().default(sql`(strftime('%s', 'now') * 1000)`),
   expiresAt: integer("expires_at", { mode: "timestamp" }), // Null means permanent
 });
 

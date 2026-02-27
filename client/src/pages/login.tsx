@@ -285,7 +285,12 @@ export default function Login() {
                 <Button
                   type="submit"
                   className="w-full h-16 text-sm font-black uppercase tracking-[0.2em] bg-primary text-primary-foreground hover:bg-yellow-400 shadow-[0_0_30px_-5px_rgba(234,179,8,0.4)] transition-all active:scale-95 relative overflow-hidden group"
-                  disabled={isPending}
+                  disabled={
+                    isPending ||
+                    isValidating ||
+                    (loginStep === "initial" && !mlbbInfo) ||
+                    (loginStep !== "initial" && pin.length < 4)
+                  }
                 >
                   <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/20 to-transparent -translate-x-full group-hover:animate-[shimmer_1.5s_infinite]" />
                   {isPending ? (

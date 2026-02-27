@@ -151,7 +151,13 @@ export default function ActivityFeed() {
                                         <div>
                                             {getContent(activity)}
                                             <span className="text-[8px] text-muted-foreground lowercase font-mono">
-                                                há {formatDistanceToNow(new Date(activity.createdAt), { locale: ptBR })}
+                                                {(() => {
+                                                    const date = new Date(activity.createdAt);
+                                                    if (isNaN(date.getTime()) || date.getFullYear() < 2000) {
+                                                        return "recentemente";
+                                                    }
+                                                    return `há ${formatDistanceToNow(date, { locale: ptBR })}`;
+                                                })()}
                                             </span>
                                         </div>
 

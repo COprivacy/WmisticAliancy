@@ -23,7 +23,9 @@ import {
   LayoutDashboard,
   ArrowUpRight,
   History,
-  KeyRound
+  KeyRound,
+  Trash2,
+  AlertTriangle
 } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import { useQuery, useMutation } from "@tanstack/react-query";
@@ -93,6 +95,27 @@ export default function Admin() {
     onSuccess: () => {
       toast({ title: "Relíquia Concedida!", description: "O item agora brilha na vitrine." });
       setSelectedRewardId(null);
+    }
+  });
+
+  const dataResetMutation = useMutation({
+    mutationFn: async (type: "activities" | "matches" | "challenges") => {
+      const res = await apiRequest("POST", `/api/admin/reset/${type}`);
+      return res.json();
+    },
+    onSuccess: (data) => {
+      queryClient.invalidateQueries();
+      toast({
+        title: "🛡️ Limpeza Concluída",
+        description: data.message,
+      });
+    },
+    onError: () => {
+      toast({
+        title: "Erro no Reset",
+        description: "Não foi possível limpar os dados.",
+        variant: "destructive",
+      });
     }
   });
 
@@ -316,7 +339,7 @@ export default function Admin() {
                   <div className="p-2 rounded-2xl bg-rose-500/20 text-rose-500">
                     <History className="w-5 h-5" />
                   </div>
-                  <CardTitle className="uppercase tracking-widest font-serif text-lg text-rose-500">Controle de Ciclo</CardTitle>
+                  <CardTitle className="uppercase tracking-widest font-serif text-lg text-rose-500">Controle de Ciclo (Temporada)</CardTitle>
                 </div>
                 <CardDescription className="uppercase text-[10px] font-black opacity-60">Operações críticas de final de temporada</CardDescription>
               </CardHeader>
@@ -325,7 +348,6 @@ export default function Admin() {
                   <h4 className="text-sm font-black uppercase tracking-widest text-white">Reset de Temporada</h4>
                   <p className="text-[9px] uppercase font-bold text-muted-foreground max-w-md">
                     Isso zerará os pontos (para 100), vitórias, derrotas e streaks de todos os jogadores.
-                    Use apenas quando a nova temporada for declarada.
                   </p>
                 </div>
 
@@ -342,7 +364,6 @@ export default function Admin() {
                     <div className="py-6 text-center space-y-4">
                       <p className="text-sm uppercase font-bold text-muted-foreground leading-loose">
                         Você está prestes a apagar o progresso de <span className="text-white">{stats.totalPlayers}</span> guerreiros.
-                        Esta ação <span className="text-rose-500">NÃO PODE SER DESFEITA</span>.
                       </p>
                     </div>
                     <DialogFooter>
@@ -364,6 +385,54 @@ export default function Admin() {
                 </Dialog>
               </CardContent>
             </Card>
+
+            {/* Granular Reset Tools Card */}
+            <Card className="bg-white/5 border-white/10 rounded-[2.5rem] overflow-hidden">
+              <CardHeader>
+                <div className="flex items-center gap-3">
+                  <div className="p-2 rounded-2xl bg-blue-500/20 text-blue-500">
+                    <Trash2 className="w-5 h-5" />
+                  </div>
+                  <CardTitle className="uppercase tracking-widest font-serif text-lg text-blue-500">Limpeza de Dados Específica</CardTitle>
+                </div>
+                <CardDescription className="uppercase text-[10px] font-black opacity-60">Resetar seções independentes do sistema</CardDescription>
+              </CardHeader>
+              <CardContent className="grid grid-cols-1 md:grid-cols-3 gap-6 p-8">
+                {[
+                  { title: "Radar da Arena", desc: "Apaga todo o feed de atividades e reações.", type: "activities" as const },
+                  { title: "Histórico de Lutas", desc: "Apaga todas as partidas (aprovadas e pendentes).", type: "matches" as const },
+                  { title: "War Room", desc: "Apaga todos os pedidos de desafios (agendas).", type: "challenges" as const }
+                ].map((reset) => (
+                  <div key={reset.type} className="flex flex-col gap-4 p-6 rounded-3xl bg-black/20 border border-white/5 hover:border-blue-500/20 transition-all">
+                    <div>
+                      <h4 className="text-sm font-black uppercase tracking-widest text-white mb-2">{reset.title}</h4>
+                      <p className="text-[9px] uppercase font-bold text-muted-foreground leading-relaxed">{reset.desc}</p>
+                    </div>
+                    <Dialog>
+                      <DialogTrigger asChild>
+                        <Button variant="ghost" className="h-10 w-full rounded-xl border border-white/5 hover:bg-rose-500/10 hover:text-rose-500 hover:border-rose-500/20 text-[10px] font-black uppercase tracking-widest">
+                          LIMPAR SEÇÃO
+                        </Button>
+                      </DialogTrigger>
+                      <DialogContent className="bg-[#020617] border-rose-500/30">
+                        <DialogHeader>
+                          <DialogTitle className="flex items-center gap-2 uppercase tracking-widest font-serif text-rose-500">
+                            <AlertTriangle className="w-5 h-5" /> EXCLUSÃO
+                          </DialogTitle>
+                        </DialogHeader>
+                        <div className="py-4 text-center">
+                          <p className="text-sm uppercase font-bold text-muted-foreground">Apagar dados de <span className="text-white">{reset.title}</span>?</p>
+                        </div>
+                        <DialogFooter>
+                          <Button variant="destructive" className="w-full h-14 font-black uppercase tracking-widest" onClick={() => dataResetMutation.mutate(reset.type)}>CONFIRMAR</Button>
+                        </DialogFooter>
+                      </DialogContent>
+                    </Dialog>
+                  </div>
+                ))}
+              </CardContent>
+            </Card>
+
             {/* Reward Distribution Re-implementation */}
             <Card className="bg-yellow-500/5 border-yellow-500/20 rounded-[2.5rem] overflow-hidden">
               <CardHeader>

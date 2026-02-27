@@ -24,7 +24,11 @@ import {
   X,
   Gift,
   BarChart3,
-  Zap
+  Zap,
+  Star,
+  Sparkles,
+  Award,
+  Timer as ClockIcon
 } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import { useQuery, useMutation } from "@tanstack/react-query";
@@ -276,36 +280,84 @@ export default function Rankings() {
       {/* Top 3 Podium Section */}
       <section className="relative py-12 px-4 mb-20">
         <div className="absolute inset-0 bg-gradient-to-b from-primary/5 to-transparent blur-3xl pointer-events-none" />
-        {/* --- SEASON BANNER --- */}
+        {/* --- CINEMATIC SEASON BANNER --- */}
+        {/* --- REFINED CINEMATIC SEASON BANNER --- */}
         {season && (
           <motion.div
-            initial={{ opacity: 0, scale: 0.95 }}
-            animate={{ opacity: 1, scale: 1 }}
-            className="mb-12 relative overflow-hidden rounded-[2.5rem] border border-primary/30 bg-[#020617]/60 backdrop-blur-3xl p-8"
+            initial={{ opacity: 0, y: -20 }}
+            animate={{ opacity: 1, y: 0 }}
+            className="mb-16 relative"
           >
-            <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-transparent via-primary to-transparent animate-pulse" />
-            <div className="flex flex-col md:flex-row items-center justify-between gap-8 relative z-10">
-              <div className="space-y-2 text-center md:text-left">
-                <Badge className="bg-primary/20 text-primary border-primary/30 uppercase tracking-[0.2em] px-4 py-1">
-                  Temporada Ativa
-                </Badge>
-                <h2 className="text-2xl md:text-3xl font-serif text-white uppercase tracking-widest">{season.name}</h2>
-                <div className="flex flex-wrap justify-center md:justify-start gap-4 mt-4">
-                  {season.prizes.slice(0, 3).map((p, i) => (
-                    <div key={i} className="flex items-center gap-2 text-[10px] bg-white/5 px-3 py-1.5 rounded-full border border-white/5">
-                      <span className="text-primary font-black uppercase">{p.rank}:</span>
-                      <span className="text-muted-foreground italic">{p.prize}</span>
-                    </div>
+            {/* Soft Ambient Glow */}
+            <div className="absolute -inset-4 bg-primary/5 blur-[80px] rounded-full opacity-50 pointer-events-none" />
+
+            <div className="relative overflow-hidden rounded-[2.5rem] border border-white/10 bg-[#020617]/60 backdrop-blur-3xl p-8 md:p-12">
+              {/* Subtle Scanning Line Effect */}
+              <div className="absolute inset-0 bg-[linear-gradient(rgba(255,255,255,0.02)_1px,transparent_1px)] bg-[size:100%_4px] pointer-events-none opacity-20" />
+
+              <div className="relative z-10 flex flex-col items-center text-center space-y-10">
+                {/* Top Status Bar */}
+                <div className="flex flex-wrap items-center justify-center gap-6">
+                  <div className="flex items-center gap-2 px-4 py-1.5 rounded-full bg-primary/10 border border-primary/20">
+                    <div className="w-1.5 h-1.5 rounded-full bg-primary animate-pulse" />
+                    <span className="text-[10px] font-black uppercase tracking-[0.3em] text-primary font-sans">Arena Ativa</span>
+                  </div>
+
+                  <div className="flex items-center gap-3 text-muted-foreground/60">
+                    <div className="w-px h-4 bg-white/10" />
+                    <ClockIcon className="w-3.5 h-3.5" />
+                    <span className="text-[10px] font-black uppercase tracking-[0.2em] font-sans">Encerramento:</span>
+                    <span className="text-white font-mono text-sm tracking-widest">{getTimeLeft(season.endsAt).toLowerCase()}</span>
+                  </div>
+                </div>
+
+                {/* Season Title with Elegant Glitch */}
+                <div className="space-y-4 max-w-4xl relative">
+                  <h2 className="text-4xl md:text-6xl font-serif font-black uppercase tracking-tighter text-white leading-tight">
+                    {season.name.split(':')[0]}
+                    {season.name.includes(':') && (
+                      <span className="text-lg md:text-xl text-primary font-black italic tracking-[0.4em] uppercase mt-2 block opacity-80">
+                        {season.name.split(':')[1]}
+                      </span>
+                    )}
+                  </h2>
+                </div>
+
+                {/* Prize Relics Row */}
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-4 w-full max-w-5xl">
+                  {season.prizes.map((p, i) => (
+                    <motion.div
+                      key={i}
+                      whileHover={{ y: -5, scale: 1.02 }}
+                      className="relative overflow-hidden p-6 rounded-3xl border border-white/5 bg-white/5 backdrop-blur-md group/prize transition-all text-left"
+                    >
+                      <div className="absolute top-0 right-0 p-4 opacity-5 group-hover/prize:opacity-20 transition-opacity">
+                        <Award className="w-10 h-10 text-primary" />
+                      </div>
+                      <span className="text-[9px] font-black text-primary uppercase tracking-[0.3em] mb-2 block font-sans">{p.rank}</span>
+                      <p className="text-xs text-white/80 font-bold uppercase tracking-widest leading-relaxed leading-snug">{p.prize}</p>
+                    </motion.div>
                   ))}
+                </div>
+
+                {/* Arena Stats Hook */}
+                <div className="flex items-center gap-12 pt-4 border-t border-white/5 w-full justify-center">
+                  <div className="text-center group/stat">
+                    <span className="block text-2xl font-serif font-black text-white group-hover/stat:text-primary transition-colors">{sortedPlayers.length}</span>
+                    <span className="text-[8px] font-black text-muted-foreground uppercase tracking-[0.3em] font-sans">Guerreiros Ativos</span>
+                  </div>
+                  <div className="text-center group/stat">
+                    <span className="block text-2xl font-serif font-black text-white group-hover/stat:text-primary transition-colors">
+                      {players?.reduce((acc, p) => acc + p.wins, 0) || 0}
+                    </span>
+                    <span className="text-[8px] font-black text-muted-foreground uppercase tracking-[0.3em] font-sans">Combates Travados</span>
+                  </div>
                 </div>
               </div>
 
-              <div className="flex flex-col items-center justify-center p-6 bg-primary/10 rounded-3xl border border-primary/20 min-w-[200px]">
-                <span className="text-[10px] font-black uppercase tracking-[0.3em] text-primary mb-2">Termina em:</span>
-                <div className="text-4xl font-serif font-black text-white italic animate-pulse">
-                  {getTimeLeft(season.endsAt)}
-                </div>
-              </div>
+              {/* Decorative Corner Accents */}
+              <div className="absolute top-0 left-0 w-8 h-8 border-t border-l border-white/20 rounded-tl-2xl" />
+              <div className="absolute bottom-0 right-0 w-8 h-8 border-b border-r border-white/20 rounded-br-2xl" />
             </div>
           </motion.div>
         )}

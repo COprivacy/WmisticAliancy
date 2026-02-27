@@ -23,7 +23,9 @@ import {
     Globe,
     Settings,
     Loader2,
-    Share2
+    Share2,
+    Info,
+    Star
 } from "lucide-react";
 import { useAuth } from "@/lib/auth";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogFooter, DialogDescription } from "@/components/ui/dialog";
@@ -57,6 +59,7 @@ export default function Profile() {
     const fileInputRef = useRef<HTMLInputElement>(null);
     const [uploadingAvatar, setUploadingAvatar] = useState(false);
     const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
+    const [selectedReward, setSelectedReward] = useState<Reward | null>(null);
 
     // Form state for profile editing
     const [editBio, setEditBio] = useState("");
@@ -528,7 +531,8 @@ export default function Profile() {
                                 <motion.div
                                     key={i}
                                     whileHover={{ scale: 1.05 }}
-                                    className="group relative"
+                                    className="group relative cursor-pointer"
+                                    onClick={() => setSelectedReward(reward)}
                                 >
                                     <div className={`absolute inset-0 rounded-3xl blur-2xl opacity-20 group-hover:opacity-40 transition-opacity ${reward.rarity === 'mythic' ? 'bg-purple-500' :
                                         reward.rarity === 'legendary' ? 'bg-yellow-500' :
@@ -550,9 +554,21 @@ export default function Profile() {
                                                 }`}>
                                                 {reward.rarity}
                                             </Badge>
+
+                                            {/* Quick Info Overlay */}
+                                            <div className="absolute inset-0 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity duration-300">
+                                                <div className="p-2 rounded-full bg-primary/20 backdrop-blur-md border border-primary/30 text-primary">
+                                                    <Info className="w-4 h-4" />
+                                                </div>
+                                            </div>
                                         </div>
-                                        <div className="p-4 text-center">
-                                            <span className="text-xs font-black uppercase tracking-tighter truncate block">{reward.name}</span>
+                                        <div className="p-4 text-center border-t border-white/5">
+                                            <span className="text-xs font-black uppercase tracking-tighter truncate block mb-2">{reward.name}</span>
+                                            <div className="flex justify-center gap-0.5">
+                                                {Array.from({ length: reward.stars || 1 }).map((_, s) => (
+                                                    <Star key={s} className="w-2.5 h-2.5 fill-primary text-primary" />
+                                                ))}
+                                            </div>
                                         </div>
                                     </Card>
                                 </motion.div>
@@ -566,6 +582,69 @@ export default function Profile() {
                             </Link>
                         </Card>
                     )}
+
+                    {/* Reward Detail Dialog */}
+                    <Dialog open={!!selectedReward} onOpenChange={(open) => !open && setSelectedReward(null)}>
+                        <DialogContent className="bg-slate-950/90 border-white/10 backdrop-blur-3xl p-0 overflow-hidden max-w-2xl rounded-[3rem]">
+                            <AnimatePresence>
+                                {selectedReward && (
+                                    <motion.div
+                                        initial={{ opacity: 0, scale: 0.9 }}
+                                        animate={{ opacity: 1, scale: 1 }}
+                                        className="flex flex-col md:flex-row h-full"
+                                    >
+                                        <div className="w-full md:w-1/2 relative bg-black">
+                                            <img
+                                                src={selectedReward.icon}
+                                                className="w-full h-full object-cover"
+                                                alt={selectedReward.name}
+                                            />
+                                            <div className="absolute inset-0 bg-gradient-to-t from-black via-transparent to-transparent" />
+                                        </div>
+
+                                        <div className="w-full md:w-1/2 p-10 flex flex-col justify-between">
+                                            <div className="space-y-6">
+                                                <div className="space-y-2">
+                                                    <Badge className="uppercase font-black tracking-[0.2em] bg-primary/20 text-primary border-primary/20">
+                                                        {selectedReward.rarity}
+                                                    </Badge>
+                                                    <DialogTitle className="text-4xl font-serif font-black uppercase text-white leading-tight">
+                                                        {selectedReward.name}
+                                                    </DialogTitle>
+                                                </div>
+
+                                                <div className="flex gap-1 py-4 border-y border-white/5">
+                                                    {Array.from({ length: selectedReward.stars || 1 }).map((_, s) => (
+                                                        <Star key={s} className="w-5 h-5 fill-primary text-primary drop-shadow-[0_0_8px_rgba(234,179,8,0.5)]" />
+                                                    ))}
+                                                    <span className="ml-4 text-[10px] font-black uppercase tracking-[0.3em] text-white/40 flex items-center">Raridade {selectedReward.stars}/7</span>
+                                                </div>
+
+                                                <DialogDescription className="text-sm text-muted-foreground leading-loose italic">
+                                                    "{selectedReward.description}"
+                                                </DialogDescription>
+                                            </div>
+
+                                            <div className="pt-8 space-y-4">
+                                                <div className="flex items-center gap-4 p-4 rounded-2xl bg-white/5 border border-white/5">
+                                                    <Shield className="w-6 h-6 text-primary" />
+                                                    <p className="text-[10px] font-black uppercase tracking-widest text-white/60">
+                                                        ITEM AUTÊNTICO • WMYTHIC
+                                                    </p>
+                                                </div>
+                                                <Button
+                                                    onClick={() => setSelectedReward(null)}
+                                                    className="w-full h-14 bg-white/10 hover:bg-white/20 text-white font-black uppercase tracking-widest rounded-2xl"
+                                                >
+                                                    FECHAR
+                                                </Button>
+                                            </div>
+                                        </div>
+                                    </motion.div>
+                                )}
+                            </AnimatePresence>
+                        </DialogContent>
+                    </Dialog>
                 </motion.div>
                 {/* --- FIM DA SEÇÃO: VITRINE --- */}
 

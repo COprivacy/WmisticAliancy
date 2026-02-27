@@ -2,12 +2,22 @@ import { useQuery } from "@tanstack/react-query";
 import { Reward } from "@shared/schema";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { motion } from "framer-motion";
-import { Trophy, Star, Sparkles, Shield, Loader2, ChevronLeft } from "lucide-react";
+import { motion, AnimatePresence } from "framer-motion";
+import { Trophy, Star, Sparkles, Shield, Loader2, ChevronLeft, Info, X } from "lucide-react";
 import { Link } from "wouter";
 import { Button } from "@/components/ui/button";
+import { useState } from "react";
+import {
+    Dialog,
+    DialogContent,
+    DialogDescription,
+    DialogHeader,
+    DialogTitle,
+    DialogTrigger,
+} from "@/components/ui/dialog";
 
 export default function Rewards() {
+    const [selectedReward, setSelectedReward] = useState<Reward | null>(null);
     const { data: rewards, isLoading } = useQuery<Reward[]>({
         queryKey: ["/api/rewards"],
     });
@@ -75,7 +85,8 @@ export default function Rewards() {
                             initial={{ opacity: 0, y: 20 }}
                             animate={{ opacity: 1, y: 0 }}
                             transition={{ delay: index * 0.1 }}
-                            className="group"
+                            className="group cursor-pointer"
+                            onClick={() => setSelectedReward(reward)}
                         >
                             <Card className={`h-full bg-white/5 border-white/10 backdrop-blur-xl overflow-hidden transition-all duration-500 transform group-hover:-translate-y-2 ${getRarityGlow(reward.rarity)}`}>
                                 <div className="relative aspect-square overflow-hidden bg-black/40">
@@ -94,6 +105,13 @@ export default function Rewards() {
                                             {reward.rarity}
                                         </Badge>
                                     </div>
+
+                                    {/* Quick Info Overlay */}
+                                    <div className="absolute inset-0 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity duration-300">
+                                        <div className="p-3 rounded-full bg-primary/20 backdrop-blur-md border border-primary/30 text-primary">
+                                            <Info className="w-6 h-6" />
+                                        </div>
+                                    </div>
                                 </div>
 
                                 <CardHeader className="relative pb-2">
@@ -101,23 +119,86 @@ export default function Rewards() {
                                 </CardHeader>
 
                                 <CardContent>
-                                    <p className="text-sm text-muted-foreground leading-relaxed italic">
+                                    <p className="text-xs text-muted-foreground leading-relaxed italic line-clamp-2">
                                         "{reward.description}"
                                     </p>
 
                                     <div className="mt-8 pt-6 border-t border-white/5 flex items-center justify-between">
-                                        <div className="flex gap-1">
-                                            {Array.from({ length: reward.rarity === 'mythic' ? 7 : reward.rarity === 'legendary' ? 5 : reward.rarity === 'epic' ? 3 : 1 }).map((_, s) => (
+                                        <div className="flex gap-0.5">
+                                            {Array.from({ length: reward.stars || 1 }).map((_, s) => (
                                                 <Star key={s} className="w-3 h-3 fill-primary text-primary" />
                                             ))}
                                         </div>
-                                        <span className="text-[9px] uppercase font-bold tracking-[0.2em] text-muted-foreground">Recompensa Exclusiva</span>
+                                        <span className="text-[8px] uppercase font-black tracking-[0.2em] text-primary/50">Relíquia Nível {reward.stars}</span>
                                     </div>
                                 </CardContent>
                             </Card>
                         </motion.div>
                     ))}
                 </div>
+
+                {/* Reward Detail Dialog */}
+                <Dialog open={!!selectedReward} onOpenChange={(open) => !open && setSelectedReward(null)}>
+                    <DialogContent className="bg-slate-950/90 border-white/10 backdrop-blur-3xl p-0 overflow-hidden max-w-2xl rounded-[3rem]">
+                        <AnimatePresence>
+                            {selectedReward && (
+                                <motion.div
+                                    initial={{ opacity: 0, scale: 0.9 }}
+                                    animate={{ opacity: 1, scale: 1 }}
+                                    className="flex flex-col md:flex-row h-full"
+                                >
+                                    <div className="w-full md:w-1/2 relative bg-black">
+                                        <img
+                                            src={selectedReward.icon}
+                                            className="w-full h-full object-cover"
+                                            alt={selectedReward.name}
+                                        />
+                                        <div className="absolute inset-0 bg-gradient-to-t from-black via-transparent to-transparent" />
+                                    </div>
+
+                                    <div className="w-full md:w-1/2 p-10 flex flex-col justify-between">
+                                        <div className="space-y-6">
+                                            <div className="space-y-2">
+                                                <Badge className={`uppercase font-black tracking-[0.2em] ${getRarityColor(selectedReward.rarity)}`}>
+                                                    {selectedReward.rarity}
+                                                </Badge>
+                                                <DialogTitle className="text-4xl font-serif font-black uppercase text-white leading-tight">
+                                                    {selectedReward.name}
+                                                </DialogTitle>
+                                            </div>
+
+                                            <div className="flex gap-1 py-4 border-y border-white/5">
+                                                {Array.from({ length: selectedReward.stars || 1 }).map((_, s) => (
+                                                    <Star key={s} className="w-5 h-5 fill-primary text-primary drop-shadow-[0_0_8px_rgba(234,179,8,0.5)]" />
+                                                ))}
+                                                <span className="ml-4 text-[10px] font-black uppercase tracking-[0.3em] text-white/40 flex items-center">Raridade {selectedReward.stars}/7</span>
+                                            </div>
+
+                                            <DialogDescription className="text-sm text-muted-foreground leading-loose italic">
+                                                "{selectedReward.description}"
+                                            </DialogDescription>
+                                        </div>
+
+                                        <div className="pt-8 space-y-4">
+                                            <div className="flex items-center gap-4 p-4 rounded-2xl bg-white/5 border border-white/5">
+                                                <Shield className="w-6 h-6 text-primary" />
+                                                <p className="text-[10px] font-black uppercase tracking-widest text-white/60">
+                                                    AUTENTICIDADE GARANTIDA PELA ALIANÇA
+                                                </p>
+                                            </div>
+                                            <Button
+                                                onClick={() => setSelectedReward(null)}
+                                                className="w-full h-14 bg-white/10 hover:bg-white/20 text-white font-black uppercase tracking-widest rounded-2xl transition-all"
+                                            >
+                                                FECHAR RELIQUÁRIO
+                                            </Button>
+                                        </div>
+                                    </div>
+                                </motion.div>
+                            )}
+                        </AnimatePresence>
+                    </DialogContent>
+                </Dialog>
 
                 <motion.div
                     initial={{ opacity: 0 }}
@@ -127,7 +208,7 @@ export default function Rewards() {
                 >
                     <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-transparent via-primary/50 to-transparent" />
                     <h3 className="text-3xl font-serif font-bold uppercase tracking-widest text-primary mb-4">Como conquistar?</h3>
-                    <p className="max-w-2xl mx-auto text-muted-foreground italic mb-0 leading-relaxed">
+                    <p className="max-w-2xl mx-auto text-muted-foreground italic mb-0 leading-relaxed text-sm">
                         As recompensas são distribuídas pelo conselho da guilda ao final de cada temporada.
                         Mantenha-se no topo do Ranking 1v1 para garantir as peças mais raras do santuário.
                     </p>
