@@ -31,6 +31,13 @@ export default function Rankings() {
   const [isReportOpen, setIsReportOpen] = useState(false);
   const [proofFile, setProofFile] = useState<File | null>(null);
   const [isUploading, setIsUploading] = useState(false);
+  const [winnerHero, setWinnerHero] = useState<string>("");
+  const [loserHero, setLoserHero] = useState<string>("");
+
+  const popularHeroes = [
+    "Gusion", "Fanny", "Chou", "Lancelot", "Benedetta", "Hayabusa", "Granger", "Ling",
+    "Selena", "Paquito", "Beatrix", "Valentina", "Yve", "Mathilda", "Wanwan"
+  ].sort();
 
   const { data: players, isLoading } = useQuery<PlayerWithRewards[]>({
     queryKey: ["/api/players"],
@@ -53,6 +60,8 @@ export default function Rankings() {
       setIsReportOpen(false);
       setReportOpponentId(null);
       setProofFile(null);
+      setWinnerHero("");
+      setLoserHero("");
     },
     onError: () => {
       toast({
@@ -95,8 +104,10 @@ export default function Rankings() {
     reportMutation.mutate({
       winnerId: user.id,
       winnerZone: user.zoneId,
+      winnerHero: winnerHero,
       loserId: loser.accountId,
       loserZone: loser.zoneId,
+      loserHero: loserHero,
       proofImage: proofUrl
     });
   };
@@ -342,6 +353,35 @@ export default function Rankings() {
                         ))}
                       </SelectContent>
                     </Select>
+                  </div>
+
+                  <div className="grid grid-cols-2 gap-4">
+                    <div className="space-y-3">
+                      <Label className="text-[10px] uppercase tracking-[0.2em] font-bold text-emerald-500/70">Seu Herói</Label>
+                      <Select value={winnerHero} onValueChange={setWinnerHero}>
+                        <SelectTrigger className="border-emerald-500/20 bg-white/5 h-12">
+                          <SelectValue placeholder="Herói..." />
+                        </SelectTrigger>
+                        <SelectContent className="bg-slate-900 border-white/10">
+                          {popularHeroes.map(h => (
+                            <SelectItem key={h} value={h}>{h}</SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                    </div>
+                    <div className="space-y-3">
+                      <Label className="text-[10px] uppercase tracking-[0.2em] font-bold text-red-500/70">Herói Inimigo</Label>
+                      <Select value={loserHero} onValueChange={setLoserHero}>
+                        <SelectTrigger className="border-red-500/20 bg-white/5 h-12">
+                          <SelectValue placeholder="Herói..." />
+                        </SelectTrigger>
+                        <SelectContent className="bg-slate-900 border-white/10">
+                          {popularHeroes.map(h => (
+                            <SelectItem key={h} value={h}>{h}</SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                    </div>
                   </div>
 
                   <div className="space-y-3">

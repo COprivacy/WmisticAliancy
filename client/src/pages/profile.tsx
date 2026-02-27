@@ -15,8 +15,18 @@ import {
     Flame,
     Award,
     Camera,
-    Gamepad2 as Gamepad
+    Gamepad2 as Gamepad,
+    Instagram,
+    Youtube,
+    Twitch,
+    Globe,
+    Settings
 } from "lucide-react";
+import { useAuth } from "@/lib/auth";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogFooter } from "@/components/ui/dialog";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { apiRequest } from "@/lib/queryClient";
 import { motion } from "framer-motion";
 import { Loader2 } from "lucide-react";
 import { useRef, useState } from "react";
@@ -37,14 +47,48 @@ type ProfileData = {
 export default function Profile() {
     const { accountId, zoneId } = useParams();
     const [, setLocation] = useLocation();
+    const { user } = useAuth();
     const queryClient = useQueryClient();
     const { toast } = useToast();
     const fileInputRef = useRef<HTMLInputElement>(null);
     const [uploadingAvatar, setUploadingAvatar] = useState(false);
+    const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
+
+    // Form state for profile editing
+    const [editBio, setEditBio] = useState("");
+    const [editInsta, setEditInsta] = useState("");
+    const [editTwitch, setEditTwitch] = useState("");
+    const [editYoutube, setEditYoutube] = useState("");
 
     const { data, isLoading, error } = useQuery<ProfileData>({
         queryKey: [`/api/players/${accountId}/${zoneId}`],
     });
+
+    const updateProfileMutation = useMutation({
+        mutationFn: async (updatedData: any) => {
+            const res = await apiRequest("PUT", `/api/players/${data?.player.id}`, updatedData);
+            return res.json();
+        },
+        onSuccess: () => {
+            queryClient.invalidateQueries({ queryKey: [`/api/players/${accountId}/${zoneId}`] });
+            toast({ title: "✨ Perfil Atualizado", description: "Suas informações foram salvas com sucesso." });
+            setIsEditDialogOpen(false);
+        },
+        onError: () => {
+            toast({ title: "Erro na atualização", variant: "destructive" });
+        }
+    });
+
+    const isOwnProfile = user?.id === accountId;
+
+    useEffect(() => {
+        if (data?.player) {
+            setEditBio(data.player.bio || "");
+            setEditInsta(data.player.instagram || "");
+            setEditTwitch(data.player.twitch || "");
+            setEditYoutube(data.player.youtube || "");
+        }
+    }, [data]);
 
     if (isLoading) {
         return (
@@ -165,6 +209,76 @@ export default function Profile() {
                                 <Badge className="bg-primary/20 text-primary border-primary/30 py-1 px-4 uppercase text-[10px] tracking-widest font-bold mx-auto md:mx-0">
                                     {player.currentRank || "RANK DESCONHECIDO"}
                                 </Badge>
+                                {isOwnProfile && (
+                                    <Dialog open={isEditDialogOpen} onOpenChange={setIsEditDialogOpen}>
+                                        <DialogTrigger asChild>
+                                            <Button variant="outline" size="sm" className="bg-white/5 border-white/10 hover:bg-white/10 text-[10px] tracking-widest uppercase h-8 px-4 font-bold">
+                                                <Settings className="w-3 h-3 mr-2" />
+                                                Editar Perfil
+                                            </Button>
+                                        </DialogTrigger>
+                                        <DialogContent className="bg-[#020617]/95 border-white/10 backdrop-blur-2xl">
+                                            <DialogHeader>
+                                                <DialogTitle className="font-serif text-2xl uppercase tracking-widest text-primary">Personalizar Avatar</DialogTitle>
+                                            </DialogHeader>
+                                            <div className="space-y-4 py-4">
+                                                <div className="space-y-2">
+                                                    <Label className="text-[10px] uppercase tracking-widest font-bold opacity-70">Bio / Frase de Impacto</Label>
+                                                    <Input
+                                                        value={editBio}
+                                                        onChange={(e) => setEditBio(e.target.value)}
+                                                        placeholder="Diga algo sobre você..."
+                                                        className="bg-white/5 border-white/10 h-12"
+                                                    />
+                                                </div>
+                                                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                                                    <div className="space-y-2">
+                                                        <Label className="text-[10px] uppercase tracking-widest font-bold opacity-70">Instagram</Label>
+                                                        <Input
+                                                            value={editInsta}
+                                                            onChange={(e) => setEditInsta(e.target.value)}
+                                                            placeholder="@user"
+                                                            className="bg-white/5 border-white/10 h-10"
+                                                        />
+                                                    </div>
+                                                    <div className="space-y-2">
+                                                        <Label className="text-[10px] uppercase tracking-widest font-bold opacity-70">Twitch</Label>
+                                                        <Input
+                                                            value={editTwitch}
+                                                            onChange={(e) => setEditTwitch(e.target.value)}
+                                                            placeholder="streamer"
+                                                            className="bg-white/5 border-white/10 h-10"
+                                                        />
+                                                    </div>
+                                                    <div className="space-y-2">
+                                                        <Label className="text-[10px] uppercase tracking-widest font-bold opacity-70">YouTube</Label>
+                                                        <Input
+                                                            value={editYoutube}
+                                                            onChange={(e) => setEditYoutube(e.target.value)}
+                                                            placeholder="canal"
+                                                            className="bg-white/5 border-white/10 h-10"
+                                                        />
+                                                    </div>
+                                                </div>
+                                            </div>
+                                            <DialogFooter>
+                                                <Button
+                                                    className="w-full h-12 bg-primary text-primary-foreground font-black uppercase tracking-widest"
+                                                    disabled={updateProfileMutation.isPending}
+                                                    onClick={() => updateProfileMutation.mutate({
+                                                        accountId: player.accountId,
+                                                        bio: editBio,
+                                                        instagram: editInsta,
+                                                        twitch: editTwitch,
+                                                        youtube: editYoutube
+                                                    })}
+                                                >
+                                                    {updateProfileMutation.isPending ? <Loader2 className="w-4 h-4 animate-spin" /> : "Salvar Alterações"}
+                                                </Button>
+                                            </DialogFooter>
+                                        </DialogContent>
+                                    </Dialog>
+                                )}
                             </div>
                             <p className="text-muted-foreground font-mono text-xs uppercase tracking-[0.3em]">
                                 ID: {player.accountId} • ZONA: {player.zoneId}
@@ -174,6 +288,28 @@ export default function Profile() {
                                     <span className="text-muted-foreground block">CONTA VERIFICADA</span>
                                     <span className="text-primary">{player.currentRank || "Arena 1v1"}</span>
                                 </div>
+                            </div>
+
+                            {/* Social Media Links */}
+                            <div className="flex items-center justify-center md:justify-start gap-3 mt-4">
+                                {player.instagram && (
+                                    <a href={`https://instagram.com/${player.instagram}`} target="_blank" rel="noreferrer" className="p-2 rounded-lg bg-pink-500/10 text-pink-500 border border-pink-500/20 hover:bg-pink-500/20 transition-all">
+                                        <Instagram className="w-4 h-4" />
+                                    </a>
+                                )}
+                                {player.twitch && (
+                                    <a href={`https://twitch.tv/${player.twitch}`} target="_blank" rel="noreferrer" className="p-2 rounded-lg bg-purple-500/10 text-purple-500 border border-purple-500/20 hover:bg-purple-500/20 transition-all">
+                                        <Twitch className="w-4 h-4" />
+                                    </a>
+                                )}
+                                {player.youtube && (
+                                    <a href={`https://youtube.com/@${player.youtube}`} target="_blank" rel="noreferrer" className="p-2 rounded-lg bg-red-500/10 text-red-500 border border-red-500/20 hover:bg-red-500/20 transition-all">
+                                        <Youtube className="w-4 h-4" />
+                                    </a>
+                                )}
+                                {player.bio && (
+                                    <p className="text-xs text-muted-foreground italic font-medium ml-2">"{player.bio}"</p>
+                                )}
                             </div>
                         </div>
                     </div>
@@ -333,7 +469,16 @@ export default function Profile() {
                                                         </span>
                                                         <span className="text-muted-foreground text-[10px]">• {new Date(match.createdAt).toLocaleDateString()}</span>
                                                     </div>
-                                                    <p className="text-lg font-serif">vs <span className="uppercase text-white">{opponentName}</span></p>
+                                                    <div className="flex items-center gap-2">
+                                                        <p className="text-lg font-serif">vs <span className="uppercase text-white">{opponentName}</span></p>
+                                                        {match.winnerHero && (
+                                                            <div className="flex items-center gap-1 bg-white/5 px-2 py-0.5 rounded border border-white/5 text-[10px] font-bold">
+                                                                <span className="text-emerald-400">{isWinner ? match.winnerHero : match.loserHero}</span>
+                                                                <span className="opacity-30">vs</span>
+                                                                <span className="text-rose-400">{isWinner ? match.loserHero : match.winnerHero}</span>
+                                                            </div>
+                                                        )}
+                                                    </div>
                                                 </div>
                                             </div>
 

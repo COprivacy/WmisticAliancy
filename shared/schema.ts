@@ -21,14 +21,22 @@ export const players = sqliteTable("players", {
   avatar: text("avatar"), // Link to MLBB Avatar
   currentRank: text("current_rank"), // Link to MLBB Real Rank (Mythic, etc)
   streak: integer("streak").notNull().default(0),
+  // New social and bio fields
+  bio: text("bio"),
+  twitch: text("twitch"),
+  instagram: text("instagram"),
+  youtube: text("youtube"),
+  mainHero: text("main_hero"),
 });
 
 export const matches = sqliteTable("matches", {
   id: integer("id").primaryKey({ autoIncrement: true }),
   winnerId: text("winner_id").notNull(),
   winnerZone: text("winner_zone_id").notNull().default(""),
+  winnerHero: text("winner_hero"), // Hero used by winner
   loserId: text("loser_id").notNull(),
   loserZone: text("loser_zone_id").notNull().default(""),
+  loserHero: text("loser_hero"), // Hero used by loser
   proofImage: text("proof_image"), // URL to the screenshot proof
   status: text("status").notNull().default("pending"), // pending, approved, rejected
   createdAt: integer("created_at", { mode: "timestamp" }).notNull().default(sql`CURRENT_TIMESTAMP`),

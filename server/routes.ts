@@ -239,6 +239,25 @@ export async function registerRoutes(
     res.json({ avatar: player.avatar });
   }));
 
+  // Update Player Profile (Bio, Socials)
+  app.put("/api/players/:id", asyncHandler(async (req, res) => {
+    const playerId = parseInt(req.params.id as string);
+    // Basic session validation: can only edit own profile or must be admin
+    if (req.session.user?.id !== req.body.accountId && !req.session.user?.isAdmin) {
+      return res.status(403).json({ message: "Não autorizado a editar este perfil" });
+    }
+
+    const updatedPlayer = await storage.updatePlayer(playerId, {
+      bio: req.body.bio,
+      instagram: req.body.instagram,
+      twitch: req.body.twitch,
+      youtube: req.body.youtube,
+      mainHero: req.body.mainHero
+    });
+
+    res.json(updatedPlayer);
+  }));
+
   // Rewards Routes
   app.get("/api/rewards", asyncHandler(async (_req, res) => {
     const allRewards = await storage.getRewards();
