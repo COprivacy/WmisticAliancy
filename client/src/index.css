@@ -147,6 +147,32 @@
     animation: epic-pulse 2s ease-in-out infinite;
   }
 
+  /* Tier-based Glows for Avatars */
+  .rank-glow-grand-master {
+    box-shadow: 0 0 20px rgba(234, 179, 8, 0.4), inset 0 0 10px rgba(234, 179, 8, 0.2);
+    border-color: #eab308 !important;
+  }
+
+  .rank-glow-master {
+    box-shadow: 0 0 15px rgba(168, 85, 247, 0.3);
+    border-color: #a855f7 !important;
+  }
+
+  .rank-glow-elite {
+    box-shadow: 0 0 12px rgba(59, 130, 246, 0.3);
+    border-color: #3b82f6 !important;
+  }
+
+  /* No Scrollbar Utility */
+  .no-scrollbar::-webkit-scrollbar {
+    display: none;
+  }
+
+  .no-scrollbar {
+    -ms-overflow-style: none;
+    scrollbar-width: none;
+  }
+
   @keyframes magic-flow {
     to {
       background-position: 200% center;

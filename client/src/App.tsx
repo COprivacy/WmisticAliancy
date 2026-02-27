@@ -10,7 +10,11 @@ import Login from "@/pages/login";
 import Rankings from "@/pages/rankings";
 import Admin from "@/pages/admin";
 import Profile from "@/pages/profile";
-import Rewards from "@/pages/rewards"; // Added import for Rewards
+import Rewards from "@/pages/rewards";
+import Meta from "@/pages/meta";
+import Fame from "@/pages/fame";
+import Arena from "@/pages/arena";
+import Rules from "@/pages/rules";
 import Layout from "@/components/layout";
 
 function Router() {
@@ -39,6 +43,30 @@ function Router() {
       <Route path="/rewards">
         <Layout>
           <Rewards />
+        </Layout>
+      </Route>
+
+      <Route path="/meta">
+        <Layout>
+          <Meta />
+        </Layout>
+      </Route>
+
+      <Route path="/fame">
+        <Layout>
+          <Fame />
+        </Layout>
+      </Route>
+
+      <Route path="/arena">
+        <Layout>
+          <Arena />
+        </Layout>
+      </Route>
+
+      <Route path="/rules">
+        <Layout>
+          <Rules />
         </Layout>
       </Route>
 

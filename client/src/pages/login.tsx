@@ -17,16 +17,17 @@ export default function Login() {
   const [username, setUsername] = useState("");
   const [id, setId] = useState("");
   const [zone, setZone] = useState("");
+  const [pin, setPin] = useState("");
+  const [loginStep, setLoginStep] = useState<"initial" | "pin_entry" | "pin_setup">("initial");
+
   const { login, isLoading: authLoading } = useAuth();
   const [, setLocation] = useLocation();
   const { toast } = useToast();
   const [mlbbInfo, setMlbbInfo] = useState<{ name: string; rank: string; avatarImage: string } | null>(null);
   const [isValidating, setIsValidating] = useState(false);
 
-
-
   const registrationMutation = useMutation({
-    mutationFn: async (data: { gameName: string; accountId: string; zoneId: string; avatar?: string; currentRank?: string }) => {
+    mutationFn: async (data: { gameName: string; accountId: string; zoneId: string; avatar?: string; currentRank?: string; pin: string }) => {
       const res = await apiRequest("POST", "/api/players", data);
       return res.json();
     },
@@ -45,6 +46,8 @@ export default function Login() {
   const validateAccount = async (idVal: string, zoneVal: string) => {
     setId(idVal);
     setZone(zoneVal);
+    setLoginStep("initial");
+    setPin("");
 
     if (idVal.length >= 8 && zoneVal.length >= 4) {
       setIsValidating(true);
@@ -70,23 +73,53 @@ export default function Login() {
     if (!id) return;
 
     try {
-      await registrationMutation.mutateAsync({
-        gameName: username || `Soldado_${id.slice(-4)}`,
-        accountId: id,
-        zoneId: zone,
-        avatar: mlbbInfo?.avatarImage,
-        currentRank: mlbbInfo?.rank
-      });
+      // First attempt to login (this checks if account exists and status)
+      const loginRes = await login(username || `Soldado_${id.slice(-4)}`, id, zone, pin);
 
-      await login(username || `Soldado_${id.slice(-4)}`, id, zone);
-      setLocation("/rankings");
-    } catch (error) {
-      // Re-try login directly if registration failed but record might exist
-      try {
-        await login(username, id, zone);
+      if (loginRes.status === "needs_pin") {
+        setLoginStep("pin_entry");
+        toast({ title: "PIN Necessário", description: "Sua conta é protegida. Digite seu PIN." });
+        return;
+      }
+
+      if (loginRes.status === "needs_setup_pin") {
+        setLoginStep("pin_setup");
+        toast({ title: "Segurança Ativada", description: "Cadastre um PIN para proteger sua conta." });
+        return;
+      }
+
+      if (loginRes.id) {
+        // Successful login
         setLocation("/rankings");
-      } catch (e) {
-        toast({ title: "Falha na Arena", variant: "destructive" });
+      }
+    } catch (error: any) {
+      // If error is 404 (conceptually, if registration is needed)
+      // or if login failed because player doesn't exist
+      if (loginStep === "initial") {
+        setLoginStep("pin_setup");
+        toast({ title: "Primeiro Acesso", description: "Defina seu PIN de segurança." });
+        return;
+      }
+
+      // If we are in setup and have a PIN, register
+      if (loginStep === "pin_setup" && pin.length >= 4) {
+        try {
+          await registrationMutation.mutateAsync({
+            gameName: username || `Soldado_${id.slice(-4)}`,
+            accountId: id,
+            zoneId: zone,
+            avatar: mlbbInfo?.avatarImage,
+            currentRank: mlbbInfo?.rank,
+            pin: pin
+          });
+
+          await login(username || `Soldado_${id.slice(-4)}`, id, zone, pin);
+          setLocation("/rankings");
+        } catch (regErr) {
+          toast({ title: "Erro no Registro", description: "Não foi possível criar sua conta.", variant: "destructive" });
+        }
+      } else {
+        toast({ title: "Falha na Arena", description: error.message || "Erro desconhecido", variant: "destructive" });
       }
     }
   };
@@ -155,8 +188,9 @@ export default function Login() {
                       id="id"
                       placeholder="ID: 1792001576"
                       value={id}
+                      readOnly={loginStep !== "initial"}
                       onChange={(e) => validateAccount(e.target.value, zone)}
-                      className="bg-white/5 border-primary/20 focus-visible:ring-primary h-14 text-center text-lg font-mono transition-all group-hover:border-primary/40 rounded-xl"
+                      className={`bg-white/5 border-primary/20 focus-visible:ring-primary h-14 text-center text-lg font-mono transition-all group-hover:border-primary/40 rounded-xl ${loginStep !== "initial" ? "opacity-50" : ""}`}
                     />
                     {isValidating && (
                       <div className="absolute right-4 top-1/2 -translate-y-1/2">
@@ -169,74 +203,116 @@ export default function Login() {
                       id="zone"
                       placeholder="2888"
                       value={zone}
+                      readOnly={loginStep !== "initial"}
                       onChange={(e) => validateAccount(id, e.target.value)}
-                      className="bg-white/5 border-primary/20 focus-visible:ring-primary h-14 text-center text-lg font-mono transition-all group-hover:border-primary/40 rounded-xl"
+                      className={`bg-white/5 border-primary/20 focus-visible:ring-primary h-14 text-center text-lg font-mono transition-all group-hover:border-primary/40 rounded-xl ${loginStep !== "initial" ? "opacity-50" : ""}`}
                     />
                   </div>
                 </div>
               </div>
 
-              <AnimatePresence>
-                {mlbbInfo && (
+              <AnimatePresence mode="wait">
+                {loginStep === "initial" && (
                   <motion.div
-                    initial={{ opacity: 0, height: 0 }}
-                    animate={{ opacity: 1, height: "auto" }}
-                    exit={{ opacity: 0, height: 0 }}
-                    className="flex flex-col items-center gap-4 p-4 rounded-xl bg-primary/5 border border-primary/20"
+                    key="initial-info"
+                    initial={{ opacity: 0, y: 10 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    exit={{ opacity: 0, y: -10 }}
                   >
-                    <div className="relative">
-                      <img src={mlbbInfo.avatarImage} className="w-16 h-16 rounded-full border-2 border-primary shadow-lg shadow-primary/20" />
-                      <div className="absolute -bottom-1 -right-1 bg-primary text-primary-foreground text-[8px] font-bold px-1.5 rounded-sm">
-                        MLBB
+                    {mlbbInfo && (
+                      <div className="flex flex-col items-center gap-4 p-4 rounded-xl bg-primary/5 border border-primary/20 mb-6">
+                        <div className="relative">
+                          <img src={mlbbInfo.avatarImage} className="w-16 h-16 rounded-full border-2 border-primary shadow-lg shadow-primary/20" />
+                          <div className="absolute -bottom-1 -right-1 bg-primary text-primary-foreground text-[8px] font-bold px-1.5 rounded-sm">MLBB</div>
+                        </div>
+                        <div className="text-center">
+                          <p className="text-lg font-serif uppercase tracking-widest">{mlbbInfo.name}</p>
+                          <Badge variant="outline" className="text-[9px] border-primary/30 text-primary">{mlbbInfo.rank}</Badge>
+                        </div>
                       </div>
-                    </div>
-                    <div className="text-center">
-                      <p className="text-lg font-serif uppercase tracking-widest">{mlbbInfo.name}</p>
-                      <Badge variant="outline" className="text-[9px] border-primary/30 text-primary">{mlbbInfo.rank}</Badge>
+                    )}
+                  </motion.div>
+                )}
+
+                {(loginStep === "pin_entry" || loginStep === "pin_setup") && (
+                  <motion.div
+                    key="pin-step"
+                    initial={{ opacity: 0, scale: 0.95 }}
+                    animate={{ opacity: 1, scale: 1 }}
+                    className="space-y-6"
+                  >
+                    {loginStep === "pin_setup" && (
+                      <div className="space-y-3">
+                        <Label htmlFor="username" className="text-[10px] uppercase tracking-[0.2em] font-black text-primary">Nickname na Guilda</Label>
+                        <Input
+                          id="username"
+                          placeholder="Como quer ser chamado?"
+                          value={username}
+                          onChange={(e) => setUsername(e.target.value)}
+                          className="bg-primary/5 border-primary/30 h-14 rounded-2xl text-lg font-bold tracking-wide"
+                        />
+                      </div>
+                    )}
+
+                    <div className="space-y-3">
+                      <div className="flex justify-between items-center">
+                        <Label htmlFor="pin" className="text-[10px] uppercase tracking-[0.2em] font-black text-primary">
+                          {loginStep === "pin_setup" ? "Cadastrar PIN de Segurança" : "Digitar seu PIN"}
+                        </Label>
+                        <span className="text-[8px] text-muted-foreground uppercase font-bold">4-6 DÍGITOS</span>
+                      </div>
+                      <Input
+                        id="pin"
+                        type="password"
+                        placeholder="••••••"
+                        value={pin}
+                        autoFocus
+                        maxLength={6}
+                        onChange={(e) => setPin(e.target.value.replace(/\D/g, ""))}
+                        className="bg-white/5 border-primary text-primary h-20 text-center text-4xl tracking-[0.5em] font-black rounded-2xl"
+                      />
+                      <p className="text-[9px] text-center text-muted-foreground uppercase font-bold tracking-widest">
+                        {loginStep === "pin_setup"
+                          ? "Não esqueça este código! Ele é sua chave de acesso."
+                          : "Proteja sua conta. Não compartilhe seu PIN."}
+                      </p>
                     </div>
                   </motion.div>
                 )}
               </AnimatePresence>
 
-              <div className="space-y-4 pt-4 border-t border-white/5">
-                <div className="flex items-center justify-between">
-                  <Label htmlFor="username" className="text-[10px] uppercase tracking-[0.2em] font-black text-primary flex items-center gap-2">
-                    <Sparkles className="w-3 h-3" /> Nickname na Guilda
-                  </Label>
-                  <span className="text-[9px] text-muted-foreground uppercase tracking-widest animate-pulse">Recomendado: Nome do Jogo</span>
-                </div>
-                <div className="relative group">
-                  <Input
-                    id="username"
-                    placeholder="Ex: SeuNickMLBB"
-                    value={username}
-                    onChange={(e) => setUsername(e.target.value)}
-                    className="bg-primary/5 border-primary/30 h-14 rounded-2xl text-lg font-bold tracking-wide focus-visible:ring-primary focus-visible:border-primary transition-all group-hover:bg-primary/10 pl-12"
-                  />
-                  <div className="absolute left-4 top-1/2 -translate-y-1/2 text-primary/40 group-hover:text-primary transition-colors">
-                    <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="lucide lucide-pencil-line"><path d="M12 20h9" /><path d="M16.5 3.5a2.12 2.12 0 0 1 3 3L7 19l-4 1 1-4Z" /><path d="m15 5 3 3" /></svg>
-                  </div>
-                </div>
-                <p className="text-[10px] text-center text-muted-foreground italic px-4">
-                  "Este é o nome que brilhará no alto do palanque quando você conquistar a glória."
-                </p>
-              </div>
+              <div className="flex flex-col gap-3 pt-4">
+                <Button
+                  type="submit"
+                  className="w-full h-16 text-sm font-black uppercase tracking-[0.2em] bg-primary text-primary-foreground hover:bg-yellow-400 shadow-[0_0_30px_-5px_rgba(234,179,8,0.4)] transition-all active:scale-95 relative overflow-hidden group"
+                  disabled={isPending}
+                >
+                  <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/20 to-transparent -translate-x-full group-hover:animate-[shimmer_1.5s_infinite]" />
+                  {isPending ? (
+                    <Loader2 className="w-6 h-6 animate-spin" />
+                  ) : (
+                    <span className="flex items-center">
+                      {loginStep === "initial" ? "Validar Identidade" :
+                        loginStep === "pin_setup" ? "Cadastrar e Entrar" : "Acessar Arena"}
+                      <Swords className="w-5 h-5 ml-3" />
+                    </span>
+                  )}
+                </Button>
 
-              <Button
-                type="submit"
-                className="w-full h-16 text-sm font-black uppercase tracking-[0.2em] bg-primary text-primary-foreground hover:bg-yellow-400 shadow-[0_0_30px_-5px_rgba(234,179,8,0.4)] transition-all active:scale-95 mt-6 relative overflow-hidden group"
-                disabled={isPending}
-              >
-                <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/20 to-transparent -translate-x-full group-hover:animate-[shimmer_1.5s_infinite]" />
-                {isPending ? (
-                  <Loader2 className="w-6 h-6 animate-spin" />
-                ) : (
-                  <span className="flex items-center">
-                    Reivindicar Lugar no Rank
-                    <Swords className="w-5 h-5 ml-3" />
-                  </span>
+                {loginStep !== "initial" && (
+                  <Button
+                    type="button"
+                    variant="ghost"
+                    className="text-[10px] uppercase font-bold tracking-widest opacity-50 hover:opacity-100"
+                    onClick={() => {
+                      setLoginStep("initial");
+                      setPin("");
+                    }}
+                  >
+                    Voltar / Trocar ID
+                  </Button>
                 )}
-              </Button>
+              </div>
             </form>
           </CardContent>
         </Card>

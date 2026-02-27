@@ -27,6 +27,9 @@ export const players = sqliteTable("players", {
   instagram: text("instagram"),
   youtube: text("youtube"),
   mainHero: text("main_hero"),
+  isBanned: integer("is_banned", { mode: "boolean" }).notNull().default(false),
+  pin: text("pin"),
+  lastClaimedAt: integer("last_claimed_at", { mode: "timestamp" }),
 });
 
 export const matches = sqliteTable("matches", {
@@ -56,6 +59,46 @@ export const playerRewards = sqliteTable("player_rewards", {
   rewardId: integer("reward_id").notNull(),
   assignedAt: integer("assigned_at", { mode: "timestamp" }).notNull().default(sql`CURRENT_TIMESTAMP`),
   expiresAt: integer("expires_at", { mode: "timestamp" }), // Null means permanent
+});
+
+export const seasons = sqliteTable("seasons", {
+  id: integer("id").primaryKey({ autoIncrement: true }),
+  name: text("name").notNull(),
+  championName: text("champion_name"),
+  championId: text("champion_account_id"),
+  championZone: text("champion_zone_id"),
+  secondName: text("second_name"),
+  thirdName: text("third_name"),
+  endedAt: integer("ended_at", { mode: "timestamp" }).notNull(),
+});
+
+export const challenges = sqliteTable("challenges", {
+  id: integer("id").primaryKey({ autoIncrement: true }),
+  challengerId: text("challenger_id").notNull(),
+  challengerZone: text("challenger_zone_id").notNull(),
+  challengedId: text("challenged_id").notNull(),
+  challengedZone: text("challenged_zone_id").notNull(),
+  status: text("status").notNull().default("pending"), // pending, accepted, rejected, completed
+  message: text("message"),
+  scheduledAt: integer("scheduled_at", { mode: "timestamp" }),
+  createdAt: integer("created_at", { mode: "timestamp" }).notNull().default(sql`CURRENT_TIMESTAMP`),
+});
+
+export const activities = sqliteTable("activities", {
+  id: integer("id").primaryKey({ autoIncrement: true }),
+  type: text("type").notNull(), // match_approved, rank_up, reward_earned, new_player
+  playerId: integer("player_id"),
+  playerGameName: text("player_game_name"),
+  data: text("data"), // JSON string with extra info (opponent, reward name, rank name)
+  createdAt: integer("created_at", { mode: "timestamp" }).notNull().default(sql`CURRENT_TIMESTAMP`),
+});
+
+export const reactions = sqliteTable("reactions", {
+  id: integer("id").primaryKey({ autoIncrement: true }),
+  activityId: integer("activity_id").notNull(),
+  userId: text("user_id").notNull(),
+  emoji: text("emoji").notNull(),
+  createdAt: integer("created_at", { mode: "timestamp" }).notNull().default(sql`CURRENT_TIMESTAMP`),
 });
 
 export const insertUserSchema = createInsertSchema(users).pick({

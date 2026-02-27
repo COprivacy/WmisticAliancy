@@ -4,6 +4,7 @@ import { Player, Match, Reward } from "@shared/schema";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+import { useEffect, useRef, useState } from "react";
 import {
     Trophy,
     Swords,
@@ -20,17 +21,20 @@ import {
     Youtube,
     Twitch,
     Globe,
-    Settings
+    Settings,
+    Loader2,
+    Share2
 } from "lucide-react";
 import { useAuth } from "@/lib/auth";
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogFooter } from "@/components/ui/dialog";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogFooter, DialogDescription } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
+import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
 import { apiRequest } from "@/lib/queryClient";
 import { motion } from "framer-motion";
-import { Loader2 } from "lucide-react";
-import { useRef, useState } from "react";
 import { useToast } from "@/hooks/use-toast";
+import { RankCard } from "@/components/rank-card";
+import { EvolutionChart } from "@/components/evolution-chart";
 
 type ProfileData = {
     player: Player;
@@ -81,6 +85,30 @@ export default function Profile() {
 
     const isOwnProfile = user?.id === accountId;
 
+    const [isRankCardOpen, setIsRankCardOpen] = useState(false);
+    const [challengeMessage, setChallengeMessage] = useState("");
+    const [challengeDate, setChallengeDate] = useState("");
+    const [isChallengeDialogOpen, setIsChallengeDialogOpen] = useState(false);
+
+    const challengeMutation = useMutation({
+        mutationFn: async (challengeData: any) => {
+            const res = await apiRequest("POST", "/api/challenges", challengeData);
+            return res.json();
+        },
+        onSuccess: () => {
+            toast({ title: "⚔️ Desafio Enviado!", description: "Aguardando o oponente aceitar." });
+            queryClient.invalidateQueries({ queryKey: [`/api/challenges/${accountId}/${zoneId}`] });
+            setIsChallengeDialogOpen(false);
+            setChallengeMessage("");
+            setChallengeDate("");
+        }
+    });
+
+    const { data: challenges } = useQuery<any[]>({
+        queryKey: [`/api/challenges/${accountId}/${zoneId}`],
+        enabled: !!accountId
+    });
+
     useEffect(() => {
         if (data?.player) {
             setEditBio(data.player.bio || "");
@@ -89,6 +117,33 @@ export default function Profile() {
             setEditYoutube(data.player.youtube || "");
         }
     }, [data]);
+
+    // Calculate topHeroes and winRate here
+    const sortedHistory = data?.history.sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()) || [];
+    const winRate = data?.arenaStats.winRate || "0";
+
+    // Extract hero stats
+    const heroStats: Record<string, { used: number; wins: number }> = {};
+    data?.history.forEach(match => {
+        const isWinner = match.winnerId === accountId;
+        const hero = isWinner ? match.winnerHero : match.loserHero;
+        if (hero) {
+            if (!heroStats[hero]) heroStats[hero] = { used: 0, wins: 0 };
+            heroStats[hero].used++;
+            if (isWinner) heroStats[hero].wins++;
+        }
+    });
+
+    const topHeroes = Object.entries(heroStats)
+        .map(([name, stats]) => ({
+            name,
+            used: stats.used,
+            winRate: Math.round((stats.wins / stats.used) * 100)
+        }))
+        .sort((a, b) => b.used - a.used)
+        .slice(0, 3);
+
+    const firstHero = topHeroes[0];
 
     if (isLoading) {
         return (
@@ -113,10 +168,6 @@ export default function Profile() {
     }
 
     const { player, history, arenaStats, rewards } = data;
-    const winRate = player.wins + player.losses > 0
-        ? Math.round((player.wins / (player.wins + player.losses)) * 100)
-        : 0;
-
     return (
         <div className="min-h-screen bg-[#020617] text-white pb-20 relative">
             {/* Cinematic Hero Background */}
@@ -279,6 +330,81 @@ export default function Profile() {
                                         </DialogContent>
                                     </Dialog>
                                 )}
+
+                                <Dialog open={isRankCardOpen} onOpenChange={setIsRankCardOpen}>
+                                    <DialogTrigger asChild>
+                                        <Button variant="outline" size="sm" className="bg-primary/10 border-primary/20 hover:bg-primary/20 text-primary [text-shadow:_0_0_10px_rgba(245,158,11,0.3)] text-[10px] tracking-widest uppercase h-8 px-4 font-bold ml-2 shadow-lg shadow-primary/10">
+                                            <Share2 className="w-3 h-3 mr-2" />
+                                            Compartilhar Glória
+                                        </Button>
+                                    </DialogTrigger>
+                                    <DialogContent className="bg-transparent border-none shadow-none p-0 flex items-center justify-center max-w-none">
+                                        <div className="scale-90 sm:scale-100">
+                                            {data && (
+                                                <RankCard
+                                                    player={data.player}
+                                                    stats={{ totalMatches: data.arenaStats.totalMatches, winRate: `${winRate}%` }}
+                                                    topHero={firstHero ? { name: firstHero.name, winRate: firstHero.winRate } : undefined}
+                                                />
+                                            )}
+                                        </div>
+                                    </DialogContent>
+                                </Dialog>
+
+                                {!isOwnProfile && user && (
+                                    <Dialog open={isChallengeDialogOpen} onOpenChange={setIsChallengeDialogOpen}>
+                                        <DialogTrigger asChild>
+                                            <Button className="bg-orange-600 hover:bg-orange-700 text-[10px] tracking-widest uppercase h-8 px-4 font-bold ml-2 shadow-lg shadow-orange-600/20">
+                                                <Swords className="w-3 h-3 mr-2" />
+                                                Lançar Desafio
+                                            </Button>
+                                        </DialogTrigger>
+                                        <DialogContent className="bg-[#020617] border-orange-500/20">
+                                            <DialogHeader>
+                                                <DialogTitle className="uppercase tracking-widest text-primary">Intimar para Combate</DialogTitle>
+                                                <DialogDescription className="uppercase text-[10px] tracking-widest opacity-60">
+                                                    Defina os termos e a hora do duelo.
+                                                </DialogDescription>
+                                            </DialogHeader>
+                                            <div className="space-y-6 py-4">
+                                                <div className="space-y-3">
+                                                    <Label className="text-[10px] uppercase tracking-widest font-black text-primary/70">Provocação / Mensagem</Label>
+                                                    <Textarea
+                                                        placeholder="Ex: Vou te amassar no 1v1 de Gusion! Esteja pronto."
+                                                        className="bg-white/5 border-white/10 min-h-[100px] text-xs"
+                                                        value={challengeMessage}
+                                                        onChange={(e) => setChallengeMessage(e.target.value)}
+                                                    />
+                                                </div>
+                                                <div className="space-y-3">
+                                                    <Label className="text-[10px] uppercase tracking-widest font-black text-primary/70">Horário Sugerido (BRT)</Label>
+                                                    <Input
+                                                        type="datetime-local"
+                                                        className="bg-white/5 border-white/10 h-12"
+                                                        value={challengeDate}
+                                                        onChange={(e) => setChallengeDate(e.target.value)}
+                                                    />
+                                                </div>
+                                            </div>
+                                            <DialogFooter>
+                                                <Button
+                                                    className="w-full h-14 bg-orange-600 hover:bg-orange-700 uppercase font-black tracking-widest shadow-xl shadow-orange-600/20"
+                                                    disabled={challengeMutation.isPending}
+                                                    onClick={() => challengeMutation.mutate({
+                                                        challengerId: user.id,
+                                                        challengerZone: user.zoneId,
+                                                        challengedId: player.accountId,
+                                                        challengedZone: player.zoneId,
+                                                        message: challengeMessage,
+                                                        scheduledAt: challengeDate
+                                                    })}
+                                                >
+                                                    {challengeMutation.isPending ? <Loader2 className="w-5 h-5 animate-spin" /> : "ENVIAR DESAFIO ⚔️"}
+                                                </Button>
+                                            </DialogFooter>
+                                        </DialogContent>
+                                    </Dialog>
+                                )}
                             </div>
                             <p className="text-muted-foreground font-mono text-xs uppercase tracking-[0.3em]">
                                 ID: {player.accountId} • ZONA: {player.zoneId}
@@ -320,6 +446,54 @@ export default function Profile() {
                         <Swords className="w-5 h-5 text-primary" />
                         <h3 className="text-xl font-serif uppercase tracking-widest">Estatísticas da Arena 1v1</h3>
                     </div>
+
+                    {/* Challenges List */}
+                    {challenges && challenges.filter(c => c.status === 'pending').length > 0 && (
+                        <div className="mb-8 space-y-3">
+                            {challenges.filter(c => c.status === 'pending').map((challenge) => (
+                                <div key={challenge.id} className="p-4 rounded-xl bg-orange-500/10 border border-orange-500/20 flex flex-col md:flex-row items-center justify-between gap-4 animate-in fade-in slide-in-from-top-4">
+                                    <div className="flex items-center gap-3">
+                                        <div className="w-10 h-10 rounded-full bg-orange-500/20 flex items-center justify-center">
+                                            <Swords className="w-5 h-5 text-orange-500" />
+                                        </div>
+                                        <div>
+                                            <p className="text-sm font-bold uppercase tracking-widest">
+                                                {challenge.challengerId === user?.id ? "Você desafiou!" : "Novo Desafio Recebido!"}
+                                            </p>
+                                            <p className="text-[10px] text-muted-foreground uppercase">Aguardando confirmação</p>
+                                        </div>
+                                    </div>
+                                    {challenge.challengedId === user?.id && (
+                                        <div className="flex gap-2">
+                                            <Button
+                                                size="sm"
+                                                className="bg-emerald-600 hover:bg-emerald-700 text-[10px] font-bold uppercase tracking-widest"
+                                                onClick={async () => {
+                                                    await apiRequest("PATCH", `/api/challenges/${challenge.id}`, { status: 'accepted' });
+                                                    queryClient.invalidateQueries({ queryKey: [`/api/challenges/${accountId}/${zoneId}`] });
+                                                    toast({ title: "⚔️ Desafio Aceito!", description: "Prepare-se para o combate!" });
+                                                }}
+                                            >
+                                                Aceitar
+                                            </Button>
+                                            <Button
+                                                size="sm"
+                                                variant="outline"
+                                                className="border-red-500/20 text-red-500 hover:bg-red-500/10 text-[10px] font-bold uppercase tracking-widest"
+                                                onClick={async () => {
+                                                    await apiRequest("PATCH", `/api/challenges/${challenge.id}`, { status: 'rejected' });
+                                                    queryClient.invalidateQueries({ queryKey: [`/api/challenges/${accountId}/${zoneId}`] });
+                                                }}
+                                            >
+                                                Recusar
+                                            </Button>
+                                        </div>
+                                    )}
+                                </div>
+                            ))}
+                        </div>
+                    )}
+
                     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
                         <div className="p-5 rounded-2xl bg-gradient-to-br from-blue-500/10 to-transparent border border-blue-500/10 backdrop-blur-sm">
                             <span className="block text-[8px] font-bold text-blue-400 uppercase tracking-widest mb-1">COMBATES NA ARENA</span>
@@ -424,6 +598,52 @@ export default function Profile() {
                             </motion.div>
                         ))}
                     </div>
+
+                    {/* Evolution Chart */}
+                    <div className="mb-12">
+                        <div className="flex items-center gap-3 border-b border-white/5 pb-4 mb-6">
+                            <TrendingUp className="w-5 h-5 text-primary" />
+                            <h3 className="text-xl font-serif uppercase tracking-widest">Jornada de Gigante</h3>
+                        </div>
+                        <EvolutionChart history={history} currentPoints={player.points} accountId={player.accountId} />
+                    </div>
+
+                    {/* Top Heroes Section */}
+                    {topHeroes.length > 0 && (
+                        <div className="mt-8">
+                            <div className="flex items-center gap-3 border-b border-white/5 pb-4 mb-6">
+                                <Gamepad className="w-5 h-5 text-emerald-400" />
+                                <h3 className="text-xl font-serif uppercase tracking-widest">Estatísticas de Heróis</h3>
+                            </div>
+                            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                                {topHeroes.map((hero, i) => (
+                                    <Card key={hero.name} className="bg-white/5 border-white/10 overflow-hidden group hover:border-emerald-500/30 transition-all">
+                                        <CardContent className="p-0">
+                                            <div className="flex items-center p-4 gap-4">
+                                                <div className="w-12 h-12 rounded-lg bg-emerald-500/10 flex items-center justify-center border border-emerald-500/20 group-hover:bg-emerald-500/20 transition-all">
+                                                    <span className="text-xl font-black text-emerald-500">{i + 1}</span>
+                                                </div>
+                                                <div className="flex-1">
+                                                    <h4 className="text-sm font-bold uppercase tracking-widest text-white">{hero.name}</h4>
+                                                    <div className="flex items-center gap-3 text-[10px] uppercase font-bold tracking-tighter mt-1">
+                                                        <span className="text-muted-foreground">{hero.used} PARTIDAS</span>
+                                                        <span className="text-emerald-400">{hero.winRate}% WR</span>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                            <div className="h-1 w-full bg-white/5">
+                                                <div
+                                                    className="h-full bg-emerald-500 transition-all duration-1000"
+                                                    style={{ width: `${hero.winRate}%` }}
+                                                />
+                                            </div>
+                                        </CardContent>
+                                    </Card>
+                                ))}
+                            </div>
+                        </div>
+                    )}
+
 
                     {/* Match History */}
                     <div className="space-y-6">

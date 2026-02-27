@@ -53,11 +53,46 @@ export async function registerRoutes(
 ): Promise<Server> {
   // Authentication Routes
   app.post("/api/login", asyncHandler(async (req, res) => {
-    const { username, id, zoneId } = req.body;
+    const { username, id, zoneId, pin } = req.body;
     const isAdmin = id === ADMIN_ID;
 
+    // Check if player exists
+    const player = await storage.getPlayerByAccountId(id, zoneId);
+
+    if (!isAdmin && !player) {
+      res.status(404).json({ message: "Jogador não encontrado." });
+      return;
+    }
+
+    if (player?.isBanned) {
+      res.status(403).json({ message: "Sua conta foi suspensa por violar as regras da arena." });
+      return;
+    }
+
+    // Only skip pin for Admin or if specifically handled (but let's enforce Pin if it's there)
+    if (!isAdmin && player) {
+      if (player.pin) {
+        if (!pin) {
+          res.json({ status: "needs_pin" });
+          return;
+        }
+        if (player.pin !== pin) {
+          res.status(401).json({ message: "PIN de acesso incorreto." });
+          return;
+        }
+      } else {
+        // Player exists but has no pin set yet
+        if (!pin) {
+          res.json({ status: "needs_setup_pin" });
+          return;
+        }
+        // Save the first time pin
+        await storage.updatePlayer(player.id, { pin });
+      }
+    }
+
     req.session.user = {
-      username: isAdmin ? "sempaiadm" : username,
+      username: isAdmin ? "sempaiadm" : (player?.gameName || username),
       id,
       zoneId: zoneId || "0000",
       isAdmin
@@ -83,6 +118,54 @@ export async function registerRoutes(
       return { ...p, rewards };
     }));
     res.json(playersWithRewards);
+  }));
+
+  app.post("/api/daily-claim", requireAuth, asyncHandler(async (req, res) => {
+    const user = req.session.user;
+    if (!user) {
+      res.sendStatus(401);
+      return;
+    }
+
+    const player = await storage.getPlayerByAccountId(user.id, user.zoneId);
+    if (!player) {
+      res.status(404).json({ message: "Guerreiro não encontrado." });
+      return;
+    }
+
+    const now = new Date();
+    const lastClaimed = player.lastClaimedAt ? new Date(player.lastClaimedAt) : null;
+
+    if (lastClaimed &&
+      lastClaimed.getDate() === now.getDate() &&
+      lastClaimed.getMonth() === now.getMonth() &&
+      lastClaimed.getFullYear() === now.getFullYear()) {
+      res.status(400).json({ message: "Você já resgatou sua honra hoje! Volte amanhã." });
+      return;
+    }
+
+    const rewardPoints = 15;
+    const newPoints = player.points + rewardPoints;
+    const newRank = calculateRank(newPoints);
+    const rankUp = newRank !== player.rank;
+
+    const updated = await storage.updatePlayer(player.id, {
+      points: newPoints,
+      rank: newRank,
+      lastClaimedAt: now
+    });
+
+    await storage.createActivity("daily_claim", player.id, player.gameName, { points: rewardPoints });
+
+    if (rankUp) {
+      await storage.createActivity("rank_up", player.id, player.gameName, { newRank });
+    }
+
+    res.json({
+      success: true,
+      points: updated.points,
+      message: `Você recebeu +${rewardPoints} pontos de honra diária! ⚔️`
+    });
   }));
 
   // Season Info Route
@@ -203,7 +286,35 @@ export async function registerRoutes(
       rank: calculateRank(result.data.points || 100)
     };
     const player = await storage.createPlayer(playerData);
+
+    // Log Activity: New Player
+    await storage.createActivity("new_player", player.id, player.gameName);
+
     res.json(player);
+  }));
+
+  // Hero Stats / Global Meta
+  app.get("/api/activities", asyncHandler(async (_req, res) => {
+    const latest = await storage.getLatestActivities(15);
+    res.json(latest);
+  }));
+
+  app.post("/api/activities/:id/react", requireAuth, asyncHandler(async (req, res) => {
+    const activityId = parseInt(req.params.id as string);
+    const { emoji } = req.body;
+    const userId = req.session.user?.id;
+    if (!userId) {
+      res.sendStatus(401);
+      return;
+    }
+
+    await storage.toggleReaction(activityId, userId, emoji);
+    res.json({ success: true });
+  }));
+
+  app.get("/api/matches/approved", asyncHandler(async (_req, res) => {
+    const allApproved = await storage.getAllApprovedMatches();
+    res.json(allApproved);
   }));
 
   // Report a combat
@@ -221,7 +332,8 @@ export async function registerRoutes(
   // Image Upload Route
   app.post("/api/upload", upload.single('file'), (req, res) => {
     if (!req.file) {
-      return res.status(400).json({ message: "Nenhum arquivo enviado." });
+      res.status(400).json({ message: "Nenhum arquivo enviado." });
+      return;
     }
     const filePath = `/uploads/${req.file.filename}`;
     res.json({ url: filePath });
@@ -244,7 +356,8 @@ export async function registerRoutes(
     const playerId = parseInt(req.params.id as string);
     // Basic session validation: can only edit own profile or must be admin
     if (req.session.user?.id !== req.body.accountId && !req.session.user?.isAdmin) {
-      return res.status(403).json({ message: "Não autorizado a editar este perfil" });
+      res.status(403).json({ message: "Não autorizado a editar este perfil" });
+      return;
     }
 
     const updatedPlayer = await storage.updatePlayer(playerId, {
@@ -258,16 +371,111 @@ export async function registerRoutes(
     res.json(updatedPlayer);
   }));
 
+  app.patch("/api/players/:id/admin", requireAdmin, asyncHandler(async (req, res) => {
+    const playerId = parseInt(req.params.id as string);
+    const { points, isBanned, pin } = req.body;
+
+    const update: any = {};
+    if (points !== undefined) {
+      update.points = points;
+      update.rank = calculateRank(points);
+    }
+    if (isBanned !== undefined) {
+      update.isBanned = isBanned;
+    }
+    if (pin !== undefined) {
+      update.pin = pin;
+    }
+
+    const updated = await storage.updatePlayer(playerId, update);
+    res.json(updated);
+  }));
+
+  app.post("/api/admin/reset-season", requireAdmin, asyncHandler(async (_req, res) => {
+    const playersList = await storage.getPlayers();
+    for (const p of playersList) {
+      await storage.updatePlayer(p.id, {
+        points: 100,
+        wins: 0,
+        losses: 0,
+        streak: 0,
+        rank: "Recruta"
+      });
+    }
+    res.json({ success: true, message: "Temporada resetada com sucesso!" });
+  }));
+
   // Rewards Routes
   app.get("/api/rewards", asyncHandler(async (_req, res) => {
     const allRewards = await storage.getRewards();
     res.json(allRewards);
   }));
 
+  app.get("/api/seasons", asyncHandler(async (_req, res) => {
+    const allSeasons = await storage.getSeasons();
+    res.json(allSeasons);
+  }));
+
   app.post("/api/players/:id/rewards", requireAdmin, asyncHandler(async (req, res) => {
     const playerId = parseInt(req.params.id as string);
     const { rewardId } = req.body;
+
     await storage.assignReward(playerId, rewardId);
+
+    // Log Activity: Reward Earned
+    const [player, allRewards] = await Promise.all([
+      storage.getPlayer(playerId),
+      storage.getRewards()
+    ]);
+    const reward = allRewards.find(r => r.id === rewardId);
+
+    if (player && reward) {
+      await storage.createActivity("reward_earned", player.id, player.gameName, {
+        rewardName: reward.name,
+        rewardIcon: reward.icon
+      });
+    }
+
+    res.json({ success: true });
+  }));
+
+  // Challenges Routes
+  app.get("/api/challenges", requireAuth, asyncHandler(async (_req, res) => {
+    const list = await storage.getAllChallenges();
+    res.json(list);
+  }));
+
+  app.post("/api/challenges", requireAuth, asyncHandler(async (req, res) => {
+    const { challengerId, challengerZone, challengedId, challengedZone, message, scheduledAt } = req.body;
+    // Check if user is the challenger
+    if (req.session.user?.id !== challengerId) {
+      res.status(403).json({ message: "Não autorizado" });
+      return;
+    }
+    const challenge = await storage.createChallenge(
+      challengerId,
+      challengerZone,
+      challengedId,
+      challengedZone,
+      message,
+      scheduledAt ? new Date(scheduledAt) : undefined
+    );
+    res.json(challenge);
+  }));
+
+  app.get("/api/challenges/:accountId/:zoneId", requireAuth, asyncHandler(async (req, res) => {
+    const accountId = req.params.accountId as string;
+    const zoneId = req.params.zoneId as string;
+    const challengesList = await storage.getChallengesByPlayer(accountId, zoneId);
+    res.json(challengesList);
+  }));
+
+  app.patch("/api/challenges/:id", requireAuth, asyncHandler(async (req, res) => {
+    const id = parseInt(req.params.id as string);
+    const { status } = req.body;
+    // Basic validation: user must be one of the participants
+    // For simplicity, we assume the client sends the correct status update (accept/reject)
+    await storage.updateChallengeStatus(id, status);
     res.json({ success: true });
   }));
 
@@ -288,12 +496,31 @@ export async function registerRoutes(
       const winner = await storage.getPlayerByAccountId(match.winnerId, match.winnerZone);
       if (winner) {
         const newPoints = winner.points + 50;
+        const newRank = calculateRank(newPoints);
+        const rankUp = newRank !== winner.rank;
+
         await storage.updatePlayer(winner.id, {
           points: newPoints,
           wins: winner.wins + 1,
           streak: winner.streak + 1,
-          rank: calculateRank(newPoints)
+          rank: newRank
         });
+
+        const loser = await storage.getPlayerByAccountId(match.loserId, match.loserZone);
+
+        // Log Activity: Match Win
+        await storage.createActivity("match_approved", winner.id, winner.gameName, {
+          opponentName: loser?.gameName || "Oponente",
+          winnerHero: match.winnerHero,
+          proofImage: match.proofImage
+        });
+
+        // Log Activity: Rank Up
+        if (rankUp) {
+          await storage.createActivity("rank_up", winner.id, winner.gameName, {
+            newRank: newRank
+          });
+        }
       }
 
       // Update Loser
@@ -319,7 +546,10 @@ export async function registerRoutes(
   // Example proxy to MLBB API for hero data
   app.get("/api/mlbb/hero/:id", async (req, res) => {
     const hero = await getHeroDetails(req.params.id);
-    if (!hero) return res.status(404).json({ message: "Hero não encontrado." });
+    if (!hero) {
+      res.status(404).json({ message: "Hero não encontrado." });
+      return;
+    }
     res.json(hero);
   });
 

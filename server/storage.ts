@@ -1,4 +1,4 @@
-import { users, players, matches, rewards, playerRewards, type User, type InsertUser, type Player, type InsertPlayer, type Match, type InsertMatch, type Reward, type InsertReward } from "@shared/schema";
+import { users, players, matches, rewards, playerRewards, seasons, challenges, activities, reactions, type User, type InsertUser, type Player, type InsertPlayer, type Match, type InsertMatch, type Reward, type InsertReward } from "@shared/schema";
 import { db } from "./db";
 import { eq, and, sql } from "drizzle-orm";
 
@@ -19,6 +19,7 @@ export interface IStorage {
   createMatch(match: InsertMatch): Promise<Match>;
   updateMatchStatus(id: number, status: string): Promise<Match>;
   getMatchesByPlayerId(accountId: string, zoneId: string): Promise<Match[]>;
+  getAllApprovedMatches(): Promise<Match[]>;
 
   // Search
   searchPlayers(query: string): Promise<Player[]>;
@@ -28,6 +29,20 @@ export interface IStorage {
   createReward(reward: InsertReward): Promise<Reward>;
   assignReward(playerId: number, rewardId: number): Promise<void>;
   getPlayerRewards(playerId: number): Promise<Reward[]>;
+
+  // Season methods
+  getSeasons(): Promise<any[]>;
+
+  // Challenge methods
+  createChallenge(challengerId: string, challengerZone: string, challengedId: string, challengedZone: string, message?: string, scheduledAt?: Date): Promise<any>;
+  getChallengesByPlayer(accountId: string, zoneId: string): Promise<any[]>;
+  getAllChallenges(): Promise<any[]>;
+  updateChallengeStatus(id: number, status: string): Promise<void>;
+
+  // Activity methods
+  createActivity(type: string, playerId?: number, playerGameName?: string, data?: any): Promise<void>;
+  getLatestActivities(limit?: number): Promise<any[]>;
+  toggleReaction(activityId: number, userId: string, emoji: string): Promise<void>;
 }
 
 export class DatabaseStorage implements IStorage {
@@ -139,6 +154,12 @@ export class DatabaseStorage implements IStorage {
       .orderBy(sql`${matches.createdAt} DESC`);
   }
 
+  async getAllApprovedMatches(): Promise<Match[]> {
+    return await db.select().from(matches)
+      .where(eq(matches.status, "approved"))
+      .orderBy(sql`${matches.createdAt} DESC`);
+  }
+
   async getRewards(): Promise<Reward[]> {
     return await db.select().from(rewards);
   }
@@ -160,6 +181,103 @@ export class DatabaseStorage implements IStorage {
       .where(eq(playerRewards.playerId, playerId));
 
     return results.map(r => r.reward);
+  }
+
+  async getSeasons(): Promise<any[]> {
+    return await db.select().from(seasons).orderBy(sql`${seasons.endedAt} DESC`);
+  }
+
+  async createChallenge(challengerId: string, challengerZone: string, challengedId: string, challengedZone: string, message?: string, scheduledAt?: Date): Promise<any> {
+    const [challenge] = await db.insert(challenges).values({
+      challengerId,
+      challengerZone,
+      challengedId,
+      challengedZone,
+      status: "pending",
+      message: message || null,
+      scheduledAt: scheduledAt || null
+    }).returning();
+    return challenge;
+  }
+
+  async getChallengesByPlayer(accountId: string, zoneId: string): Promise<any[]> {
+    return await db.select().from(challenges)
+      .where(
+        sql`(${challenges.challengerId} = ${accountId} AND ${challenges.challengerZone} = ${zoneId}) OR (${challenges.challengedId} = ${accountId} AND ${challenges.challengedZone} = ${zoneId})`
+      )
+      .orderBy(sql`${challenges.createdAt} DESC`);
+  }
+
+  async getAllChallenges(): Promise<any[]> {
+    const all = await db.select().from(challenges).orderBy(sql`${challenges.createdAt} DESC`);
+    const enriched = await Promise.all(all.map(async (c) => {
+      const [challenger, challenged] = await Promise.all([
+        this.getPlayerByAccountId(c.challengerId, c.challengerZone),
+        this.getPlayerByAccountId(c.challengedId, c.challengedZone)
+      ]);
+      return {
+        ...c,
+        challengerName: challenger?.gameName || "Desconhecido",
+        challengedName: challenged?.gameName || "Desconhecido",
+        challengerAvatar: challenger?.avatar,
+        challengedAvatar: challenged?.avatar
+      };
+    }));
+    return enriched;
+  }
+
+  async updateChallengeStatus(id: number, status: string): Promise<void> {
+    await db.update(challenges).set({ status }).where(eq(challenges.id, id));
+  }
+
+  async createActivity(type: string, playerId?: number, playerGameName?: string, data?: any): Promise<void> {
+    await db.insert(activities).values({
+      type,
+      playerId,
+      playerGameName,
+      data: data ? JSON.stringify(data) : null
+    });
+  }
+
+  async getLatestActivities(limit: number = 20): Promise<any[]> {
+    const results = await db.select().from(activities).orderBy(sql`${activities.createdAt} DESC`).limit(limit);
+
+    const enriched = await Promise.all(results.map(async (a) => {
+      const activityReactions = await db.select().from(reactions).where(eq(reactions.activityId, a.id));
+      return {
+        ...a,
+        data: a.data ? JSON.parse(a.data) : null,
+        reactions: activityReactions
+      };
+    }));
+
+    return enriched;
+  }
+
+  async toggleReaction(activityId: number, userId: string, emoji: string): Promise<void> {
+    const existing = await db.select().from(reactions).where(
+      and(
+        eq(reactions.activityId, activityId),
+        eq(reactions.userId, userId),
+        eq(reactions.emoji, emoji)
+      )
+    );
+
+    if (existing.length > 0) {
+      await db.delete(reactions).where(
+        and(
+          eq(reactions.activityId, activityId),
+          eq(reactions.userId, userId),
+          eq(reactions.emoji, emoji)
+        )
+      );
+    } else {
+      await db.insert(reactions).values({
+        activityId,
+        userId,
+        emoji
+      });
+    }
   }
 }
 

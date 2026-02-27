@@ -22,7 +22,7 @@ export default function Layout({ children }: { children: ReactNode }) {
     <div className="min-h-screen flex flex-col bg-background text-foreground relative overflow-hidden">
       {/* Background elements */}
       <div className="absolute top-0 left-1/2 -translate-x-1/2 w-full max-w-4xl h-[500px] bg-primary/5 blur-[120px] rounded-full pointer-events-none" />
-      
+
       <header className="border-b border-border/50 bg-card/50 backdrop-blur-md sticky top-0 z-50">
         <div className="container mx-auto px-4 h-16 flex items-center justify-between">
           <div className="flex items-center gap-2">
@@ -33,18 +33,36 @@ export default function Layout({ children }: { children: ReactNode }) {
             <h1 className="text-xl font-bold text-primary sm:hidden">WMA</h1>
           </div>
 
-          <nav className="flex items-center gap-1 sm:gap-4">
+          <nav className="flex items-center gap-1 sm:gap-4 overflow-x-auto no-scrollbar max-w-full pb-1">
             <Link href="/rankings">
-              <Button variant="ghost" className={`font-medium ${location === '/rankings' ? 'text-primary' : 'text-muted-foreground'}`}>
-                Ranking
+              <Button variant="ghost" size="sm" className={`font-black uppercase tracking-widest text-[9px] h-8 ${location === '/rankings' ? 'text-primary' : 'text-muted-foreground'}`}>
+                Arena
               </Button>
             </Link>
-            
+
+            <Link href="/arena">
+              <Button variant="ghost" size="sm" className={`font-black uppercase tracking-widest text-[9px] h-8 ${location === '/arena' ? 'text-primary' : 'text-muted-foreground'}`}>
+                War Room
+              </Button>
+            </Link>
+
+            <Link href="/fame">
+              <Button variant="ghost" size="sm" className={`font-black uppercase tracking-widest text-[9px] h-8 ${location === '/fame' ? 'text-primary' : 'text-muted-foreground'}`}>
+                Glória
+              </Button>
+            </Link>
+
+            <Link href="/rules">
+              <Button variant="ghost" size="sm" className={`font-black uppercase tracking-widest text-[9px] h-8 ${location === '/rules' ? 'text-primary' : 'text-muted-foreground'}`}>
+                Regras
+              </Button>
+            </Link>
+
             {user.isAdmin && (
               <Link href="/admin">
-                <Button variant="ghost" className={`font-medium ${location === '/admin' ? 'text-primary' : 'text-muted-foreground'}`}>
-                  <ShieldAlert className="w-4 h-4 mr-2" />
-                  <span className="hidden sm:inline">Admin</span>
+                <Button variant="ghost" size="sm" className={`font-black uppercase tracking-widest text-[9px] h-8 ${location === '/admin' ? 'text-primary' : 'text-muted-foreground'}`}>
+                  <ShieldAlert className="w-3 h-3 mr-1" />
+                  Admin
                 </Button>
               </Link>
             )}

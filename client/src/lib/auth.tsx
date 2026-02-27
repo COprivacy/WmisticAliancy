@@ -33,12 +33,17 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       .finally(() => setIsLoading(false));
   }, []);
 
-  const login = async (username: string, id: string, zoneId: string) => {
+  const login = async (username: string, id: string, zoneId: string, pin?: string) => {
     setIsLoading(true);
     try {
-      const res = await apiRequest("POST", "/api/login", { username, id, zoneId });
-      const userData = await res.json();
-      setUser(userData);
+      const res = await apiRequest("POST", "/api/login", { username, id, zoneId, pin });
+      const data = await res.json();
+
+      // If it's a regular user object (id exists), set it
+      if (data && data.id) {
+        setUser(data);
+      }
+      return data;
     } finally {
       setIsLoading(false);
     }
