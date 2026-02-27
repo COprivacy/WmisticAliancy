@@ -1,12 +1,35 @@
 import type { Express } from "express";
 import { createServer, type Server } from "http";
 import { storage } from "./storage";
-import { insertPlayerSchema, insertMatchSchema } from "@shared/schema";
+import { insertPlayerSchema, insertMatchSchema, calculateRank } from "@shared/schema";
 import { getHeroDetails } from "./mlbb-api";
 import asyncHandler from "express-async-handler";
 import multer from "multer";
 import path from "path";
 import fs from "fs";
+
+declare module "express-session" {
+  interface SessionData {
+    user: {
+      id: string;
+      zoneId: string;
+      username: string;
+      isAdmin: boolean;
+    };
+  }
+}
+
+const ADMIN_ID = "1792001576";
+
+const requireAuth = (req: any, res: any, next: any) => {
+  if (!req.session.user) return res.status(401).json({ message: "Não autorizado" });
+  next();
+};
+
+const requireAdmin = (req: any, res: any, next: any) => {
+  if (!req.session.user?.isAdmin) return res.status(403).json({ message: "Acesso negado: Apenas admins" });
+  next();
+};
 
 const storageMulter = multer.diskStorage({
   destination: function (_req, _file, cb) {
@@ -28,6 +51,30 @@ export async function registerRoutes(
   httpServer: Server,
   app: Express
 ): Promise<Server> {
+  // Authentication Routes
+  app.post("/api/login", asyncHandler(async (req, res) => {
+    const { username, id, zoneId } = req.body;
+    const isAdmin = id === ADMIN_ID;
+
+    req.session.user = {
+      username: isAdmin ? "sempaiadm" : username,
+      id,
+      zoneId: zoneId || "0000",
+      isAdmin
+    };
+
+    res.json(req.session.user);
+  }));
+
+  app.get("/api/user", (req, res) => {
+    res.json(req.session.user || null);
+  });
+
+  app.post("/api/logout", (req, res) => {
+    req.session.destroy(() => {
+      res.json({ success: true });
+    });
+  });
   // Get all players for rankings
   app.get("/api/players", asyncHandler(async (_req, res) => {
     const playersList = await storage.getPlayers();
@@ -55,7 +102,8 @@ export async function registerRoutes(
 
   // Get single player details
   app.get("/api/players/:accountId/:zoneId", asyncHandler(async (req, res) => {
-    const { accountId, zoneId } = req.params;
+    const accountId = req.params.accountId as string;
+    const zoneId = req.params.zoneId as string;
     const [player, history] = await Promise.all([
       storage.getPlayerByAccountId(accountId, zoneId),
       storage.getMatchesByPlayerId(accountId, zoneId),
@@ -79,11 +127,16 @@ export async function registerRoutes(
       winRate: totalArena > 0 ? ((arenaWins / totalArena) * 100).toFixed(1) + "%" : "0%",
     };
 
+    const playersList = await storage.getPlayers();
     const matchesWithNames = history.map(m => {
       const isWinner = m.winnerId === accountId && m.winnerZone === zoneId;
+      const opponentId = isWinner ? m.loserId : m.winnerId;
+      const opponentZone = isWinner ? m.loserZone : m.winnerZone;
+      const opponent = playersList.find(p => p.accountId === opponentId && p.zoneId === opponentZone);
+
       return {
         ...m,
-        opponentName: isWinner ? "Inimigo" : "Vencedor",
+        opponentName: opponent?.gameName || (isWinner ? "Oponente Desconhecido" : "Vencedor Desconhecido"),
         result: isWinner ? "win" : "loss"
       };
     });
@@ -139,13 +192,17 @@ export async function registerRoutes(
       return;
     }
 
-    const existing = await storage.getPlayerByAccountId(result.data.accountId, result.data.zoneId);
+    const existing = await storage.getPlayerByAccountId(result.data.accountId as string, result.data.zoneId as string);
     if (existing) {
       res.status(400).json({ message: "ID de conta já registrado nesta zona." });
       return;
     }
 
-    const player = await storage.createPlayer(result.data);
+    const playerData = {
+      ...result.data,
+      rank: calculateRank(result.data.points || 100)
+    };
+    const player = await storage.createPlayer(playerData);
     res.json(player);
   }));
 
@@ -172,7 +229,7 @@ export async function registerRoutes(
 
   // Avatar Upload Route
   app.post("/api/players/:id/avatar", upload.single('avatar'), asyncHandler(async (req, res) => {
-    const playerId = parseInt(req.params.id);
+    const playerId = parseInt(req.params.id as string);
     if (!req.file) {
       res.status(400).json({ message: "Nenhum arquivo enviado." });
       return;
@@ -188,17 +245,17 @@ export async function registerRoutes(
     res.json(allRewards);
   }));
 
-  app.post("/api/players/:id/rewards", asyncHandler(async (req, res) => {
-    const playerId = parseInt(req.params.id);
+  app.post("/api/players/:id/rewards", requireAdmin, asyncHandler(async (req, res) => {
+    const playerId = parseInt(req.params.id as string);
     const { rewardId } = req.body;
     await storage.assignReward(playerId, rewardId);
     res.json({ success: true });
   }));
 
   // Admin Actions: Approve or Reject
-  app.post("/api/matches/:id/:action", asyncHandler(async (req, res) => {
+  app.post("/api/matches/:id/:action", requireAdmin, asyncHandler(async (req, res) => {
     const id = parseInt(req.params.id as string);
-    const action = req.params.action;
+    const action = req.params.action as string;
 
     if (action === "approve") {
       const matches_list = await storage.getPendingMatches();
@@ -211,20 +268,24 @@ export async function registerRoutes(
       // Update Winner
       const winner = await storage.getPlayerByAccountId(match.winnerId, match.winnerZone);
       if (winner) {
+        const newPoints = winner.points + 50;
         await storage.updatePlayer(winner.id, {
-          points: winner.points + 50,
+          points: newPoints,
           wins: winner.wins + 1,
-          streak: winner.streak + 1
+          streak: winner.streak + 1,
+          rank: calculateRank(newPoints)
         });
       }
 
       // Update Loser
       const loser = await storage.getPlayerByAccountId(match.loserId, match.loserZone);
       if (loser) {
+        const newPoints = Math.max(0, loser.points - 20);
         await storage.updatePlayer(loser.id, {
-          points: Math.max(0, loser.points - 20),
+          points: newPoints,
           losses: loser.losses + 1,
-          streak: 0
+          streak: 0,
+          rank: calculateRank(newPoints)
         });
       }
 

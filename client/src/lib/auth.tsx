@@ -1,4 +1,5 @@
 import { createContext, useContext, useState, ReactNode, useEffect } from "react";
+import { apiRequest, queryClient } from "./queryClient";
 
 type User = {
   id: string;
@@ -18,44 +19,35 @@ type AuthContextType = {
 
 const AuthContext = createContext<AuthContextType | null>(null);
 
-// Admin validation moved to a more "abstracted" way to avoid hardcoding in UI
-// In a real app, this would be a server-side check
-const ADMIN_ID = "1792001576";
-
 export function AuthProvider({ children }: { children: ReactNode }) {
   const [user, setUser] = useState<User | null>(null);
-  const [isLoading, setIsLoading] = useState(false);
+  const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
-    const saved = localStorage.getItem("wmythic_auth");
-    if (saved) {
-      setUser(JSON.parse(saved));
-    }
+    // Check session on mount
+    fetch("/api/user")
+      .then(res => res.json())
+      .then(data => {
+        if (data) setUser(data);
+      })
+      .finally(() => setIsLoading(false));
   }, []);
 
   const login = async (username: string, id: string, zoneId: string) => {
     setIsLoading(true);
-    await new Promise((resolve) => setTimeout(resolve, 1500));
-
-    const isAdmin = id === ADMIN_ID;
-
-    const newUser = {
-      username: isAdmin ? "sempaiadm" : username,
-      id,
-      zoneId: zoneId || "0000",
-      isAdmin,
-      avatar: `https://api.dicebear.com/7.x/avataaars/svg?seed=${isAdmin ? "sempaiadm" : username}&backgroundColor=b6e3f4`,
-      rank: isAdmin ? "Mythical Glory" : "Legend",
-    };
-
-    setUser(newUser);
-    localStorage.setItem("wmythic_auth", JSON.stringify(newUser));
-    setIsLoading(false);
+    try {
+      const res = await apiRequest("POST", "/api/login", { username, id, zoneId });
+      const userData = await res.json();
+      setUser(userData);
+    } finally {
+      setIsLoading(false);
+    }
   };
 
-  const logout = () => {
+  const logout = async () => {
+    await apiRequest("POST", "/api/logout");
     setUser(null);
-    localStorage.removeItem("wmythic_auth");
+    queryClient.invalidateQueries({ queryKey: ["/api/user"] });
   };
 
   return (

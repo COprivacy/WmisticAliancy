@@ -77,4 +77,11 @@ export type InsertReward = z.infer<typeof insertRewardSchema>;
 export type Reward = typeof rewards.$inferSelect;
 export type PlayerReward = typeof playerRewards.$inferSelect;
 
-
+export function calculateRank(points: number): string {
+  if (points >= 2000) return "Grande Mestre";
+  if (points >= 1000) return "Mestre";
+  if (points >= 600) return "Elite";
+  if (points >= 300) return "Guerreiro";
+  if (points >= 100) return "Soldado";
+  return "Recruta";
+}
