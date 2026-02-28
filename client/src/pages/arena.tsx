@@ -43,7 +43,7 @@ export default function ArenaPage() {
                     initial={{ opacity: 0, scale: 0.9 }}
                     animate={{ opacity: 1, scale: 1 }}
                 >
-                    <Badge className="bg-orange-600 text-white border-orange-500/30 px-6 py-2 uppercase tracking-[0.4em] font-black text-[10px] shadow-lg shadow-orange-500/20">
+                    <Badge className="bg-orange-600 text-white border-orange-500/30 px-6 py-2 uppercase tracking-[0.4em] font-black text-xs shadow-lg shadow-orange-500/20">
                         CENTRALE DE COMBATE
                     </Badge>
                 </motion.div>
@@ -51,7 +51,7 @@ export default function ArenaPage() {
                     <h1 className="text-4xl sm:text-6xl font-serif font-black uppercase tracking-widest text-glow leading-none">War Room</h1>
                     <div className="h-1 w-24 bg-primary mx-auto rounded-full" />
                 </div>
-                <p className="text-muted-foreground uppercase tracking-widest text-[10px] font-bold opacity-60">Prepare seu coração: os duelos mais esperados do clã acontecem aqui.</p>
+                <p className="text-muted-foreground uppercase tracking-widest text-xs font-bold opacity-60">Prepare seu coração: os duelos mais esperados do clã acontecem aqui.</p>
             </header>
 
             <section className="space-y-10">
@@ -60,7 +60,7 @@ export default function ArenaPage() {
                         <Swords className="w-6 h-6 text-primary animate-pulse" />
                         <h2 className="text-2xl font-serif uppercase tracking-widest">Arena Ao Vivo</h2>
                     </div>
-                    <Badge variant="outline" className="text-emerald-400 border-emerald-500/20 uppercase tracking-widest text-[9px] font-bold">
+                    <Badge variant="outline" className="text-emerald-400 border-emerald-500/20 uppercase tracking-widest text-[11px] font-bold">
                         {acceptedChallenges.length} DUELOS AGENDADOS
                     </Badge>
                 </div>
@@ -70,7 +70,7 @@ export default function ArenaPage() {
                         <Card className="bg-[#020617]/40 border-dashed border-white/10 p-20 text-center rounded-3xl">
                             <Swords className="w-12 h-12 text-muted-foreground/20 mx-auto mb-6" />
                             <p className="text-muted-foreground uppercase tracking-[0.2em] text-xs font-bold">O silêncio precede a tempestade...</p>
-                            <p className="text-muted-foreground/40 uppercase tracking-widest text-[8px] mt-2">Nenhum duelo confirmado para as próximas horas.</p>
+                            <p className="text-muted-foreground/40 uppercase tracking-widest text-[10px] mt-2">Nenhum duelo confirmado para as próximas horas.</p>
                         </Card>
                     ) : (
                         acceptedChallenges.map((challenge, i) => (
@@ -92,7 +92,7 @@ export default function ArenaPage() {
                                                         src={challenge.challengerAvatar || `https://api.dicebear.com/7.x/avataaars/svg?seed=${challenge.challengerId}&backgroundColor=b6e3f4`}
                                                         className="w-28 h-28 sm:w-36 sm:h-36 rounded-full border-4 border-primary/30 mx-auto relative z-10 grayscale-[0.5] group-hover:grayscale-0 transition-all shadow-xl"
                                                     />
-                                                    <Badge className="absolute -bottom-3 left-1/2 -translate-x-1/2 bg-primary text-white uppercase text-[8px] font-black px-4 py-1.5 shadow-lg border-none z-20">DESAFIANTE</Badge>
+                                                    <Badge className="absolute -bottom-3 left-1/2 -translate-x-1/2 bg-primary text-white uppercase text-[10px] font-black px-4 py-1.5 shadow-lg border-none z-20">DESAFIANTE</Badge>
                                                 </div>
                                                 <h3 className="text-2xl sm:text-3xl font-black uppercase tracking-tighter text-glow">{challenge.challengerName}</h3>
                                             </div>
@@ -116,7 +116,7 @@ export default function ArenaPage() {
                                                         src={challenge.challengedAvatar || `https://api.dicebear.com/7.x/avataaars/svg?seed=${challenge.challengedId}&backgroundColor=ffdfbf`}
                                                         className="w-28 h-28 sm:w-36 sm:h-36 rounded-full border-4 border-primary/30 mx-auto relative z-10 grayscale-[0.5] group-hover:grayscale-0 transition-all shadow-xl"
                                                     />
-                                                    <Badge className="absolute -bottom-3 left-1/2 -translate-x-1/2 bg-orange-600 text-white uppercase text-[8px] font-black px-4 py-1.5 shadow-lg border-none z-20">DEFENSOR</Badge>
+                                                    <Badge className="absolute -bottom-3 left-1/2 -translate-x-1/2 bg-orange-600 text-white uppercase text-[10px] font-black px-4 py-1.5 shadow-lg border-none z-20">DEFENSOR</Badge>
                                                 </div>
                                                 <h3 className="text-2xl sm:text-3xl font-black uppercase tracking-tighter text-glow">{challenge.challengedName}</h3>
                                             </div>
@@ -128,7 +128,7 @@ export default function ArenaPage() {
                                                 <div className="flex flex-col items-center md:items-start gap-2">
                                                     <div className="flex items-center gap-2">
                                                         <Calendar className="w-4 h-4 text-primary" />
-                                                        <span className="text-[10px] uppercase font-black tracking-[0.2em] text-primary">DATA DO COMBATE</span>
+                                                        <span className="text-xs uppercase font-black tracking-[0.2em] text-primary">DATA DO COMBATE</span>
                                                     </div>
                                                     <span className="text-sm font-bold uppercase tracking-widest pl-6">
                                                         {challenge.scheduledAt ? format(new Date(challenge.scheduledAt), "dd 'de' MMMM", { locale: ptBR }) : "INDETERMINADA"}
@@ -137,7 +137,7 @@ export default function ArenaPage() {
                                                 <div className="flex flex-col items-center md:items-start gap-2">
                                                     <div className="flex items-center gap-2">
                                                         <Clock className="w-4 h-4 text-primary" />
-                                                        <span className="text-[10px] uppercase font-black tracking-[0.2em] text-primary">HORÁRIO MARCADO</span>
+                                                        <span className="text-xs uppercase font-black tracking-[0.2em] text-primary">HORÁRIO MARCADO</span>
                                                     </div>
                                                     <span className="text-sm font-bold uppercase tracking-widest pl-6">
                                                         {challenge.scheduledAt ? format(new Date(challenge.scheduledAt), "HH:mm 'BRT'", { locale: ptBR }) : "A DEFINIR"}

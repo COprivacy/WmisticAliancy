@@ -7,6 +7,12 @@ import asyncHandler from "express-async-handler";
 import multer from "multer";
 import path from "path";
 import fs from "fs";
+import { createClient } from "@supabase/supabase-js";
+
+// Supabase configuration for persistent storage
+const supabaseUrl = process.env.SUPABASE_URL || `https://${process.env.SUPABASE_PROJECT_ID}.supabase.co`;
+const supabaseKey = process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.SUPABASE_ANON_KEY;
+const supabase = supabaseUrl && supabaseKey ? createClient(supabaseUrl, supabaseKey) : null;
 
 declare module "express-session" {
   interface SessionData {
@@ -31,21 +37,30 @@ const requireAdmin = (req: any, res: any, next: any) => {
   next();
 };
 
-const storageMulter = multer.diskStorage({
-  destination: function (_req, _file, cb) {
-    const uploadDir = 'client/public/uploads';
-    if (!fs.existsSync(uploadDir)) {
-      fs.mkdirSync(uploadDir, { recursive: true });
-    }
-    cb(null, uploadDir);
-  },
-  filename: function (_req, file, cb) {
-    const uniqueSuffix = Date.now() + '-' + Math.round(Math.random() * 1E9);
-    cb(null, 'file-' + uniqueSuffix + path.extname(file.originalname));
-  }
-});
+const upload = multer({ storage: multer.memoryStorage() });
 
-const upload = multer({ storage: storageMulter });
+async function uploadToSupabase(file: Express.Multer.File, bucket: string): Promise<string | null> {
+  if (!supabase) return null;
+
+  const fileExt = path.extname(file.originalname);
+  const fileName = `${Date.now()}-${Math.round(Math.random() * 1e9)}${fileExt}`;
+  const filePath = `${fileName}`;
+
+  const { error } = await supabase.storage
+    .from(bucket)
+    .upload(filePath, file.buffer, {
+      contentType: file.mimetype,
+      upsert: true
+    });
+
+  if (error) {
+    console.error(`Supabase upload error (${bucket}):`, error);
+    return null;
+  }
+
+  const { data } = supabase.storage.from(bucket).getPublicUrl(filePath);
+  return data.publicUrl;
+}
 
 export async function registerRoutes(
   httpServer: Server,
@@ -326,15 +341,24 @@ export async function registerRoutes(
     res.json(match);
   }));
 
-  // Image Upload Route
-  app.post("/api/upload", upload.single('file'), (req, res) => {
+  // Image Upload Route (Persist to Supabase if available)
+  app.post("/api/upload", upload.single('file'), asyncHandler(async (req, res) => {
     if (!req.file) {
       res.status(400).json({ message: "Nenhum arquivo enviado." });
       return;
     }
-    const filePath = `/uploads/${req.file.filename}`;
-    res.json({ url: filePath });
-  });
+
+    if (supabase) {
+      const publicUrl = await uploadToSupabase(req.file, 'uploads');
+      if (publicUrl) {
+        res.json({ url: publicUrl });
+        return;
+      }
+    }
+
+    // Fallback if supabase not configured
+    res.status(503).json({ message: "Serviço de armazenamento não configurado." });
+  }));
 
   // Avatar Upload Route
   app.post("/api/players/:id/avatar", upload.single('avatar'), asyncHandler(async (req, res) => {
@@ -343,9 +367,17 @@ export async function registerRoutes(
       res.status(400).json({ message: "Nenhum arquivo enviado." });
       return;
     }
-    const avatarUrl = `/uploads/${req.file.filename}`;
-    const player = await storage.updatePlayer(playerId, { avatar: avatarUrl });
-    res.json({ avatar: player.avatar });
+
+    if (supabase) {
+      const avatarUrl = await uploadToSupabase(req.file, 'avatars');
+      if (avatarUrl) {
+        const player = await storage.updatePlayer(playerId, { avatar: avatarUrl });
+        res.json({ avatar: player.avatar });
+        return;
+      }
+    }
+
+    res.status(503).json({ message: "Serviço de armazenamento não configurado." });
   }));
 
   // Update Player Profile (Bio, Socials)
