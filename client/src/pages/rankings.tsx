@@ -241,7 +241,7 @@ export default function Rankings() {
         >
           {sortedPlayers.slice(0, 5).map((p, i) => (
             <div key={p.id} className="flex items-center gap-2">
-              <span className="text-primary font-black uppercase text-[10px] tracking-widest">
+              <span className="text-primary font-black uppercase text-xs tracking-widest">
                 {i === 0 ? "🏆 REI DA ARENA:" : `🔥 TOP ${i + 1}:`}
               </span>
               <span className="text-white font-serif uppercase tracking-widest text-xs">
@@ -300,13 +300,13 @@ export default function Rankings() {
                 <div className="flex flex-wrap items-center justify-center gap-6">
                   <div className="flex items-center gap-2 px-4 py-1.5 rounded-full bg-primary/10 border border-primary/20">
                     <div className="w-1.5 h-1.5 rounded-full bg-primary animate-pulse" />
-                    <span className="text-[10px] font-black uppercase tracking-[0.3em] text-primary font-sans">Arena Ativa</span>
+                    <span className="text-xs font-black uppercase tracking-[0.3em] text-primary font-sans">Arena Ativa</span>
                   </div>
 
                   <div className="flex items-center gap-3 text-muted-foreground/60">
                     <div className="w-px h-4 bg-white/10" />
                     <ClockIcon className="w-3.5 h-3.5" />
-                    <span className="text-[10px] font-black uppercase tracking-[0.2em] font-sans">Encerramento:</span>
+                    <span className="text-xs font-black uppercase tracking-[0.2em] font-sans">Encerramento:</span>
                     <span className="text-white font-mono text-sm tracking-widest">{getTimeLeft(season.endsAt).toLowerCase()}</span>
                   </div>
                 </div>
@@ -334,7 +334,7 @@ export default function Rankings() {
                       <div className="absolute top-0 right-0 p-4 opacity-5 group-hover/prize:opacity-20 transition-opacity">
                         <Award className="w-10 h-10 text-primary" />
                       </div>
-                      <span className="text-[9px] font-black text-primary uppercase tracking-[0.3em] mb-2 block font-sans">{p.rank}</span>
+                      <span className="text-[11px] font-black text-primary uppercase tracking-[0.3em] mb-2 block font-sans">{p.rank}</span>
                       <p className="text-xs text-white/80 font-bold uppercase tracking-widest leading-relaxed leading-snug">{p.prize}</p>
                     </motion.div>
                   ))}
@@ -344,13 +344,13 @@ export default function Rankings() {
                 <div className="flex items-center gap-12 pt-4 border-t border-white/5 w-full justify-center">
                   <div className="text-center group/stat">
                     <span className="block text-2xl font-serif font-black text-white group-hover/stat:text-primary transition-colors">{sortedPlayers.length}</span>
-                    <span className="text-[8px] font-black text-muted-foreground uppercase tracking-[0.3em] font-sans">Guerreiros Ativos</span>
+                    <span className="text-[10px] font-black text-muted-foreground uppercase tracking-[0.3em] font-sans">Guerreiros Ativos</span>
                   </div>
                   <div className="text-center group/stat">
                     <span className="block text-2xl font-serif font-black text-white group-hover/stat:text-primary transition-colors">
                       {players?.reduce((acc, p) => acc + p.wins, 0) || 0}
                     </span>
-                    <span className="text-[8px] font-black text-muted-foreground uppercase tracking-[0.3em] font-sans">Combates Travados</span>
+                    <span className="text-[10px] font-black text-muted-foreground uppercase tracking-[0.3em] font-sans">Combates Travados</span>
                   </div>
                 </div>
               </div>
@@ -382,7 +382,15 @@ export default function Rankings() {
                   <Link href={`/player/${sortedPlayers[1].accountId}/${sortedPlayers[1].zoneId}`} className="block">
                     <div className="relative mb-6">
                       <div className={`w-24 h-24 md:w-32 md:h-32 rounded-full border-4 overflow-hidden shadow-2xl relative z-10 mx-auto transition-all duration-500 ${getRankGlow(1)}`}>
-                        <img src={sortedPlayers[1].avatar || `https://api.dicebear.com/7.x/avataaars/svg?seed=${sortedPlayers[1].accountId}`} className="w-full h-full object-cover" alt={sortedPlayers[1].gameName} />
+                        <img
+                          src={sortedPlayers[1].avatar || `https://api.dicebear.com/7.x/avataaars/svg?seed=${sortedPlayers[1].accountId}`}
+                          className="w-full h-full object-cover"
+                          alt={sortedPlayers[1].gameName}
+                          onError={(e) => {
+                            (e.target as HTMLImageElement).onerror = null;
+                            (e.target as HTMLImageElement).src = `https://api.dicebear.com/7.x/avataaars/svg?seed=${sortedPlayers[1].accountId}`;
+                          }}
+                        />
                       </div>
                       <div className="absolute -bottom-4 left-1/2 -translate-x-1/2 bg-slate-400 text-slate-950 font-black px-4 py-1 rounded-full text-sm z-20">2º</div>
                     </div>
@@ -409,7 +417,15 @@ export default function Rankings() {
                         <Crown className="w-16 h-16 fill-primary" />
                       </motion.div>
                       <div className={`w-32 h-32 md:w-44 md:h-44 rounded-full border-8 overflow-hidden relative z-10 mx-auto transition-all duration-700 ${getRankGlow(0)}`}>
-                        <img src={sortedPlayers[0].avatar || `https://api.dicebear.com/7.x/avataaars/svg?seed=${sortedPlayers[0].accountId}`} className="w-full h-full object-cover" alt={sortedPlayers[0].gameName} />
+                        <img
+                          src={sortedPlayers[0].avatar || `https://api.dicebear.com/7.x/avataaars/svg?seed=${sortedPlayers[0].accountId}`}
+                          className="w-full h-full object-cover"
+                          alt={sortedPlayers[0].gameName}
+                          onError={(e) => {
+                            (e.target as HTMLImageElement).onerror = null;
+                            (e.target as HTMLImageElement).src = `https://api.dicebear.com/7.x/avataaars/svg?seed=${sortedPlayers[0].accountId}`;
+                          }}
+                        />
                       </div>
                       <div className="absolute -bottom-4 left-1/2 -translate-x-1/2 bg-primary text-primary-foreground font-black px-6 py-2 rounded-full text-xl z-20 shadow-xl">1º</div>
                     </div>
@@ -433,7 +449,15 @@ export default function Rankings() {
                   <Link href={`/player/${sortedPlayers[2].accountId}/${sortedPlayers[2].zoneId}`} className="block">
                     <div className="relative mb-6">
                       <div className={`w-24 h-24 md:w-32 md:h-32 rounded-full border-4 overflow-hidden shadow-2xl relative z-10 mx-auto transition-all duration-500 ${getRankGlow(2)}`}>
-                        <img src={sortedPlayers[2].avatar || `https://api.dicebear.com/7.x/avataaars/svg?seed=${sortedPlayers[2].accountId}`} className="w-full h-full object-cover" alt={sortedPlayers[2].gameName} />
+                        <img
+                          src={sortedPlayers[2].avatar || `https://api.dicebear.com/7.x/avataaars/svg?seed=${sortedPlayers[2].accountId}`}
+                          className="w-full h-full object-cover"
+                          alt={sortedPlayers[2].gameName}
+                          onError={(e) => {
+                            (e.target as HTMLImageElement).onerror = null;
+                            (e.target as HTMLImageElement).src = `https://api.dicebear.com/7.x/avataaars/svg?seed=${sortedPlayers[2].accountId}`;
+                          }}
+                        />
                       </div>
                       <div className="absolute -bottom-4 left-1/2 -translate-x-1/2 bg-amber-800 text-white font-black px-4 py-1 rounded-full text-sm z-20">3º</div>
                     </div>
@@ -457,7 +481,7 @@ export default function Rankings() {
               <Crown className="w-24 h-24 text-primary" />
             </div>
             <CardHeader className="pb-2 text-center md:text-left">
-              <p className="text-[10px] uppercase tracking-[0.2em] font-bold text-primary/70">Sua Posição</p>
+              <p className="text-xs uppercase tracking-[0.2em] font-bold text-primary/70">Sua Posição</p>
               <CardTitle className="text-4xl font-serif">#{myRank}</CardTitle>
             </CardHeader>
             <CardContent>
@@ -475,7 +499,7 @@ export default function Rankings() {
               <Zap className="w-24 h-24 text-blue-400" />
             </div>
             <CardHeader className="pb-2 text-center md:text-left">
-              <p className="text-[10px] uppercase tracking-[0.2em] font-bold text-blue-400/70">Seus Pontos</p>
+              <p className="text-xs uppercase tracking-[0.2em] font-bold text-blue-400/70">Seus Pontos</p>
               <CardTitle className="text-4xl font-serif text-blue-100">{myPlayer?.points || 0}</CardTitle>
             </CardHeader>
             <CardContent>
@@ -490,7 +514,7 @@ export default function Rankings() {
           <Card className={`relative overflow-hidden group h-full border-none transition-all duration-500 ${isDailyClaimed() ? 'bg-white/5 opacity-80' : 'bg-gradient-to-br from-amber-500/30 via-primary/20 to-transparent border-primary/30 shadow-[0_0_30px_rgba(234,179,8,0.15)] shadow-primary/20'}`}>
             <div className="absolute inset-0 bg-grid-white/5 mask-gradient-to-b" />
             <CardHeader className="pb-2 text-center relative z-10">
-              <p className="text-[9px] uppercase tracking-[0.3em] font-black text-primary/80">Recompensa Diária</p>
+              <p className="text-[11px] uppercase tracking-[0.3em] font-black text-primary/80">Recompensa Diária</p>
               <CardTitle className="text-2xl font-serif text-white uppercase italic">Honra Diária</CardTitle>
             </CardHeader>
             <CardContent className="flex flex-col items-center justify-center gap-3 relative z-10">
@@ -504,12 +528,12 @@ export default function Rankings() {
               <Button
                 onClick={() => dailyClaimMutation.mutate()}
                 disabled={isDailyClaimed() || dailyClaimMutation.isPending}
-                className={`w-full h-10 uppercase text-[10px] font-black tracking-widest rounded-xl transition-all ${isDailyClaimed() ? 'bg-white/5 text-muted-foreground' : 'bg-primary text-primary-foreground hover:bg-white hover:text-primary shadow-xl shadow-primary/20'}`}
+                className={`w-full h-10 uppercase text-xs font-black tracking-widest rounded-xl transition-all ${isDailyClaimed() ? 'bg-white/5 text-muted-foreground' : 'bg-primary text-primary-foreground hover:bg-white hover:text-primary shadow-xl shadow-primary/20'}`}
               >
                 {isDailyClaimed() ? "RESGATADO" : "+15 PONTOS"}
               </Button>
 
-              <p className="text-[8px] uppercase tracking-widest text-muted-foreground font-bold">
+              <p className="text-[10px] uppercase tracking-widest text-muted-foreground font-bold">
                 {isDailyClaimed() ? "VOLTE EM 24 HORAS" : " DISPONÍVEL AGORA"}
               </p>
             </CardContent>
@@ -534,7 +558,7 @@ export default function Rankings() {
                 </DialogHeader>
                 <div className="grid gap-6 py-6">
                   <div className="space-y-3">
-                    <Label className="text-[10px] uppercase tracking-[0.2em] font-bold text-primary/70">Oponente Superado</Label>
+                    <Label className="text-xs uppercase tracking-[0.2em] font-bold text-primary/70">Oponente Superado</Label>
                     <SearchableSelect
                       options={sortedPlayers
                         .filter(p => p.accountId !== user?.id)
@@ -548,7 +572,7 @@ export default function Rankings() {
 
                   <div className="grid grid-cols-2 gap-4">
                     <div className="space-y-3">
-                      <Label className="text-[10px] uppercase tracking-[0.2em] font-bold text-emerald-500/70">Seu Herói</Label>
+                      <Label className="text-xs uppercase tracking-[0.2em] font-bold text-emerald-500/70">Seu Herói</Label>
                       <SearchableSelect
                         options={heroOptions}
                         value={winnerHero}
@@ -558,7 +582,7 @@ export default function Rankings() {
                       />
                     </div>
                     <div className="space-y-3">
-                      <Label className="text-[10px] uppercase tracking-[0.2em] font-bold text-red-500/70">Herói Inimigo</Label>
+                      <Label className="text-xs uppercase tracking-[0.2em] font-bold text-red-500/70">Herói Inimigo</Label>
                       <SearchableSelect
                         options={heroOptions}
                         value={loserHero}
@@ -570,7 +594,7 @@ export default function Rankings() {
                   </div>
 
                   <div className="space-y-3">
-                    <Label className="text-[10px] uppercase tracking-[0.2em] font-bold text-primary/70">Prova da Vitória (Screenshot)</Label>
+                    <Label className="text-xs uppercase tracking-[0.2em] font-bold text-primary/70">Prova da Vitória (Screenshot)</Label>
                     <div className="relative">
                       {!proofFile ? (
                         <div className="flex flex-col items-center justify-center border-2 border-dashed border-primary/20 bg-white/5 rounded-2xl p-6 transition-all hover:bg-white/10 group cursor-pointer">
@@ -581,7 +605,7 @@ export default function Rankings() {
                             className="absolute inset-0 opacity-0 cursor-pointer"
                           />
                           <ImageIcon className="w-8 h-8 text-primary/40 group-hover:scale-110 transition-transform mb-2" />
-                          <p className="text-[10px] uppercase tracking-widest text-muted-foreground">Clique para anexar o print</p>
+                          <p className="text-xs uppercase tracking-widest text-muted-foreground">Clique para anexar o print</p>
                         </div>
                       ) : (
                         <div className="relative rounded-2xl border border-primary/20 overflow-hidden group">
@@ -591,7 +615,7 @@ export default function Rankings() {
                             alt="Preview"
                           />
                           <div className="absolute inset-0 flex items-center justify-center bg-black/40">
-                            <span className="text-[10px] font-bold uppercase tracking-widest">{proofFile.name}</span>
+                            <span className="text-xs font-bold uppercase tracking-widest">{proofFile.name}</span>
                           </div>
                           <Button
                             variant="destructive"
@@ -669,7 +693,7 @@ export default function Rankings() {
                 placeholder="BUSCAR GUERREIRO..."
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
-                className="pl-10 bg-white/5 border-white/10 text-[10px] uppercase font-bold tracking-widest h-10 rounded-xl focus:border-primary/50 transition-all"
+                className="pl-10 bg-white/5 border-white/10 text-xs uppercase font-bold tracking-widest h-10 rounded-xl focus:border-primary/50 transition-all"
               />
               {searchQuery && (
                 <button
@@ -681,7 +705,7 @@ export default function Rankings() {
               )}
             </div>
 
-            <Badge variant="outline" className="border-primary/30 text-primary uppercase tracking-widest text-[9px] px-3 hidden sm:flex">
+            <Badge variant="outline" className="border-primary/30 text-primary uppercase tracking-widest text-[11px] px-3 hidden sm:flex">
               Temporada de Sangue
             </Badge>
           </div>
@@ -700,7 +724,7 @@ export default function Rankings() {
                   <p className="text-muted-foreground uppercase tracking-[0.2em] text-xs font-black">Nenhum guerreiro encontrado com "{searchQuery}"</p>
                   <Button
                     variant="link"
-                    className="mt-4 text-primary uppercase text-[10px] font-bold tracking-widest"
+                    className="mt-4 text-primary uppercase text-xs font-bold tracking-widest"
                     onClick={() => setSearchQuery("")}
                   >
                     Limpar Busca
@@ -746,7 +770,7 @@ export default function Rankings() {
                                       alt={r.name}
                                     />
                                   </TooltipTrigger>
-                                  <TooltipContent className="bg-slate-950 border-white/5 text-[9px] uppercase font-bold tracking-widest text-primary p-2">
+                                  <TooltipContent className="bg-slate-950 border-white/5 text-[11px] uppercase font-bold tracking-widest text-primary p-2">
                                     {r.name}
                                   </TooltipContent>
                                 </Tooltip>
@@ -758,18 +782,18 @@ export default function Rankings() {
                           <TooltipProvider>
                             <Tooltip>
                               <TooltipTrigger asChild>
-                                <span className="text-[9px] sm:text-[10px] uppercase tracking-[0.1em] sm:tracking-[0.2em] font-medium opacity-70 cursor-help border-b border-dotted border-white/20">
+                                <span className="text-xs uppercase tracking-[0.1em] sm:tracking-[0.2em] font-medium opacity-70 cursor-help border-b border-dotted border-white/20">
                                   {player.currentRank || player.rank}
                                 </span>
                               </TooltipTrigger>
                               <TooltipContent className="bg-black/90 border-white/10 p-2">
-                                <p className="text-[8px] font-black uppercase tracking-widest text-primary">Requisito do Rank:</p>
+                                <p className="text-[10px] font-black uppercase tracking-widest text-primary">Requisito do Rank:</p>
                                 <p className="text-white font-bold">{getRankRequirements(player.rank)}</p>
                               </TooltipContent>
                             </Tooltip>
                           </TooltipProvider>
                           {player.streak >= 2 && (
-                            <Badge className="h-4 px-1 bg-orange-500 text-[8px] animate-pulse border-none">
+                            <Badge className="h-4 px-1 bg-orange-500 text-[10px] animate-pulse border-none">
                               🔥 {player.streak}
                             </Badge>
                           )}
@@ -783,7 +807,7 @@ export default function Rankings() {
                     <div className="flex items-center gap-4 sm:gap-10">
                       <div className="text-right min-w-[60px] sm:min-w-[100px]">
                         <p className="text-xl sm:text-3xl font-serif font-black">{player.points}</p>
-                        <p className="text-[8px] sm:text-[9px] uppercase tracking-[0.2em] sm:tracking-[0.3em] opacity-60 font-bold">PTS</p>
+                        <p className="text-[10px] uppercase tracking-[0.2em] sm:tracking-[0.3em] opacity-60 font-bold">PTS</p>
                       </div>
                       <ChevronRight className="w-4 h-4 opacity-30 group-hover:opacity-100 transition-all" />
                     </div>
