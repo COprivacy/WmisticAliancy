@@ -3,9 +3,10 @@ import { registerRoutes } from "./routes";
 import { serveStatic } from "./static";
 import { createServer } from "http";
 import session from "express-session";
-import MemoryStoreFactory from "memorystore";
+import connectPgSimple from "connect-pg-simple";
+import { pool } from "./db";
 
-const MemoryStore = MemoryStoreFactory(session);
+const PostgresStore = connectPgSimple(session);
 
 const app = express();
 const httpServer = createServer(app);
@@ -13,12 +14,13 @@ const httpServer = createServer(app);
 app.use(
   session({
     cookie: { maxAge: 86400000 },
-    store: new MemoryStore({
-      checkPeriod: 86400000 // prune expired entries every 24h
+    store: new PostgresStore({
+      pool: pool,
+      tableName: 'session'
     }),
     resave: false,
     saveUninitialized: false,
-    secret: "wmythic_super_secret_shield", // Em produção, usar .env
+    secret: process.env.SESSION_SECRET || "wmythic_super_secret_shield", // Configure no Render
   })
 );
 

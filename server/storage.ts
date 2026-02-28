@@ -27,7 +27,9 @@ export interface IStorage {
   // Reward methods
   getRewards(): Promise<Reward[]>;
   createReward(reward: InsertReward): Promise<Reward>;
-  assignReward(playerId: number, rewardId: number): Promise<void>;
+  updateReward(id: number, update: Partial<Reward>): Promise<Reward>;
+  deleteReward(id: number): Promise<void>;
+  assignReward(playerId: number, rewardId: number, expiresAt?: Date): Promise<void>;
   getPlayerRewards(playerId: number): Promise<Reward[]>;
 
   // Season methods
@@ -57,14 +59,14 @@ export class DatabaseStorage implements IStorage {
 
   async seedRewards() {
     try {
+      const fs = await import("fs");
+      const path = await import("path");
+      const relicsPath = path.resolve(process.cwd(), "shared", "relics.json");
+
+      if (!fs.existsSync(relicsPath)) return;
+
+      const initialRewards = JSON.parse(fs.readFileSync(relicsPath, "utf-8"));
       const existing = await this.getRewards();
-      const initialRewards = [
-        { name: "Espada Suprema da Aliança", description: "Campeão absoluto da temporada (Top 1).", rarity: "mythic", stars: 7, icon: "/images/rewards/mythic-sword.png" },
-        { name: "Cajado do Arcanista", description: "Top 3 da arena por 3 temporadas seguidas.", rarity: "legendary", stars: 6, icon: "/images/rewards/legendary-staff.png" },
-        { name: "Asas da Vitória", description: "Mais de 100 vitórias na temporada.", rarity: "epic", stars: 5, icon: "/images/rewards/epic-wings.svg" },
-        { name: "Medalha de Honra", description: "Participação em mais de 50 duelos.", rarity: "rare", stars: 3, icon: "/images/rewards/rare-medal.svg" },
-        { name: "Selo de Sangue da Aliança", description: "Concedida a todo guerreiro que inicia sua jornada na guilda.", rarity: "rare", stars: 2, icon: "/images/rewards/recruit-badge.png" }
-      ];
 
       for (const reward of initialRewards) {
         const alreadyExists = existing.find(r => r.name === reward.name);
@@ -192,11 +194,22 @@ export class DatabaseStorage implements IStorage {
     return reward;
   }
 
-  async assignReward(playerId: number, rewardId: number): Promise<void> {
+  async updateReward(id: number, update: Partial<Reward>): Promise<Reward> {
+    const [reward] = await db.update(rewards).set(update).where(eq(rewards.id, id)).returning();
+    if (!reward) throw new Error("Reward not found");
+    return reward;
+  }
+
+  async deleteReward(id: number): Promise<void> {
+    await db.delete(rewards).where(eq(rewards.id, id));
+  }
+
+  async assignReward(playerId: number, rewardId: number, expiresAt?: Date): Promise<void> {
     await db.insert(playerRewards).values({
       playerId,
       rewardId,
-      assignedAt: new Date()
+      assignedAt: new Date(),
+      expiresAt: expiresAt || null
     });
   }
 

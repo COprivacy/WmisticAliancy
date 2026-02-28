@@ -41,7 +41,7 @@ const storageMulter = multer.diskStorage({
   },
   filename: function (_req, file, cb) {
     const uniqueSuffix = Date.now() + '-' + Math.round(Math.random() * 1E9);
-    cb(null, 'proof-' + uniqueSuffix + path.extname(file.originalname));
+    cb(null, 'file-' + uniqueSuffix + path.extname(file.originalname));
   }
 });
 
@@ -59,40 +59,37 @@ export async function registerRoutes(
     // Check if player exists
     const player = await storage.getPlayerByAccountId(id, zoneId);
 
-    if (!isAdmin && !player) {
+    if (!player) {
       res.status(404).json({ message: "Jogador não encontrado." });
       return;
     }
 
-    if (player?.isBanned) {
+    if (player.isBanned) {
       res.status(403).json({ message: "Sua conta foi suspensa por violar as regras da arena." });
       return;
     }
 
-    // Only skip pin for Admin or if specifically handled (but let's enforce Pin if it's there)
-    if (!isAdmin && player) {
-      if (player.pin) {
-        if (!pin) {
-          res.json({ status: "needs_pin" });
-          return;
-        }
-        if (player.pin !== pin) {
-          res.status(401).json({ message: "PIN de acesso incorreto." });
-          return;
-        }
-      } else {
-        // Player exists but has no pin set yet
-        if (!pin) {
-          res.json({ status: "needs_setup_pin" });
-          return;
-        }
-        // Save the first time pin
-        await storage.updatePlayer(player.id, { pin });
+    if (player.pin) {
+      if (!pin) {
+        res.json({ status: "needs_pin" });
+        return;
       }
+      if (player.pin !== pin) {
+        res.status(401).json({ message: "PIN de acesso incorreto." });
+        return;
+      }
+    } else {
+      // Player exists but has no pin set yet
+      if (!pin) {
+        res.json({ status: "needs_setup_pin" });
+        return;
+      }
+      // Save the first time pin
+      await storage.updatePlayer(player.id, { pin });
     }
 
     req.session.user = {
-      username: isAdmin ? "sempaiadm" : (player?.gameName || username),
+      username: isAdmin ? "Sem+Pai (ADM)" : player.gameName,
       id,
       zoneId: zoneId || "0000",
       isAdmin
@@ -426,16 +423,41 @@ export async function registerRoutes(
     res.json(allRewards);
   }));
 
+  app.post("/api/rewards", requireAdmin, asyncHandler(async (req, res) => {
+    const reward = await storage.createReward(req.body);
+    res.json(reward);
+  }));
+
+  app.patch("/api/rewards/:id", requireAdmin, asyncHandler(async (req, res) => {
+    const id = parseInt(req.params.id as string);
+    const reward = await storage.updateReward(id, req.body);
+    res.json(reward);
+  }));
+
+  app.delete("/api/rewards/:id", requireAdmin, asyncHandler(async (req, res) => {
+    const id = parseInt(req.params.id as string);
+    await storage.deleteReward(id);
+    res.json({ success: true });
+  }));
+
   app.get("/api/seasons", asyncHandler(async (_req, res) => {
     const allSeasons = await storage.getSeasons();
     res.json(allSeasons);
   }));
 
+  app.post("/api/upload", requireAdmin, upload.single("file"), (req, res) => {
+    if (!req.file) {
+      return res.status(400).json({ message: "Nenhum arquivo enviado" });
+    }
+    const publicUrl = `/uploads/${req.file.filename}`;
+    res.json({ url: publicUrl });
+  });
+
   app.post("/api/players/:id/rewards", requireAdmin, asyncHandler(async (req, res) => {
     const playerId = parseInt(req.params.id as string);
-    const { rewardId } = req.body;
+    const { rewardId, expiresAt } = req.body;
 
-    await storage.assignReward(playerId, rewardId);
+    await storage.assignReward(playerId, rewardId, expiresAt ? new Date(expiresAt) : undefined);
 
     // Log Activity: Reward Earned
     const [player, allRewards] = await Promise.all([

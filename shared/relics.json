@@ -1,0 +1,44 @@
+[
+    {
+        "name": "Coroa da Imortalidade",
+        "description": "Concedida ao guerreiro que domina a arena por múltiplas temporadas consecutivas.",
+        "rarity": "mythic",
+        "stars": 7,
+        "icon": "/images/rewards/coroa-imortalidade.png"
+    },
+    {
+        "name": "Espada Suprema da Aliança",
+        "description": "Campeão absoluto da temporada (Top 1).",
+        "rarity": "mythic",
+        "stars": 7,
+        "icon": "/images/rewards/mythic-sword.png"
+    },
+    {
+        "name": "Cajado do Arcanista",
+        "description": "Top 3 da arena por 3 temporadas seguidas.",
+        "rarity": "legendary",
+        "stars": 6,
+        "icon": "/images/rewards/legendary-staff.png"
+    },
+    {
+        "name": "Asas da Vitória",
+        "description": "Mais de 100 vitórias na temporada.",
+        "rarity": "epic",
+        "stars": 5,
+        "icon": "/images/rewards/epic-wings.svg"
+    },
+    {
+        "name": "Medalha de Honra",
+        "description": "Participação em mais de 50 duelos.",
+        "rarity": "rare",
+        "stars": 3,
+        "icon": "/images/rewards/rare-medal.svg"
+    },
+    {
+        "name": "Selo de Sangue da Aliança",
+        "description": "Concedida a todo guerreiro que inicia sua jornada na guilda.",
+        "rarity": "rare",
+        "stars": 2,
+        "icon": "/images/recruit-badge.png"
+    }
+]

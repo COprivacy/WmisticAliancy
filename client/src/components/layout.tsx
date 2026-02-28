@@ -35,32 +35,38 @@ export default function Layout({ children }: { children: ReactNode }) {
 
           <nav className="flex items-center gap-1 sm:gap-4 overflow-x-auto no-scrollbar max-w-full pb-1">
             <Link href="/rankings">
-              <Button variant="ghost" size="sm" className={`font-black uppercase tracking-widest text-[9px] h-8 ${location === '/rankings' ? 'text-primary' : 'text-muted-foreground'}`}>
+              <Button variant="ghost" size="sm" className={`font-black uppercase tracking-widest text-[11px] h-8 ${location === '/rankings' ? 'text-primary' : 'text-muted-foreground'}`}>
                 Arena
               </Button>
             </Link>
 
             <Link href="/arena">
-              <Button variant="ghost" size="sm" className={`font-black uppercase tracking-widest text-[9px] h-8 ${location === '/arena' ? 'text-primary' : 'text-muted-foreground'}`}>
+              <Button variant="ghost" size="sm" className={`font-black uppercase tracking-widest text-[11px] h-8 ${location === '/arena' ? 'text-primary' : 'text-muted-foreground'}`}>
                 War Room
               </Button>
             </Link>
 
             <Link href="/fame">
-              <Button variant="ghost" size="sm" className={`font-black uppercase tracking-widest text-[9px] h-8 ${location === '/fame' ? 'text-primary' : 'text-muted-foreground'}`}>
+              <Button variant="ghost" size="sm" className={`font-black uppercase tracking-widest text-[11px] h-8 ${location === '/fame' ? 'text-primary' : 'text-muted-foreground'}`}>
                 Glória
               </Button>
             </Link>
 
             <Link href="/rules">
-              <Button variant="ghost" size="sm" className={`font-black uppercase tracking-widest text-[9px] h-8 ${location === '/rules' ? 'text-primary' : 'text-muted-foreground'}`}>
+              <Button variant="ghost" size="sm" className={`font-black uppercase tracking-widest text-[11px] h-8 ${location === '/rules' ? 'text-primary' : 'text-muted-foreground'}`}>
                 Regras
+              </Button>
+            </Link>
+
+            <Link href={`/player/${user.id}/${user.zoneId}`}>
+              <Button variant="ghost" size="sm" className={`font-black uppercase tracking-widest text-[11px] h-8 ${location.includes('/player/') ? 'text-primary' : 'text-muted-foreground'}`}>
+                Meu Perfil
               </Button>
             </Link>
 
             {user.isAdmin && (
               <Link href="/admin">
-                <Button variant="ghost" size="sm" className={`font-black uppercase tracking-widest text-[9px] h-8 ${location === '/admin' ? 'text-primary' : 'text-muted-foreground'}`}>
+                <Button variant="ghost" size="sm" className={`font-black uppercase tracking-widest text-[11px] h-8 ${location === '/admin' ? 'text-primary' : 'text-muted-foreground'}`}>
                   <ShieldAlert className="w-3 h-3 mr-1" />
                   Admin
                 </Button>

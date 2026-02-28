@@ -1,105 +1,104 @@
 import { sql } from "drizzle-orm";
-import { sqliteTable, text, integer } from "drizzle-orm/sqlite-core";
+import { pgTable, text, integer, serial, timestamp, boolean } from "drizzle-orm/pg-core";
 import { createInsertSchema } from "drizzle-zod";
 import { z } from "zod";
 
-export const users = sqliteTable("users", {
-  id: integer("id").primaryKey({ autoIncrement: true }),
+export const users = pgTable("users", {
+  id: serial("id").primaryKey(),
   username: text("username").notNull().unique(),
   password: text("password").notNull(),
 });
 
-export const players = sqliteTable("players", {
-  id: integer("id").primaryKey({ autoIncrement: true }),
+export const players = pgTable("players", {
+  id: serial("id").primaryKey(),
   gameName: text("game_name").notNull(),
   accountId: text("account_id").notNull(),
   zoneId: text("zone_id").notNull().default(""),
-  points: integer("points").notNull().default(100), // Start with 100 points
+  points: integer("points").notNull().default(100),
   wins: integer("wins").notNull().default(0),
   losses: integer("losses").notNull().default(0),
   rank: text("rank").notNull().default("Recruta"),
-  avatar: text("avatar"), // Link to MLBB Avatar
-  currentRank: text("current_rank"), // Link to MLBB Real Rank (Mythic, etc)
+  avatar: text("avatar"),
+  currentRank: text("current_rank"),
   streak: integer("streak").notNull().default(0),
-  // New social and bio fields
   bio: text("bio"),
   twitch: text("twitch"),
   instagram: text("instagram"),
   youtube: text("youtube"),
   mainHero: text("main_hero"),
-  isBanned: integer("is_banned", { mode: "boolean" }).notNull().default(false),
+  isBanned: boolean("is_banned").notNull().default(false),
   pin: text("pin"),
-  lastClaimedAt: integer("last_claimed_at", { mode: "timestamp" }),
+  lastClaimedAt: timestamp("last_claimed_at"),
 });
 
-export const matches = sqliteTable("matches", {
-  id: integer("id").primaryKey({ autoIncrement: true }),
+export const matches = pgTable("matches", {
+  id: serial("id").primaryKey(),
   winnerId: text("winner_id").notNull(),
   winnerZone: text("winner_zone_id").notNull().default(""),
-  winnerHero: text("winner_hero"), // Hero used by winner
+  winnerHero: text("winner_hero"),
   loserId: text("loser_id").notNull(),
   loserZone: text("loser_zone_id").notNull().default(""),
-  loserHero: text("loser_hero"), // Hero used by loser
-  proofImage: text("proof_image"), // URL to the screenshot proof
-  status: text("status").notNull().default("pending"), // pending, approved, rejected
-  createdAt: integer("created_at", { mode: "timestamp" }).notNull().default(sql`CURRENT_TIMESTAMP`),
+  loserHero: text("loser_hero"),
+  proofImage: text("proof_image"),
+  status: text("status").notNull().default("pending"),
+  createdAt: timestamp("created_at").notNull().defaultNow(),
 });
 
-export const rewards = sqliteTable("rewards", {
-  id: integer("id").primaryKey({ autoIncrement: true }),
+export const rewards = pgTable("rewards", {
+  id: serial("id").primaryKey(),
   name: text("name").notNull(),
   description: text("description").notNull(),
-  rarity: text("rarity").notNull(), // mythic, legendary, epic, rare
+  rarity: text("rarity").notNull(),
   stars: integer("stars").notNull().default(1),
   icon: text("icon").notNull(),
 });
 
-export const playerRewards = sqliteTable("player_rewards", {
-  id: integer("id").primaryKey({ autoIncrement: true }),
+export const playerRewards = pgTable("player_rewards", {
+  id: serial("id").primaryKey(),
   playerId: integer("player_id").notNull(),
   rewardId: integer("reward_id").notNull(),
-  assignedAt: integer("assigned_at", { mode: "timestamp" }).notNull().default(sql`(strftime('%s', 'now') * 1000)`),
-  expiresAt: integer("expires_at", { mode: "timestamp" }), // Null means permanent
+  assignedAt: timestamp("assigned_at").notNull().defaultNow(),
+  expiresAt: timestamp("expires_at"),
 });
 
-export const seasons = sqliteTable("seasons", {
-  id: integer("id").primaryKey({ autoIncrement: true }),
+export const seasons = pgTable("seasons", {
+  id: serial("id").primaryKey(),
   name: text("name").notNull(),
   championName: text("champion_name"),
   championId: text("champion_account_id"),
   championZone: text("champion_zone_id"),
   secondName: text("second_name"),
   thirdName: text("third_name"),
-  endedAt: integer("ended_at", { mode: "timestamp" }).notNull(),
+  endedAt: timestamp("ended_at").notNull(),
 });
 
-export const challenges = sqliteTable("challenges", {
-  id: integer("id").primaryKey({ autoIncrement: true }),
+export const challenges = pgTable("challenges", {
+  id: serial("id").primaryKey(),
   challengerId: text("challenger_id").notNull(),
   challengerZone: text("challenger_zone_id").notNull(),
   challengedId: text("challenged_id").notNull(),
   challengedZone: text("challenged_zone_id").notNull(),
-  status: text("status").notNull().default("pending"), // pending, accepted, rejected, completed
+  status: text("status").notNull().default("pending"),
   message: text("message"),
-  scheduledAt: integer("scheduled_at", { mode: "timestamp" }),
-  createdAt: integer("created_at", { mode: "timestamp" }).notNull().default(sql`CURRENT_TIMESTAMP`),
+  scheduledAt: timestamp("scheduled_at"),
+  createdAt: timestamp("created_at").notNull().defaultNow(),
 });
 
-export const activities = sqliteTable("activities", {
-  id: integer("id").primaryKey({ autoIncrement: true }),
-  type: text("type").notNull(), // match_approved, rank_up, reward_earned, new_player
+export const activities = pgTable("activities", {
+  id: serial("id").primaryKey(),
+  type: text("type").notNull(),
   playerId: integer("player_id"),
   playerGameName: text("player_game_name"),
-  data: text("data"), // JSON string with extra info (opponent, reward name, rank name)
-  createdAt: integer("created_at", { mode: "timestamp" }).notNull().default(sql`CURRENT_TIMESTAMP`),
+  data: text("data"),
+  createdAt: timestamp("created_at").notNull().defaultNow(),
 });
 
-export const reactions = sqliteTable("reactions", {
-  id: integer("id").primaryKey({ autoIncrement: true }),
+export const reactions = pgTable("reactions", {
+  id: serial("id").primaryKey(),
   activityId: integer("activity_id").notNull(),
   userId: text("user_id").notNull(),
   emoji: text("emoji").notNull(),
-  createdAt: integer("created_at", { mode: "timestamp" }).notNull().default(sql`CURRENT_TIMESTAMP`),
+  createdAt: timestamp("created_at").notNull().defaultNow(),
 });
 
 export const insertUserSchema = createInsertSchema(users).pick({

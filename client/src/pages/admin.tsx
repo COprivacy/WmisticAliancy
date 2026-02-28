@@ -61,6 +61,8 @@ export default function Admin() {
 
   const [selectedPlayerId, setSelectedPlayerId] = useState<number | null>(null);
   const [selectedRewardId, setSelectedRewardId] = useState<number | null>(null);
+  const [rewardDuration, setRewardDuration] = useState<string>(""); // Days
+  const [editingRelic, setEditingRelic] = useState<Reward | null>(null);
 
   const matchMutation = useMutation({
     mutationFn: async ({ id, action }: { id: number; action: "approve" | "reject" }) => {
@@ -89,12 +91,18 @@ export default function Admin() {
   });
 
   const assignRewardMutation = useMutation({
-    mutationFn: async ({ playerId, rewardId }: { playerId: number; rewardId: number }) => {
-      await apiRequest("POST", `/api/players/${playerId}/rewards`, { rewardId });
+    mutationFn: async ({ playerId, rewardId, days }: { playerId: number; rewardId: number; days?: number }) => {
+      let expiresAt: Date | undefined;
+      if (days) {
+        expiresAt = new Date();
+        expiresAt.setDate(expiresAt.getDate() + days);
+      }
+      await apiRequest("POST", `/api/players/${playerId}/rewards`, { rewardId, expiresAt });
     },
     onSuccess: () => {
       toast({ title: "Relíquia Concedida!", description: "O item agora brilha na vitrine." });
       setSelectedRewardId(null);
+      setRewardDuration("");
     }
   });
 
@@ -164,6 +172,10 @@ export default function Admin() {
           <TabsTrigger value="stats" className="rounded-xl data-[state=active]:bg-primary data-[state=active]:text-primary-foreground uppercase text-[10px] font-black tracking-widest">
             <LayoutDashboard className="w-3 h-3 mr-2" />
             Economia
+          </TabsTrigger>
+          <TabsTrigger value="relics" className="rounded-xl data-[state=active]:bg-primary data-[state=active]:text-primary-foreground uppercase text-[10px] font-black tracking-widest">
+            <Gift className="w-3 h-3 mr-2" />
+            Relíquias
           </TabsTrigger>
         </TabsList>
 
@@ -469,15 +481,173 @@ export default function Admin() {
                   </SelectContent>
                 </Select>
 
+                <div className="w-32">
+                  <Input
+                    type="number"
+                    placeholder="DIAS"
+                    className="h-14 bg-black/20 border-white/10 rounded-2xl text-center"
+                    value={rewardDuration}
+                    onChange={(e) => setRewardDuration(e.target.value)}
+                  />
+                </div>
+
                 <Button
                   className="h-14 px-12 bg-yellow-500 text-yellow-950 font-black uppercase tracking-[0.2em] rounded-2xl hover:bg-yellow-400 shadow-xl shadow-yellow-500/20"
-                  onClick={() => selectedPlayerId && selectedRewardId && assignRewardMutation.mutate({ playerId: selectedPlayerId, rewardId: selectedRewardId })}
+                  onClick={() => selectedPlayerId && selectedRewardId && assignRewardMutation.mutate({
+                    playerId: selectedPlayerId,
+                    rewardId: selectedRewardId,
+                    days: rewardDuration ? parseInt(rewardDuration) : undefined
+                  })}
                   disabled={!selectedPlayerId || !selectedRewardId || assignRewardMutation.isPending}
                 >
                   ENTREGAR ✨
                 </Button>
               </CardContent>
             </Card>
+          </TabsContent>
+
+          <TabsContent value="relics" className="space-y-8">
+            <Card className="bg-white/5 border-white/10 rounded-[2.5rem] overflow-hidden">
+              <CardHeader>
+                <CardTitle className="uppercase tracking-widest font-serif text-xl text-primary">
+                  {editingRelic ? `Editando: ${editingRelic.name}` : "Criar Nova Relíquia"}
+                </CardTitle>
+                <CardDescription className="uppercase text-[10px] font-black opacity-60">
+                  {editingRelic ? "Altere as propriedades do item sagrado" : "Forje um novo item sagrado para a guilda"}
+                </CardDescription>
+              </CardHeader>
+              <CardContent>
+                <form
+                  key={editingRelic?.id || 'new'}
+                  className="space-y-6"
+                  onSubmit={async (e) => {
+                    e.preventDefault();
+                    const formData = new FormData(e.currentTarget);
+                    const fileInput = e.currentTarget.querySelector('input[type="file"]') as HTMLInputElement;
+
+                    let iconUrl = editingRelic?.icon || "/images/rewards/default.png";
+                    if (fileInput.files?.[0]) {
+                      const uploadFormData = new FormData();
+                      uploadFormData.append("file", fileInput.files[0]);
+                      const uploadRes = await fetch("/api/upload", { method: "POST", body: uploadFormData });
+                      const uploadData = await uploadRes.json();
+                      iconUrl = uploadData.url;
+                    }
+
+                    const data = {
+                      name: formData.get("name"),
+                      description: formData.get("description"),
+                      rarity: formData.get("rarity"),
+                      stars: parseInt(formData.get("stars") as string),
+                      icon: iconUrl
+                    };
+
+                    try {
+                      if (editingRelic) {
+                        await apiRequest("PATCH", `/api/rewards/${editingRelic.id}`, data);
+                        toast({ title: "Relíquia Atualizada!" });
+                        setEditingRelic(null);
+                      } else {
+                        await apiRequest("POST", "/api/rewards", data);
+                        toast({ title: "Relíquia Forjada!" });
+                      }
+                      queryClient.invalidateQueries({ queryKey: ["/api/rewards"] });
+                      (e.target as HTMLFormElement).reset();
+                    } catch (err) {
+                      toast({ title: "Erro na Operação", variant: "destructive" });
+                    }
+                  }}
+                >
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <div className="space-y-2">
+                      <Label className="text-[10px] uppercase font-black">Nome da Relíquia</Label>
+                      <Input name="name" defaultValue={editingRelic?.name} placeholder="Ex: Martelo de Thor" required className="bg-black/20 border-white/10 h-12" />
+                    </div>
+                    <div className="space-y-2">
+                      <Label className="text-[10px] uppercase font-black">Raridade</Label>
+                      <Select name="rarity" defaultValue={editingRelic?.rarity || "rare"}>
+                        <SelectTrigger className="h-12 bg-black/20 border-white/10">
+                          <SelectValue />
+                        </SelectTrigger>
+                        <SelectContent className="bg-slate-900 border-white/10">
+                          <SelectItem value="mythic">Mythic</SelectItem>
+                          <SelectItem value="legendary">Legendary</SelectItem>
+                          <SelectItem value="epic">Epic</SelectItem>
+                          <SelectItem value="rare">Rare</SelectItem>
+                        </SelectContent>
+                      </Select>
+                    </div>
+                    <div className="space-y-2">
+                      <Label className="text-[10px] uppercase font-black">Nível de Estrelas (1-7)</Label>
+                      <Input name="stars" defaultValue={editingRelic?.stars || 1} type="number" min="1" max="7" required className="bg-black/20 border-white/10 h-12" />
+                    </div>
+                    <div className="space-y-2">
+                      <Label className="text-[10px] uppercase font-black">Ícone da Relíquia</Label>
+                      <Input name="icon" type="file" accept="image/*" className="bg-black/20 border-white/10 h-12 pt-2" />
+                      {editingRelic && <p className="text-[8px] opacity-40 uppercase font-bold">Mantenha vazio para não alterar a imagem atual</p>}
+                    </div>
+                    <div className="col-span-full space-y-2">
+                      <Label className="text-[10px] uppercase font-black">Descrição da Lenda</Label>
+                      <Input name="description" defaultValue={editingRelic?.description} placeholder="A história por trás deste item..." required className="bg-black/20 border-white/10 h-12" />
+                    </div>
+                  </div>
+                  <div className="flex gap-3">
+                    {editingRelic && (
+                      <Button
+                        type="button"
+                        variant="outline"
+                        className="flex-1 h-14 border-white/10 uppercase font-black"
+                        onClick={() => setEditingRelic(null)}
+                      >
+                        Cancelar Edição
+                      </Button>
+                    )}
+                    <Button type="submit" className="flex-[2] h-14 bg-primary text-primary-foreground font-black uppercase tracking-widest rounded-2xl">
+                      {editingRelic ? "SALVAR ALTERAÇÕES" : "ADICIONAR AO SANTUÁRIO"}
+                    </Button>
+                  </div>
+                </form>
+              </CardContent>
+            </Card>
+
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+              {rewardsList?.map(reward => (
+                <div key={reward.id} className="p-4 rounded-2xl bg-white/5 border border-white/5 flex items-center gap-4">
+                  <img src={reward.icon} className="w-12 h-12 rounded-lg object-cover bg-black/40" />
+                  <div className="flex-1">
+                    <span className="block font-black uppercase text-xs">{reward.name}</span>
+                    <Badge className="text-[8px] h-4 uppercase">{reward.rarity}</Badge>
+                  </div>
+                  <div className="flex gap-1">
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      className="text-blue-400 hover:bg-blue-400/10"
+                      onClick={() => {
+                        setEditingRelic(reward);
+                        window.scrollTo({ top: 0, behavior: 'smooth' });
+                      }}
+                    >
+                      <Edit2 className="w-4 h-4" />
+                    </Button>
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      className="text-rose-500 hover:bg-rose-500/10"
+                      onClick={async () => {
+                        if (confirm("Deseja destruir esta relíquia?")) {
+                          await apiRequest("DELETE", `/api/rewards/${reward.id}`);
+                          queryClient.invalidateQueries({ queryKey: ["/api/rewards"] });
+                          toast({ title: "Relíquia Destruída" });
+                        }
+                      }}
+                    >
+                      <Trash2 className="w-4 h-4" />
+                    </Button>
+                  </div>
+                </div>
+              ))}
+            </div>
           </TabsContent>
         </div>
       </Tabs>
