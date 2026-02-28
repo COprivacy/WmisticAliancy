@@ -213,6 +213,10 @@ export default function Profile() {
                                 src={player.avatar || `https://api.dicebear.com/7.x/avataaars/svg?seed=${player.gameName}`}
                                 className="w-32 h-32 rounded-full border-4 border-white/10 relative z-10 bg-[#0c1120] object-cover"
                                 alt={player.gameName}
+                                onError={(e) => {
+                                    (e.target as HTMLImageElement).onerror = null;
+                                    (e.target as HTMLImageElement).src = `https://api.dicebear.com/7.x/avataaars/svg?seed=${player.gameName}`;
+                                }}
                             />
                             <div className="absolute inset-0 flex items-center justify-center bg-black/50 rounded-full opacity-0 group-hover:opacity-100 transition-opacity z-20">
                                 {uploadingAvatar ? (
@@ -260,13 +264,13 @@ export default function Profile() {
                         <div className="flex-1 text-center md:text-left space-y-3">
                             <div className="flex flex-col md:flex-row md:items-center gap-3">
                                 <h1 className="text-4xl font-black uppercase tracking-tighter text-glow">{player.gameName}</h1>
-                                <Badge className="bg-primary/20 text-primary border-primary/30 py-1 px-4 uppercase text-[10px] tracking-widest font-bold mx-auto md:mx-0">
+                                <Badge className="bg-primary/20 text-primary border-primary/30 py-1 px-4 uppercase text-xs tracking-widest font-bold mx-auto md:mx-0">
                                     {player.currentRank || "RANK DESCONHECIDO"}
                                 </Badge>
                                 {isOwnProfile && (
                                     <Dialog open={isEditDialogOpen} onOpenChange={setIsEditDialogOpen}>
                                         <DialogTrigger asChild>
-                                            <Button variant="outline" size="sm" className="bg-white/5 border-white/10 hover:bg-white/10 text-[10px] tracking-widest uppercase h-8 px-4 font-bold">
+                                            <Button variant="outline" size="sm" className="bg-white/5 border-white/10 hover:bg-white/10 text-xs tracking-widest uppercase h-10 px-4 font-bold">
                                                 <Settings className="w-3 h-3 mr-2" />
                                                 Editar Perfil
                                             </Button>
@@ -277,7 +281,7 @@ export default function Profile() {
                                             </DialogHeader>
                                             <div className="space-y-4 py-4">
                                                 <div className="space-y-2">
-                                                    <Label className="text-[10px] uppercase tracking-widest font-bold opacity-70">Bio / Frase de Impacto</Label>
+                                                    <Label className="text-xs uppercase tracking-widest font-bold opacity-70">Bio / Frase de Impacto</Label>
                                                     <Input
                                                         value={editBio}
                                                         onChange={(e) => setEditBio(e.target.value)}
@@ -287,7 +291,7 @@ export default function Profile() {
                                                 </div>
                                                 <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                                                     <div className="space-y-2">
-                                                        <Label className="text-[10px] uppercase tracking-widest font-bold opacity-70">Instagram</Label>
+                                                        <Label className="text-xs uppercase tracking-widest font-bold opacity-70">Instagram</Label>
                                                         <Input
                                                             value={editInsta}
                                                             onChange={(e) => setEditInsta(e.target.value)}
@@ -296,7 +300,7 @@ export default function Profile() {
                                                         />
                                                     </div>
                                                     <div className="space-y-2">
-                                                        <Label className="text-[10px] uppercase tracking-widest font-bold opacity-70">Twitch</Label>
+                                                        <Label className="text-xs uppercase tracking-widest font-bold opacity-70">Twitch</Label>
                                                         <Input
                                                             value={editTwitch}
                                                             onChange={(e) => setEditTwitch(e.target.value)}
@@ -305,7 +309,7 @@ export default function Profile() {
                                                         />
                                                     </div>
                                                     <div className="space-y-2">
-                                                        <Label className="text-[10px] uppercase tracking-widest font-bold opacity-70">YouTube</Label>
+                                                        <Label className="text-xs uppercase tracking-widest font-bold opacity-70">YouTube</Label>
                                                         <Input
                                                             value={editYoutube}
                                                             onChange={(e) => setEditYoutube(e.target.value)}
@@ -336,7 +340,7 @@ export default function Profile() {
 
                                 <Dialog open={isRankCardOpen} onOpenChange={setIsRankCardOpen}>
                                     <DialogTrigger asChild>
-                                        <Button variant="outline" size="sm" className="bg-primary/10 border-primary/20 hover:bg-primary/20 text-primary [text-shadow:_0_0_10px_rgba(245,158,11,0.3)] text-[10px] tracking-widest uppercase h-8 px-4 font-bold ml-2 shadow-lg shadow-primary/10">
+                                        <Button variant="outline" size="sm" className="bg-primary/10 border-primary/20 hover:bg-primary/20 text-primary [text-shadow:_0_0_10px_rgba(245,158,11,0.3)] text-xs tracking-widest uppercase h-10 px-4 font-bold ml-2 shadow-lg shadow-primary/10">
                                             <Share2 className="w-3 h-3 mr-2" />
                                             Compartilhar Glória
                                         </Button>
@@ -357,7 +361,7 @@ export default function Profile() {
                                 {!isOwnProfile && user && (
                                     <Dialog open={isChallengeDialogOpen} onOpenChange={setIsChallengeDialogOpen}>
                                         <DialogTrigger asChild>
-                                            <Button className="bg-orange-600 hover:bg-orange-700 text-[10px] tracking-widest uppercase h-8 px-4 font-bold ml-2 shadow-lg shadow-orange-600/20">
+                                            <Button className="bg-orange-600 hover:bg-orange-700 text-xs tracking-widest uppercase h-10 px-4 font-bold ml-2 shadow-lg shadow-orange-600/20">
                                                 <Swords className="w-3 h-3 mr-2" />
                                                 Lançar Desafio
                                             </Button>
@@ -365,13 +369,13 @@ export default function Profile() {
                                         <DialogContent className="bg-[#020617] border-orange-500/20">
                                             <DialogHeader>
                                                 <DialogTitle className="uppercase tracking-widest text-primary">Intimar para Combate</DialogTitle>
-                                                <DialogDescription className="uppercase text-[10px] tracking-widest opacity-60">
+                                                <DialogDescription className="uppercase text-xs tracking-widest opacity-60">
                                                     Defina os termos e a hora do duelo.
                                                 </DialogDescription>
                                             </DialogHeader>
                                             <div className="space-y-6 py-4">
                                                 <div className="space-y-3">
-                                                    <Label className="text-[10px] uppercase tracking-widest font-black text-primary/70">Provocação / Mensagem</Label>
+                                                    <Label className="text-xs uppercase tracking-widest font-black text-primary/70">Provocação / Mensagem</Label>
                                                     <Textarea
                                                         placeholder="Ex: Vou te amassar no 1v1 de Gusion! Esteja pronto."
                                                         className="bg-white/5 border-white/10 min-h-[100px] text-xs"
@@ -380,7 +384,7 @@ export default function Profile() {
                                                     />
                                                 </div>
                                                 <div className="space-y-3">
-                                                    <Label className="text-[10px] uppercase tracking-widest font-black text-primary/70">Horário Sugerido (BRT)</Label>
+                                                    <Label className="text-xs uppercase tracking-widest font-black text-primary/70">Horário Sugerido (BRT)</Label>
                                                     <Input
                                                         type="datetime-local"
                                                         className="bg-white/5 border-white/10 h-12"
@@ -413,7 +417,7 @@ export default function Profile() {
                                 ID: {player.accountId} • ZONA: {player.zoneId}
                             </p>
                             <div className="flex items-center justify-center md:justify-start gap-4 mt-4">
-                                <div className="text-left text-[10px] font-bold uppercase tracking-widest">
+                                <div className="text-left text-xs font-bold uppercase tracking-widest">
                                     <span className="text-muted-foreground block">CONTA VERIFICADA</span>
                                     <span className="text-primary">{player.currentRank || "Arena 1v1"}</span>
                                 </div>
@@ -463,14 +467,14 @@ export default function Profile() {
                                             <p className="text-sm font-bold uppercase tracking-widest">
                                                 {challenge.challengerId === user?.id ? "Você desafiou!" : "Novo Desafio Recebido!"}
                                             </p>
-                                            <p className="text-[10px] text-muted-foreground uppercase">Aguardando confirmação</p>
+                                            <p className="text-xs text-muted-foreground uppercase">Aguardando confirmação</p>
                                         </div>
                                     </div>
                                     {challenge.challengedId === user?.id && (
                                         <div className="flex gap-2">
                                             <Button
                                                 size="sm"
-                                                className="bg-emerald-600 hover:bg-emerald-700 text-[10px] font-bold uppercase tracking-widest"
+                                                className="bg-emerald-600 hover:bg-emerald-700 text-xs font-bold uppercase tracking-widest"
                                                 onClick={async () => {
                                                     await apiRequest("PATCH", `/api/challenges/${challenge.id}`, { status: 'accepted' });
                                                     queryClient.invalidateQueries({ queryKey: [`/api/challenges/${accountId}/${zoneId}`] });
@@ -482,7 +486,7 @@ export default function Profile() {
                                             <Button
                                                 size="sm"
                                                 variant="outline"
-                                                className="border-red-500/20 text-red-500 hover:bg-red-500/10 text-[10px] font-bold uppercase tracking-widest"
+                                                className="border-red-500/20 text-red-500 hover:bg-red-500/10 text-xs font-bold uppercase tracking-widest"
                                                 onClick={async () => {
                                                     await apiRequest("PATCH", `/api/challenges/${challenge.id}`, { status: 'rejected' });
                                                     queryClient.invalidateQueries({ queryKey: [`/api/challenges/${accountId}/${zoneId}`] });
@@ -499,19 +503,19 @@ export default function Profile() {
 
                     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
                         <div className="p-5 rounded-2xl bg-gradient-to-br from-blue-500/10 to-transparent border border-blue-500/10 backdrop-blur-sm">
-                            <span className="block text-[8px] font-bold text-blue-400 uppercase tracking-widest mb-1">COMBATES NA ARENA</span>
+                            <span className="block text-[10px] font-bold text-blue-400 uppercase tracking-widest mb-1">COMBATES NA ARENA</span>
                             <span className="text-2xl font-black">{arenaStats.totalMatches}</span>
                         </div>
                         <div className="p-5 rounded-2xl bg-gradient-to-br from-emerald-500/10 to-transparent border border-emerald-500/10 backdrop-blur-sm">
-                            <span className="block text-[8px] font-bold text-emerald-400 uppercase tracking-widest mb-1">VITÓRIAS</span>
+                            <span className="block text-[10px] font-bold text-emerald-400 uppercase tracking-widest mb-1">VITÓRIAS</span>
                             <span className="text-2xl font-black text-emerald-400">{arenaStats.wins}</span>
                         </div>
                         <div className="p-5 rounded-2xl bg-gradient-to-br from-red-500/10 to-transparent border border-red-500/10 backdrop-blur-sm">
-                            <span className="block text-[8px] font-bold text-red-400 uppercase tracking-widest mb-1">DERROTAS</span>
+                            <span className="block text-[10px] font-bold text-red-400 uppercase tracking-widest mb-1">DERROTAS</span>
                             <span className="text-2xl font-black text-red-400">{arenaStats.losses}</span>
                         </div>
                         <div className="p-5 rounded-2xl bg-gradient-to-br from-primary/10 to-transparent border border-primary/10 backdrop-blur-sm">
-                            <span className="block text-[8px] font-bold text-primary uppercase tracking-widest mb-1">WINRATE ARENA</span>
+                            <span className="block text-[10px] font-bold text-primary uppercase tracking-widest mb-1">WINRATE ARENA</span>
                             <span className="text-2xl font-black text-primary">{arenaStats.winRate}</span>
                         </div>
                     </div>
@@ -548,7 +552,7 @@ export default function Profile() {
                                                     (e.target as HTMLImageElement).src = "https://images.unsplash.com/photo-1550684848-fac1c5b4e853?w=500&q=80";
                                                 }}
                                             />
-                                            <Badge className={`absolute bottom-2 left-1/2 -translate-x-1/2 uppercase text-[8px] font-black ${reward.rarity === 'mythic' ? 'bg-purple-600' :
+                                            <Badge className={`absolute bottom-2 left-1/2 -translate-x-1/2 uppercase text-[10px] font-black ${reward.rarity === 'mythic' ? 'bg-purple-600' :
                                                 reward.rarity === 'legendary' ? 'bg-yellow-600' :
                                                     reward.rarity === 'epic' ? 'bg-green-600' : 'bg-blue-600'
                                                 }`}>
@@ -578,7 +582,7 @@ export default function Profile() {
                         <Card className="bg-white/5 border-dashed border-white/10 p-12 text-center rounded-3xl">
                             <p className="text-muted-foreground italic text-sm tracking-widest uppercase mb-4">A vitrine está vazia... por enquanto.</p>
                             <Link href="/rankings">
-                                <Button variant="outline" className="text-[10px] font-black uppercase tracking-widest border-primary/20 hover:bg-primary/5">Buscar Glória</Button>
+                                <Button variant="outline" className="text-xs font-black uppercase tracking-widest border-primary/20 hover:bg-primary/5">Buscar Glória</Button>
                             </Link>
                         </Card>
                     )}
@@ -617,7 +621,7 @@ export default function Profile() {
                                                     {Array.from({ length: selectedReward.stars || 1 }).map((_, s) => (
                                                         <Star key={s} className="w-5 h-5 fill-primary text-primary drop-shadow-[0_0_8px_rgba(234,179,8,0.5)]" />
                                                     ))}
-                                                    <span className="ml-4 text-[10px] font-black uppercase tracking-[0.3em] text-white/40 flex items-center">Raridade {selectedReward.stars}/7</span>
+                                                    <span className="ml-4 text-xs font-black uppercase tracking-[0.3em] text-white/40 flex items-center">Raridade {selectedReward.stars}/7</span>
                                                 </div>
 
                                                 <DialogDescription className="text-sm text-muted-foreground leading-loose italic">
@@ -628,7 +632,7 @@ export default function Profile() {
                                             <div className="pt-8 space-y-4">
                                                 <div className="flex items-center gap-4 p-4 rounded-2xl bg-white/5 border border-white/5">
                                                     <Shield className="w-6 h-6 text-primary" />
-                                                    <p className="text-[10px] font-black uppercase tracking-widest text-white/60">
+                                                    <p className="text-xs font-black uppercase tracking-widest text-white/60">
                                                         ITEM AUTÊNTICO • WMYTHIC
                                                     </p>
                                                 </div>
@@ -671,7 +675,7 @@ export default function Profile() {
                                     <CardContent className="p-6 flex flex-col items-center text-center">
                                         <stat.icon className={`w-6 h-6 mb-3 ${stat.color}`} />
                                         <span className="text-2xl font-black mb-1">{stat.value}</span>
-                                        <span className="text-[9px] text-muted-foreground uppercase font-bold tracking-widest line-clamp-1">{stat.label}</span>
+                                        <span className="text-[11px] text-muted-foreground uppercase font-bold tracking-widest line-clamp-1">{stat.label}</span>
                                     </CardContent>
                                 </Card>
                             </motion.div>
@@ -704,7 +708,7 @@ export default function Profile() {
                                                 </div>
                                                 <div className="flex-1">
                                                     <h4 className="text-sm font-bold uppercase tracking-widest text-white">{hero.name}</h4>
-                                                    <div className="flex items-center gap-3 text-[10px] uppercase font-bold tracking-tighter mt-1">
+                                                    <div className="flex items-center gap-3 text-xs uppercase font-bold tracking-tighter mt-1">
                                                         <span className="text-muted-foreground">{hero.used} PARTIDAS</span>
                                                         <span className="text-emerald-400">{hero.winRate}% WR</span>
                                                     </div>
@@ -766,12 +770,12 @@ export default function Profile() {
                                                         <span className={`text-sm font-bold uppercase tracking-widest ${isWinner ? 'text-emerald-400' : 'text-rose-400'}`}>
                                                             {isWinner ? 'VITÓRIA' : 'DERROTA'}
                                                         </span>
-                                                        <span className="text-muted-foreground text-[10px]">• {new Date(match.createdAt).toLocaleDateString()}</span>
+                                                        <span className="text-muted-foreground text-xs">• {new Date(match.createdAt).toLocaleDateString()}</span>
                                                     </div>
                                                     <div className="flex items-center gap-2">
                                                         <p className="text-lg font-serif">vs <span className="uppercase text-white">{opponentName}</span></p>
                                                         {match.winnerHero && (
-                                                            <div className="flex items-center gap-1 bg-white/5 px-2 py-0.5 rounded border border-white/5 text-[10px] font-bold">
+                                                            <div className="flex items-center gap-1 bg-white/5 px-2 py-0.5 rounded border border-white/5 text-xs font-bold">
                                                                 <span className="text-emerald-400">{isWinner ? match.winnerHero : match.loserHero}</span>
                                                                 <span className="opacity-30">vs</span>
                                                                 <span className="text-rose-400">{isWinner ? match.loserHero : match.winnerHero}</span>
@@ -784,7 +788,7 @@ export default function Profile() {
                                             <div className="text-right">
                                                 <span className={`text-xl font-black ${isWinner ? 'text-emerald-400' : 'text-rose-400'}`}>
                                                     {isWinner ? '+50' : '-20'}
-                                                    <span className="text-[10px] text-muted-foreground ml-1 uppercase">pts</span>
+                                                    <span className="text-xs text-muted-foreground ml-1 uppercase">pts</span>
                                                 </span>
                                             </div>
                                         </motion.div>
