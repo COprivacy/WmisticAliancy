@@ -388,7 +388,7 @@ export default function Rankings() {
                           alt={sortedPlayers[1].gameName}
                           onError={(e) => {
                             (e.target as HTMLImageElement).onerror = null;
-                            (e.target as HTMLImageElement).src = `https://api.dicebear.com/7.x/avataaars/svg?seed=${sortedPlayers[1].accountId}`;
+                            (e.target as HTMLImageElement).src = `https://api.dicebear.com/7.x/avataaars/svg?seed=${sortedPlayers[1].accountId}&backgroundColor=b6e3f4`;
                           }}
                         />
                       </div>
@@ -423,7 +423,7 @@ export default function Rankings() {
                           alt={sortedPlayers[0].gameName}
                           onError={(e) => {
                             (e.target as HTMLImageElement).onerror = null;
-                            (e.target as HTMLImageElement).src = `https://api.dicebear.com/7.x/avataaars/svg?seed=${sortedPlayers[0].accountId}`;
+                            (e.target as HTMLImageElement).src = `https://api.dicebear.com/7.x/avataaars/svg?seed=${sortedPlayers[0].accountId}&backgroundColor=b6e3f4`;
                           }}
                         />
                       </div>
@@ -455,7 +455,7 @@ export default function Rankings() {
                           alt={sortedPlayers[2].gameName}
                           onError={(e) => {
                             (e.target as HTMLImageElement).onerror = null;
-                            (e.target as HTMLImageElement).src = `https://api.dicebear.com/7.x/avataaars/svg?seed=${sortedPlayers[2].accountId}`;
+                            (e.target as HTMLImageElement).src = `https://api.dicebear.com/7.x/avataaars/svg?seed=${sortedPlayers[2].accountId}&backgroundColor=b6e3f4`;
                           }}
                         />
                       </div>
@@ -751,6 +751,10 @@ export default function Rankings() {
                         <img
                           src={player.avatar || `https://api.dicebear.com/7.x/avataaars/svg?seed=${player.accountId}&backgroundColor=b6e3f4`}
                           className="w-10 h-10 sm:w-14 sm:h-14 rounded-full border-2 border-white/10 shadow-lg object-cover bg-black/20"
+                          onError={(e) => {
+                            (e.target as HTMLImageElement).onerror = null;
+                            (e.target as HTMLImageElement).src = `https://api.dicebear.com/7.x/avataaars/svg?seed=${player.accountId}&backgroundColor=b6e3f4`;
+                          }}
                         />
                         {index === 0 && <Crown className="absolute -top-2 -right-2 w-4 h-4 text-yellow-500 animate-bounce" />}
                       </div>
