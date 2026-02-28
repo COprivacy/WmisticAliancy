@@ -540,7 +540,8 @@ export default function Profile() {
                                 >
                                     <div className={`absolute inset-0 rounded-3xl blur-2xl opacity-20 group-hover:opacity-40 transition-opacity ${reward.rarity === 'mythic' ? 'bg-purple-500' :
                                         reward.rarity === 'legendary' ? 'bg-yellow-500' :
-                                            reward.rarity === 'epic' ? 'bg-green-500' : 'bg-blue-500'
+                                            reward.rarity === 'epic' ? 'bg-green-500' :
+                                                reward.rarity === 'rare' ? 'bg-blue-500' : 'bg-slate-500'
                                         }`} />
                                     <Card className="bg-[#020617]/40 border-white/5 backdrop-blur-3xl overflow-hidden h-full rounded-3xl group-hover:border-primary/30 transition-all shadow-2xl">
                                         <div className="aspect-square relative overflow-hidden flex items-center justify-center p-4">
@@ -554,7 +555,8 @@ export default function Profile() {
                                             />
                                             <Badge className={`absolute bottom-2 left-1/2 -translate-x-1/2 uppercase text-[10px] font-black ${reward.rarity === 'mythic' ? 'bg-purple-600' :
                                                 reward.rarity === 'legendary' ? 'bg-yellow-600' :
-                                                    reward.rarity === 'epic' ? 'bg-green-600' : 'bg-blue-600'
+                                                    reward.rarity === 'epic' ? 'bg-green-600' :
+                                                        reward.rarity === 'rare' ? 'bg-blue-600' : 'bg-slate-600'
                                                 }`}>
                                                 {reward.rarity}
                                             </Badge>

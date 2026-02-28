@@ -569,11 +569,12 @@ export default function Admin() {
                         <SelectTrigger className="h-12 bg-black/20 border-white/10">
                           <SelectValue />
                         </SelectTrigger>
-                        <SelectContent className="bg-slate-900 border-white/10">
+                        <SelectContent className="bg-slate-900 border-white/10 text-white">
                           <SelectItem value="mythic">Mythic</SelectItem>
                           <SelectItem value="legendary">Legendary</SelectItem>
                           <SelectItem value="epic">Epic</SelectItem>
                           <SelectItem value="rare">Rare</SelectItem>
+                          <SelectItem value="common">Common</SelectItem>
                         </SelectContent>
                       </Select>
                     </div>
