@@ -15,6 +15,7 @@ import Meta from "@/pages/meta";
 import Fame from "@/pages/fame";
 import Arena from "@/pages/arena";
 import Rules from "@/pages/rules";
+import Chat from "@/pages/chat";
 import Layout from "@/components/layout";
 
 function Router() {
@@ -70,6 +71,11 @@ function Router() {
         </Layout>
       </Route>
 
+      <Route path="/chat">
+        <Layout>
+          <Chat />
+        </Layout>
+      </Route>
 
       <Route component={NotFound} />
     </Switch>

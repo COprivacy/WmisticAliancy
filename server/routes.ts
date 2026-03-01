@@ -62,6 +62,14 @@ async function uploadToSupabase(file: Express.Multer.File, bucket: string): Prom
   return data.publicUrl;
 }
 
+const MLBB_REWARDS_API = "https://example.com/api/rewards"; // Placeholder for actual gift service
+const GLORY_BUNDLES = [
+  { id: "starter", name: "Pacote do Iniciante", amount: 100, price: 500, description: "Ótimo para sua primeira relíquia comum." },
+  { id: "warrior", name: "Baú do Guerreiro", amount: 550, price: 2000, description: "Inclui 50 pontos de bônus!" },
+  { id: "legend", name: "Tesouro da Lenda", amount: 1200, price: 4000, description: "Melhor custo-benefício para épicos." },
+  { id: "mythic", name: "Herança Mítica", amount: 3000, price: 9000, description: "Poder supremo para as relíquias mais raras." },
+];
+
 export async function registerRoutes(
   httpServer: Server,
   app: Express
@@ -105,8 +113,8 @@ export async function registerRoutes(
 
     req.session.user = {
       username: isAdmin ? "Sem+Pai (ADM)" : player.gameName,
-      id,
-      zoneId: zoneId || "0000",
+      id: player.accountId,
+      zoneId: player.zoneId,
       isAdmin
     };
 
@@ -161,13 +169,18 @@ export async function registerRoutes(
     const newRank = calculateRank(newPoints);
     const rankUp = newRank !== player.rank;
 
+    const gloryPointsAwarded = 15;
     const updated = await storage.updatePlayer(player.id, {
       points: newPoints,
       rank: newRank,
-      lastClaimedAt: now
+      lastClaimedAt: now,
+      gloryPoints: player.gloryPoints + gloryPointsAwarded
     });
 
-    await storage.createActivity("daily_claim", player.id, player.gameName, { points: rewardPoints });
+    await storage.createActivity("daily_claim", player.id, player.gameName, {
+      points: rewardPoints,
+      gloryPoints: gloryPointsAwarded
+    });
 
     if (rankUp) {
       await storage.createActivity("rank_up", player.id, player.gameName, { newRank });
@@ -176,7 +189,8 @@ export async function registerRoutes(
     res.json({
       success: true,
       points: updated.points,
-      message: `Você recebeu +${rewardPoints} pontos de honra diária! ⚔️`
+      gloryPoints: updated.gloryPoints,
+      message: `Você recebeu +${rewardPoints} pontos de honra e +${gloryPointsAwarded} Pontos de Glória! ⚔️`
     });
   }));
 
@@ -481,7 +495,7 @@ export async function registerRoutes(
 
   app.patch("/api/players/:id/admin", requireAdmin, asyncHandler(async (req, res) => {
     const playerId = parseInt(req.params.id as string);
-    const { points, isBanned, pin } = req.body;
+    const { points, isBanned, pin, gloryPoints } = req.body;
 
     const update: any = {};
     if (points !== undefined) {
@@ -494,6 +508,9 @@ export async function registerRoutes(
     if (pin !== undefined) {
       update.pin = pin;
     }
+    if (gloryPoints !== undefined) {
+      update.gloryPoints = gloryPoints;
+    }
 
     const updated = await storage.updatePlayer(playerId, update);
     res.json(updated);
@@ -501,16 +518,37 @@ export async function registerRoutes(
 
   app.post("/api/admin/reset-season", requireAdmin, asyncHandler(async (_req, res) => {
     const playersList = await storage.getPlayers();
-    for (const p of playersList) {
+    // Sort by points for ranking distribution
+    playersList.sort((a, b) => b.points - a.points);
+
+    for (let i = 0; i < playersList.length; i++) {
+      const p = playersList[i];
+      const position = i + 1;
+      let gloryBonus = 0;
+
+      if (position === 1) gloryBonus = 2000;
+      else if (position === 2) gloryBonus = 1000;
+      else if (position === 3) gloryBonus = 500;
+      else if (position <= 10) gloryBonus = 200;
+      else gloryBonus = 50; // Participation bonus
+
       await storage.updatePlayer(p.id, {
         points: 100,
         wins: 0,
         losses: 0,
         streak: 0,
-        rank: "Recruta"
+        rank: "Recruta",
+        gloryPoints: p.gloryPoints + gloryBonus
       });
+
+      if (gloryBonus > 0) {
+        await storage.createActivity("season_payout", p.id, p.gameName, {
+          position,
+          gloryBonus
+        });
+      }
     }
-    res.json({ success: true, message: "Temporada resetada com sucesso!" });
+    res.json({ success: true, message: "Temporada resetada e Pontos de Glória distribuídos com sucesso!" });
   }));
 
   app.post("/api/admin/reset/activities", requireAdmin, asyncHandler(async (_req, res) => {
@@ -578,6 +616,84 @@ export async function registerRoutes(
     }
 
     res.json({ success: true });
+  }));
+
+  app.post("/api/rewards/purchase", requireAuth, asyncHandler(async (req, res) => {
+    const { rewardId } = req.body;
+    const sessionUser = req.session.user;
+
+    console.log("DEBUG PURCHASE - Session User:", JSON.stringify(sessionUser));
+
+    if (!sessionUser) {
+      res.status(401).json({ message: "Sessão expirada. Faça login novamente." });
+      return;
+    }
+
+    const player = await storage.getPlayerByAccountId(sessionUser.id, sessionUser.zoneId);
+
+    if (!player) {
+      console.log(`DEBUG PURCHASE - Player NOT found for ID: ${sessionUser.id}, Zone: ${sessionUser.zoneId}`);
+      res.status(404).json({ message: `Perfil ${sessionUser.id} (${sessionUser.zoneId}) não encontrado.` });
+      return;
+    }
+
+    try {
+      await storage.purchaseReward(player.id, rewardId);
+      res.json({ success: true, message: "Relíquia adquirida com sucesso e enviada ao seu Baú!" });
+    } catch (err: any) {
+      res.status(400).json({ message: err.message });
+    }
+  }));
+
+  // Glory Points Top-up Routes
+  app.get("/api/glory/bundles", asyncHandler(async (_req, res) => {
+    res.json(GLORY_BUNDLES);
+  }));
+
+  app.post("/api/glory/topup", requireAuth, asyncHandler(async (req, res) => {
+    const { bundleId } = req.body;
+    const bundle = GLORY_BUNDLES.find(b => b.id === bundleId);
+    if (!bundle) {
+      res.status(400).json({ message: "Pacote inválido selecionado." });
+      return;
+    }
+
+    const player = await storage.getPlayerByAccountId(req.session.user!.id, req.session.user!.zoneId);
+    if (!player) {
+      res.status(404).json({ message: "Perfil de jogador não encontrado." });
+      return;
+    }
+
+    const topup = await storage.createGloryTopup({
+      playerId: player.id,
+      amount: bundle.amount,
+      price: bundle.price,
+      status: "pending"
+    });
+
+    res.json({
+      success: true,
+      topup,
+      message: "Solicitação de recarga criada. Realize o PIX para confirmar.",
+      pixKey: "62992813580" // Example PIX key
+    });
+  }));
+
+  app.post("/api/admin/glory/topup/:id/status", requireAdmin, asyncHandler(async (req, res) => {
+    const { status } = req.body;
+    const { id } = req.params;
+
+    try {
+      const updated = await storage.updateGloryTopupStatus(Number(id), status);
+      res.json({ success: true, topup: updated });
+    } catch (err: any) {
+      res.status(400).json({ message: err.message });
+    }
+  }));
+
+  app.get("/api/glory/topups", requireAdmin, asyncHandler(async (_req, res) => {
+    const list = await storage.getGloryTopups();
+    res.json(list);
   }));
 
   // Challenges Routes
@@ -693,6 +809,44 @@ export async function registerRoutes(
     }
     res.json(hero);
   });
+
+  // Global Chat Routes
+  app.get("/api/chat/messages", asyncHandler(async (_req, res) => {
+    const messages = await storage.getGlobalMessages(50);
+    res.json(messages.reverse());
+  }));
+
+  app.post("/api/chat/messages", requireAuth, asyncHandler(async (req, res) => {
+    const { content } = req.body;
+    if (!content || typeof content !== "string" || !content.trim()) {
+      res.status(400).json({ message: "Mensagem vazia." });
+      return;
+    }
+
+    const isAdmMic = req.session.user?.isAdmin;
+    let authorId, authorName, authorAvatar, authorRank;
+
+    const player = await storage.getPlayerByAccountId(req.session.user!.id, req.session.user!.zoneId);
+    if (!player) {
+      res.status(404).json({ message: "Jogador não encontrado" });
+      return;
+    }
+
+    authorId = player.accountId;
+    authorName = isAdmMic ? `${player.gameName} (ADM)` : player.gameName;
+    authorAvatar = player.avatar || null;
+    authorRank = isAdmMic ? "Moderador" : player.rank;
+
+    const message = await storage.createGlobalMessage({
+      authorId,
+      authorName,
+      authorAvatar,
+      authorRank,
+      content: content.trim().substring(0, 500)
+    });
+
+    res.json(message);
+  }));
 
   return httpServer;
 }

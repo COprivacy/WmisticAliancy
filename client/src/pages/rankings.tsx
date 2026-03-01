@@ -36,9 +36,11 @@ import { useQuery, useMutation } from "@tanstack/react-query";
 import { queryClient, apiRequest } from "@/lib/queryClient";
 import { Player, Reward } from "@shared/schema";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import ActivityFeed from "@/components/activity-feed";
 import { SearchableSelect } from "@/components/searchable-select";
 import { MLBB_HEROES } from "@/lib/constants";
+import { Coins, QrCode, Wallet, ShoppingCart } from "lucide-react";
 
 type PlayerWithRewards = Player & { rewards: Reward[] };
 type SeasonInfo = {
@@ -80,6 +82,14 @@ export default function Rankings() {
 
   const { data: players, isLoading } = useQuery<PlayerWithRewards[]>({
     queryKey: ["/api/players"],
+  });
+
+  const { data: allRewards = [] } = useQuery<Reward[]>({
+    queryKey: ["/api/rewards"],
+  });
+
+  const { data: bundles = [] } = useQuery<{ id: string, name: string, amount: number, price: number, description: string }[]>({
+    queryKey: ["/api/glory/bundles"],
   });
 
   const { data: season } = useQuery<SeasonInfo>({
@@ -135,6 +145,47 @@ export default function Rankings() {
       toast({
         title: "Ainda não, combatente!",
         description: "Você já resgatou sua recompensa hoje.",
+        variant: "destructive",
+      });
+    }
+  });
+
+  const purchaseMutation = useMutation({
+    mutationFn: async (rewardId: number) => {
+      const res = await apiRequest("POST", "/api/rewards/purchase", { rewardId });
+      return res.json();
+    },
+    onSuccess: (data) => {
+      queryClient.invalidateQueries({ queryKey: ["/api/players"] });
+      toast({
+        title: "🛡️ Relíquia Adquirida!",
+        description: data.message,
+      });
+    },
+    onError: (err: any) => {
+      toast({
+        title: "Falha na Compra",
+        description: err?.response?.data?.message || err.message || "Tente novamente mais tarde.",
+        variant: "destructive",
+      });
+    }
+  });
+
+  const topupMutation = useMutation({
+    mutationFn: async (bundleId: string) => {
+      const res = await apiRequest("POST", "/api/glory/topup", { bundleId });
+      return res.json();
+    },
+    onSuccess: (data) => {
+      toast({
+        title: "⚡ Solicitação Criada",
+        description: data.message,
+      });
+    },
+    onError: (err: any) => {
+      toast({
+        title: "Erro na Recarga",
+        description: err?.response?.data?.message || err.message,
         variant: "destructive",
       });
     }
@@ -196,14 +247,6 @@ export default function Rankings() {
     return "from-blue-500/10 to-blue-600/5 text-blue-100 border-white/5";
   };
 
-  if (isLoading || !season) {
-    return (
-      <div className="flex items-center justify-center min-h-[60vh]">
-        <Loader2 className="w-10 h-10 animate-spin text-primary" />
-      </div>
-    );
-  }
-
   const sortedPlayers = players
     ? [...players]
       .filter(p => !p.isBanned)
@@ -213,6 +256,17 @@ export default function Rankings() {
       )
       .sort((a, b) => b.points - a.points)
     : [];
+
+  const myPlayer = sortedPlayers.find(p => p.accountId === user?.id);
+  const myRank = myPlayer ? sortedPlayers.indexOf(myPlayer) + 1 : "-";
+
+  if (isLoading || !season) {
+    return (
+      <div className="flex items-center justify-center min-h-[60vh]">
+        <Loader2 className="w-10 h-10 animate-spin text-primary" />
+      </div>
+    );
+  }
 
   const getRankGlow = (index: number) => {
     if (index === 0) return "rank-glow-grand-master";
@@ -250,9 +304,6 @@ export default function Rankings() {
       default: return "0+ PTS";
     }
   };
-
-  const myPlayer = sortedPlayers.find(p => p.accountId === user?.id);
-  const myRank = myPlayer ? sortedPlayers.indexOf(myPlayer) + 1 : "-";
 
   return (
     <div className="max-w-6xl mx-auto space-y-10 py-6 relative">
@@ -387,44 +438,118 @@ export default function Rankings() {
                     <span className="text-[10px] font-black uppercase tracking-[0.3em] text-primary font-sans">Premiacao da Temporada</span>
                   </div>
 
-                  <div className="grid grid-cols-2 gap-3">
-                    {season?.prizes?.map((prize, i) => {
-                      const rarity = getPrizeRarity(prize.rank);
-                      const rc = rarity === 'mythic'
-                        ? { border: 'border-purple-500/30', bg: 'from-purple-900/20', label: 'text-purple-400' }
-                        : rarity === 'legendary'
-                          ? { border: 'border-yellow-500/30', bg: 'from-yellow-900/20', label: 'text-yellow-400' }
-                          : rarity === 'epic'
-                            ? { border: 'border-emerald-500/30', bg: 'from-emerald-900/20', label: 'text-emerald-400' }
-                            : { border: 'border-blue-500/20', bg: 'from-blue-900/10', label: 'text-blue-400' };
+                  <div className="w-full">
+                    {(() => {
+                      const getPrize = (r: string) => season?.prizes?.find(p => p.rank.toUpperCase() === r);
+                      const top1 = getPrize("TOP 1");
+                      const top2 = getPrize("TOP 2");
+                      const top3 = getPrize("TOP 3");
+                      const others = season?.prizes?.filter(p => !["TOP 1", "TOP 2", "TOP 3"].includes(p.rank.toUpperCase())) || [];
+
+                      const renderPodiumItem = (prize: any, position: 1 | 2 | 3) => {
+                        if (!prize) return <div className="flex-1" />;
+                        const rarity = getPrizeRarity(prize.rank);
+                        const rc = rarity === 'mythic' ? { border: 'border-purple-500/50', glow: 'shadow-[0_0_15px_rgba(168,85,247,0.4)]', label: 'text-purple-400 text-glow' }
+                          : rarity === 'legendary' ? { border: 'border-yellow-500/50', glow: 'shadow-[0_0_15px_rgba(234,179,8,0.4)]', label: 'text-yellow-400 text-glow' }
+                            : rarity === 'epic' ? { border: 'border-emerald-500/50', glow: 'shadow-[0_0_15px_rgba(16,185,129,0.4)]', label: 'text-emerald-400 text-glow' }
+                              : { border: 'border-blue-500/50', glow: 'shadow-[0_0_15px_rgba(59,130,246,0.4)]', label: 'text-blue-400 text-glow' };
+
+                        const isCenter = position === 1;
+                        const imageSrc = prize.image || PRIZE_IMAGES[prize.rank] || "/images/rewards/rare-medal.svg";
+
+                        return (
+                          <motion.div
+                            initial={{ opacity: 0, y: 20 }}
+                            animate={{ opacity: 1, y: 0 }}
+                            transition={{ delay: position * 0.1 }}
+                            className={`flex flex-col items-center justify-end flex-1 gap-2 relative z-10 ${isCenter ? 'mb-4 z-20' : ''}`}
+                          >
+                            <Dialog>
+                              <DialogTrigger asChild>
+                                <div className="group cursor-pointer flex flex-col items-center gap-2">
+                                  {isCenter && <Crown className="absolute -top-6 text-yellow-400 w-8 h-8 animate-bounce drop-shadow-[0_0_8px_rgba(234,179,8,0.8)] z-10" />}
+                                  <div className={`relative ${isCenter ? 'w-24 h-32 sm:w-28 sm:h-36' : 'w-20 h-28 sm:w-24 sm:h-32'} rounded-2xl overflow-hidden border-2 flex-shrink-0 ${rc.border} ${rc.glow} bg-black/40 group-hover:scale-105 transition-transform duration-300`}>
+                                    <img src={imageSrc} alt={prize.rank} className="w-full h-full object-cover" />
+                                    <div className="absolute inset-x-0 bottom-0 bg-gradient-to-t from-black/90 pb-1 pt-4 to-transparent text-center">
+                                      <span className={`block text-[12px] font-black uppercase tracking-widest ${rc.label}`}>{position}º</span>
+                                    </div>
+                                  </div>
+                                  <div className="text-center px-1">
+                                    <p className={`text-[11px] font-serif font-black uppercase leading-tight group-hover:drop-shadow-lg ${prize.effect ? prize.effect : 'text-white/90'}`}>{prize.prize}</p>
+                                  </div>
+                                </div>
+                              </DialogTrigger>
+                              <DialogContent className="bg-black/95 border-primary/20 backdrop-blur-3xl sm:max-w-md p-6">
+                                <div className="flex flex-col items-center justify-center gap-6">
+                                  <div className={`w-48 h-64 rounded-xl overflow-hidden border-2 shadow-2xl ${rc.border} ${rc.glow}`}>
+                                    <img src={imageSrc} className="w-full h-full object-cover" alt={prize.rank} />
+                                  </div>
+                                  <div className="text-center space-y-2">
+                                    <h3 className={`text-2xl font-serif font-black uppercase tracking-widest ${rc.label}`}>{prize.prize}</h3>
+                                    <p className="text-xs font-bold uppercase tracking-widest text-muted-foreground">Recompensa para {prize.rank}</p>
+                                    {prize.effect && <Badge variant="outline" className={`mt-2 bg-black/50 ${rc.border} ${rc.label}`}>EFEITO ESPECIAL INCLUÍDO</Badge>}
+                                  </div>
+                                </div>
+                              </DialogContent>
+                            </Dialog>
+                          </motion.div>
+                        );
+                      };
+
                       return (
-                        <motion.div
-                          key={prize.rank}
-                          initial={{ opacity: 0, scale: 0.9 }}
-                          animate={{ opacity: 1, scale: 1 }}
-                          transition={{ delay: i * 0.07 }}
-                          className={`group relative flex gap-3 items-center p-3 rounded-2xl border ${rc.border} bg-gradient-to-br ${rc.bg} to-transparent hover:scale-[1.02] transition-all duration-300 cursor-default`}
-                        >
-                          <div className="relative w-12 h-14 rounded-xl overflow-hidden border border-white/5 bg-black/40 shrink-0">
-                            <img
-                              src={prize.image || PRIZE_IMAGES[prize.rank] || "/images/rewards/rare-medal.svg"}
-                              alt={prize.rank}
-                              className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500"
-                            />
-                            <div className="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent" />
+                        <>
+                          <div className="flex items-end justify-center w-full gap-4 pt-8 pb-4">
+                            {renderPodiumItem(top2, 2)}
+                            {renderPodiumItem(top1, 1)}
+                            {renderPodiumItem(top3, 3)}
                           </div>
-                          <div className="flex-1 min-w-0 space-y-0.5">
-                            <span className={`block text-[8px] font-black uppercase tracking-[0.25em] ${rc.label}`}>{prize.rank}</span>
-                            <p className={`text-[10px] font-serif font-black leading-tight uppercase line-clamp-2 ${prize.effect ? prize.effect : 'text-white/90'}`}>
-                              {prize.prize}
-                            </p>
-                          </div>
-                        </motion.div>
+                          {others.length > 0 && (
+                            <div className="flex flex-wrap justify-center gap-3 mt-4 border-t border-white/5 pt-6">
+                              {others.map((prize, i) => {
+                                const rarity = getPrizeRarity(prize.rank);
+                                const rc = rarity === 'mythic' ? { border: 'border-purple-500/30', bg: 'from-purple-900/20', label: 'text-purple-400 text-glow' }
+                                  : rarity === 'legendary' ? { border: 'border-yellow-500/30', bg: 'from-yellow-900/20', label: 'text-yellow-400 text-glow' }
+                                    : rarity === 'epic' ? { border: 'border-emerald-500/30', bg: 'from-emerald-900/20', label: 'text-emerald-400 text-glow' }
+                                      : { border: 'border-blue-500/20', bg: 'from-blue-900/10', label: 'text-blue-400 text-glow' };
+
+                                const imageSrc = prize.image || PRIZE_IMAGES[prize.rank] || "/images/rewards/rare-medal.svg";
+
+                                return (
+                                  <Dialog key={prize.rank}>
+                                    <DialogTrigger asChild>
+                                      <motion.div initial={{ opacity: 0, scale: 0.9 }} animate={{ opacity: 1, scale: 1 }} className={`group flex items-center gap-4 p-4 sm:p-5 rounded-2xl border cursor-pointer hover:bg-white/5 hover:scale-105 transition-all ${rc.border} bg-gradient-to-br ${rc.bg} w-full sm:w-[48%]`}>
+                                        <div className={`relative w-14 h-14 sm:w-16 sm:h-16 rounded overflow-hidden border flex-shrink-0 bg-black/40 ${rc.border}`}>
+                                          <img src={imageSrc} className="w-full h-full object-cover" />
+                                        </div>
+                                        <div className="min-w-0 flex-1">
+                                          <span className={`block text-[10px] sm:text-xs font-black uppercase tracking-widest ${rc.label}`}>{prize.rank}</span>
+                                          <p className={`text-xs sm:text-sm font-black uppercase truncate ${prize.effect || 'text-white/90'}`}>{prize.prize}</p>
+                                        </div>
+                                      </motion.div>
+                                    </DialogTrigger>
+                                    <DialogContent className="bg-black/95 border-primary/20 backdrop-blur-3xl sm:max-w-md p-6">
+                                      <div className="flex flex-col items-center justify-center gap-6">
+                                        <div className={`w-48 h-64 rounded-xl overflow-hidden border-2 shadow-2xl ${rc.border}`}>
+                                          <img src={imageSrc} className="w-full h-full object-cover" alt={prize.rank} />
+                                        </div>
+                                        <div className="text-center space-y-2">
+                                          <h3 className={`text-2xl font-serif font-black uppercase tracking-widest ${rc.label}`}>{prize.prize}</h3>
+                                          <p className="text-xs font-bold uppercase tracking-widest text-muted-foreground">Recompensa para {prize.rank}</p>
+                                          {prize.effect && <Badge variant="outline" className={`mt-2 bg-black/50 ${rc.border} ${rc.label}`}>EFEITO ESPECIAL INCLUÍDO</Badge>}
+                                        </div>
+                                      </div>
+                                    </DialogContent>
+                                  </Dialog>
+                                )
+                              })}
+                            </div>
+                          )}
+                        </>
                       );
-                    })}
+                    })()}
                   </div>
 
-                  <div className="flex items-center gap-2 pt-1">
+                  <div className="flex items-center justify-center gap-2 pt-1 mt-4">
                     <Sparkles className="w-3 h-3 text-primary/60 shrink-0 animate-pulse" />
                     <p className="text-[9px] text-muted-foreground/50 uppercase font-black tracking-widest">
                       Entrega via correio mistico ao fim da temporada.
@@ -479,77 +604,81 @@ export default function Rankings() {
               )}
 
               {/* 1st Place */}
-              {sortedPlayers[0] && (
-                <motion.div
-                  initial={{ opacity: 0, y: 50 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  transition={{ delay: 0.1, duration: 0.8 }}
-                  className="w-full md:w-[40%] order-1 md:order-2 z-20"
-                >
-                  <Link href={`/player/${sortedPlayers[0].accountId}/${sortedPlayers[0].zoneId}`} className="block">
-                    <div className="relative mb-8">
-                      <motion.div animate={{ rotate: [0, 5, -5, 0] }} transition={{ repeat: Infinity, duration: 4 }} className="absolute -top-12 left-1/2 -translate-x-1/2 text-primary drop-shadow-[0_0_15px_rgba(234,179,8,0.8)]">
-                        <Crown className="w-16 h-16 fill-primary" />
-                      </motion.div>
-                      <div className={`w-32 h-32 md:w-44 md:h-44 rounded-full border-8 overflow-hidden relative z-10 mx-auto transition-all duration-700 ${getRankGlow(0)}`}>
-                        <img
-                          src={sortedPlayers[0].avatar || `https://api.dicebear.com/7.x/avataaars/svg?seed=${sortedPlayers[0].accountId}`}
-                          className="w-full h-full object-cover"
-                          alt={sortedPlayers[0].gameName}
-                          onError={(e) => {
-                            (e.target as HTMLImageElement).onerror = null;
-                            (e.target as HTMLImageElement).src = `https://api.dicebear.com/7.x/avataaars/svg?seed=${sortedPlayers[0].accountId}&backgroundColor=b6e3f4`;
-                          }}
-                        />
+              {
+                sortedPlayers[0] && (
+                  <motion.div
+                    initial={{ opacity: 0, y: 50 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ delay: 0.1, duration: 0.8 }}
+                    className="w-full md:w-[40%] order-1 md:order-2 z-20"
+                  >
+                    <Link href={`/player/${sortedPlayers[0].accountId}/${sortedPlayers[0].zoneId}`} className="block">
+                      <div className="relative mb-8">
+                        <motion.div animate={{ rotate: [0, 5, -5, 0] }} transition={{ repeat: Infinity, duration: 4 }} className="absolute -top-12 left-1/2 -translate-x-1/2 text-primary drop-shadow-[0_0_15px_rgba(234,179,8,0.8)]">
+                          <Crown className="w-16 h-16 fill-primary" />
+                        </motion.div>
+                        <div className={`w-32 h-32 md:w-44 md:h-44 rounded-full border-8 overflow-hidden relative z-10 mx-auto transition-all duration-700 ${getRankGlow(0)}`}>
+                          <img
+                            src={sortedPlayers[0].avatar || `https://api.dicebear.com/7.x/avataaars/svg?seed=${sortedPlayers[0].accountId}`}
+                            className="w-full h-full object-cover"
+                            alt={sortedPlayers[0].gameName}
+                            onError={(e) => {
+                              (e.target as HTMLImageElement).onerror = null;
+                              (e.target as HTMLImageElement).src = `https://api.dicebear.com/7.x/avataaars/svg?seed=${sortedPlayers[0].accountId}&backgroundColor=b6e3f4`;
+                            }}
+                          />
+                        </div>
+                        <div className="absolute -bottom-4 left-1/2 -translate-x-1/2 bg-primary text-primary-foreground font-black px-6 py-2 rounded-full text-xl z-20 shadow-xl">1º</div>
                       </div>
-                      <div className="absolute -bottom-4 left-1/2 -translate-x-1/2 bg-primary text-primary-foreground font-black px-6 py-2 rounded-full text-xl z-20 shadow-xl">1º</div>
-                    </div>
-                    <h3 className={`text-3xl text-center group-hover:scale-110 transition-transform ${getMagicClass(sortedPlayers[0])}`}>
-                      {sortedPlayers[0].gameName}
-                    </h3>
-                    <p className="text-primary text-center font-black text-2xl">{sortedPlayers[0].points} pts</p>
-                    <Badge className="mt-2 mx-auto block w-fit bg-primary text-primary-foreground animate-pulse">GRANDE MESTRE</Badge>
-                  </Link>
-                </motion.div>
-              )}
+                      <h3 className={`text-3xl text-center group-hover:scale-110 transition-transform ${getMagicClass(sortedPlayers[0])}`}>
+                        {sortedPlayers[0].gameName}
+                      </h3>
+                      <p className="text-primary text-center font-black text-2xl">{sortedPlayers[0].points} pts</p>
+                      <Badge className="mt-2 mx-auto block w-fit bg-primary text-primary-foreground animate-pulse">GRANDE MESTRE</Badge>
+                    </Link>
+                  </motion.div>
+                )
+              }
 
               {/* 3rd Place */}
-              {sortedPlayers[2] && (
-                <motion.div
-                  initial={{ opacity: 0, y: 50 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  transition={{ delay: 0.5, duration: 0.8 }}
-                  className="w-full md:w-1/3 order-3"
-                >
-                  <Link href={`/player/${sortedPlayers[2].accountId}/${sortedPlayers[2].zoneId}`} className="block">
-                    <div className="relative mb-6">
-                      <div className={`w-24 h-24 md:w-32 md:h-32 rounded-full border-4 overflow-hidden shadow-2xl relative z-10 mx-auto transition-all duration-500 ${getRankGlow(2)}`}>
-                        <img
-                          src={sortedPlayers[2].avatar || `https://api.dicebear.com/7.x/avataaars/svg?seed=${sortedPlayers[2].accountId}`}
-                          className="w-full h-full object-cover"
-                          alt={sortedPlayers[2].gameName}
-                          onError={(e) => {
-                            (e.target as HTMLImageElement).onerror = null;
-                            (e.target as HTMLImageElement).src = `https://api.dicebear.com/7.x/avataaars/svg?seed=${sortedPlayers[2].accountId}&backgroundColor=b6e3f4`;
-                          }}
-                        />
+              {
+                sortedPlayers[2] && (
+                  <motion.div
+                    initial={{ opacity: 0, y: 50 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ delay: 0.5, duration: 0.8 }}
+                    className="w-full md:w-1/3 order-3"
+                  >
+                    <Link href={`/player/${sortedPlayers[2].accountId}/${sortedPlayers[2].zoneId}`} className="block">
+                      <div className="relative mb-6">
+                        <div className={`w-24 h-24 md:w-32 md:h-32 rounded-full border-4 overflow-hidden shadow-2xl relative z-10 mx-auto transition-all duration-500 ${getRankGlow(2)}`}>
+                          <img
+                            src={sortedPlayers[2].avatar || `https://api.dicebear.com/7.x/avataaars/svg?seed=${sortedPlayers[2].accountId}`}
+                            className="w-full h-full object-cover"
+                            alt={sortedPlayers[2].gameName}
+                            onError={(e) => {
+                              (e.target as HTMLImageElement).onerror = null;
+                              (e.target as HTMLImageElement).src = `https://api.dicebear.com/7.x/avataaars/svg?seed=${sortedPlayers[2].accountId}&backgroundColor=b6e3f4`;
+                            }}
+                          />
+                        </div>
+                        <div className="absolute -bottom-4 left-1/2 -translate-x-1/2 bg-amber-800 text-white font-black px-4 py-1 rounded-full text-sm z-20">3º</div>
                       </div>
-                      <div className="absolute -bottom-4 left-1/2 -translate-x-1/2 bg-amber-800 text-white font-black px-4 py-1 rounded-full text-sm z-20">3º</div>
-                    </div>
-                    <h3 className={`text-xl text-center group-hover:scale-110 transition-transform ${getMagicClass(sortedPlayers[2])}`}>
-                      {sortedPlayers[2].gameName}
-                    </h3>
-                    <p className="text-amber-700 text-center font-bold">{sortedPlayers[2].points} pts</p>
-                    <Badge className="mt-2 mx-auto block w-fit bg-amber-800 text-white">BRONZE</Badge>
-                  </Link>
-                </motion.div>
-              )}
+                      <h3 className={`text-xl text-center group-hover:scale-110 transition-transform ${getMagicClass(sortedPlayers[2])}`}>
+                        {sortedPlayers[2].gameName}
+                      </h3>
+                      <p className="text-amber-700 text-center font-bold">{sortedPlayers[2].points} pts</p>
+                      <Badge className="mt-2 mx-auto block w-fit bg-amber-800 text-white">BRONZE</Badge>
+                    </Link>
+                  </motion.div>
+                )
+              }
             </>
           )}
-        </div>
-      </section>
+        </div >
+      </section >
       {/* Hero Stats Section */}
-      <section className="grid grid-cols-1 md:grid-cols-4 gap-6">
+      < section className="grid grid-cols-1 md:grid-cols-4 gap-6" >
         <motion.div initial={{ opacity: 0, x: -20 }} animate={{ opacity: 1, x: 0 }}>
           <Card className="bg-gradient-to-br from-primary/20 to-transparent border-primary/20 relative overflow-hidden group">
             <div className="absolute top-0 right-0 p-4 opacity-10 group-hover:scale-125 transition-transform">
@@ -721,12 +850,153 @@ export default function Rankings() {
               </DialogContent>
             </Dialog>
 
-            <Link href="/rewards">
-              <Button variant="outline" className="w-full h-14 border-primary/20 bg-primary/5 hover:bg-primary/10 text-primary font-bold uppercase tracking-widest group">
-                <Gift className="w-5 h-5 mr-3 group-hover:bounce" />
-                Santuário de Prêmios
-              </Button>
-            </Link>
+            <Dialog>
+              <DialogTrigger asChild>
+                <Button variant="outline" className="w-full h-14 border-primary/20 bg-primary/5 hover:bg-primary/10 text-primary font-bold uppercase tracking-widest group">
+                  <Gift className="w-5 h-5 mr-3 group-hover:bounce" />
+                  Sacrário de Relíquias
+                </Button>
+              </DialogTrigger>
+              <DialogContent className="max-w-4xl bg-[#020617]/95 border-primary/20 backdrop-blur-3xl p-8 overflow-y-auto max-h-[90vh]">
+                <DialogHeader className="mb-8">
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <DialogTitle className="text-3xl font-serif font-black uppercase tracking-widest flex items-center gap-3 italic">
+                        <Sparkles className="w-6 h-6 text-primary animate-pulse" />
+                        Sacrário de Relíquias
+                      </DialogTitle>
+                      <DialogDescription className="text-primary/60 font-bold uppercase tracking-widest text-xs mt-1">
+                        Consuma seus Pontos de Glória por poder ancestral
+                      </DialogDescription>
+                    </div>
+                    {myPlayer && (
+                      <div className="bg-primary/10 border border-primary/20 rounded-2xl px-6 py-3 flex flex-col items-end">
+                        <span className="text-[10px] font-black uppercase tracking-widest text-primary/60">Seu Saldo:</span>
+                        <div className="flex items-center gap-2">
+                          <span className="text-2xl font-serif font-black text-white">{myPlayer.gloryPoints}</span>
+                          <Star className="w-5 h-5 text-primary fill-primary" />
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                </DialogHeader>
+
+                <div className="mt-6">
+                  <Tabs defaultValue="relics" className="w-full">
+                    <TabsList className="grid w-full grid-cols-2 bg-white/5 border border-white/10 h-12 p-1 rounded-xl">
+                      <TabsTrigger value="relics" className="data-[state=active]:bg-primary data-[state=active]:text-primary-foreground font-bold uppercase tracking-widest text-[10px]">
+                        <Trophy className="w-3 h-3 mr-2" /> Relíquias
+                      </TabsTrigger>
+                      <TabsTrigger value="topup" className="data-[state=active]:bg-primary data-[state=active]:text-primary-foreground font-bold uppercase tracking-widest text-[10px]">
+                        <Coins className="w-3 h-3 mr-2" /> Recarregar
+                      </TabsTrigger>
+                    </TabsList>
+
+                    <TabsContent value="relics" className="mt-6">
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        {allRewards.filter(r => r.isAvailableInStore).map((reward) => {
+                          const isAffordable = myPlayer ? myPlayer.gloryPoints >= reward.price : false;
+                          const alreadyHas = myPlayer?.rewards?.some(r => r.id === reward.id);
+
+                          return (
+                            <div key={reward.id} className={`relative group p-4 rounded-2xl border transition-all ${alreadyHas ? 'bg-white/5 border-white/5 opacity-80' : 'bg-primary/5 border-primary/10 hover:border-primary/30'}`}>
+                              <div className="flex gap-4">
+                                <div className={`w-20 h-20 rounded-xl overflow-hidden border-2 bg-black/40 flex-shrink-0 ${reward.rarity === 'mythic' ? 'border-purple-500/40' : 'border-primary/20'}`}>
+                                  <img src={reward.icon} className="w-full h-full object-cover group-hover:scale-110 transition-transform" alt={reward.name} />
+                                </div>
+                                <div className="flex-1 space-y-1">
+                                  <span className={`text-[10px] font-black uppercase tracking-widest ${reward.rarity === 'mythic' ? 'text-purple-400' : 'text-primary'}`}>{reward.rarity}</span>
+                                  <h4 className="font-serif font-black uppercase tracking-widest text-white leading-tight">{reward.name}</h4>
+                                  <p className="text-xs text-muted-foreground line-clamp-2">{reward.description}</p>
+
+                                  <div className="flex items-center justify-between pt-2">
+                                    <div className="flex items-center gap-1.5">
+                                      <span className={`text-sm font-black italic ${isAffordable ? 'text-white' : 'text-red-400'}`}>{reward.price}</span>
+                                      <Star className={`w-3 h-3 ${isAffordable ? 'text-primary fill-primary' : 'text-red-400'}`} />
+                                    </div>
+                                    <Button
+                                      size="sm"
+                                      disabled={!isAffordable || alreadyHas || purchaseMutation.isPending}
+                                      onClick={() => purchaseMutation.mutate(reward.id)}
+                                      className={`h-8 uppercase text-[10px] font-black tracking-widest ${alreadyHas ? 'bg-emerald-500/20 text-emerald-400' : ''}`}
+                                    >
+                                      {alreadyHas ? "ADQUIRIDO" : purchaseMutation.isPending ? "PROCESSANDO..." : "ADQUIRIR"}
+                                    </Button>
+                                  </div>
+                                </div>
+                              </div>
+                            </div>
+                          );
+                        })}
+                      </div>
+                    </TabsContent>
+
+                    <TabsContent value="topup" className="mt-6">
+                      {topupMutation.data ? (
+                        <motion.div initial={{ opacity: 0, scale: 0.95 }} animate={{ opacity: 1, scale: 1 }} className="flex flex-col items-center justify-center p-8 bg-primary/5 border border-primary/20 rounded-3xl text-center space-y-6">
+                          <div className="w-20 h-20 rounded-full bg-primary/20 flex items-center justify-center">
+                            <QrCode className="w-10 h-10 text-primary" />
+                          </div>
+                          <div>
+                            <h3 className="text-2xl font-serif font-black uppercase italic tracking-widest">Pagamento Pendente</h3>
+                            <p className="text-sm text-primary/60 font-bold uppercase tracking-widest mt-1">Realize o PIX para confirmar sua recarga</p>
+                          </div>
+
+                          <div className="w-full max-w-xs bg-white p-4 rounded-2xl">
+                            <div className="w-48 h-48 mx-auto bg-slate-100 flex items-center justify-center border-2 border-dashed border-slate-300">
+                              <QrCode className="w-24 h-24 text-slate-300" />
+                            </div>
+                          </div>
+
+                          <div className="w-full space-y-2">
+                            <p className="text-[10px] font-black uppercase text-muted-foreground tracking-widest">Chave PIX (Telefone)</p>
+                            <div className="bg-black/40 border border-white/10 p-3 rounded-xl flex items-center justify-between font-mono text-primary select-all">
+                              {topupMutation.data.pixKey}
+                            </div>
+                          </div>
+
+                          <Button
+                            variant="link"
+                            className="text-primary uppercase text-[10px] font-black"
+                            onClick={() => topupMutation.reset()}
+                          >
+                            Voltar aos Pacotes
+                          </Button>
+                        </motion.div>
+                      ) : (
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                          {bundles.map((bundle) => (
+                            <div key={bundle.id} className="relative group p-6 rounded-2xl border border-primary/10 bg-primary/5 hover:border-primary/40 transition-all flex flex-col justify-between">
+                              <div className="space-y-2">
+                                <div className="flex items-center justify-between">
+                                  <h4 className="font-serif font-black uppercase tracking-widest text-white text-lg">{bundle.name}</h4>
+                                  <Badge className="bg-primary/20 text-primary border-none text-[10px]">{bundle.amount} PTS</Badge>
+                                </div>
+                                <p className="text-xs text-muted-foreground">{bundle.description}</p>
+                              </div>
+
+                              <div className="flex items-center justify-between mt-6">
+                                <div className="text-xl font-serif font-black italic">
+                                  R${(bundle.price / 100).toFixed(2).replace('.', ',')}
+                                </div>
+                                <Button
+                                  size="sm"
+                                  className="h-10 px-6 uppercase text-[10px] font-black tracking-widest group-hover:scale-105 transition-transform"
+                                  onClick={() => topupMutation.mutate(bundle.id)}
+                                  disabled={topupMutation.isPending}
+                                >
+                                  RECARREGAR
+                                </Button>
+                              </div>
+                            </div>
+                          ))}
+                        </div>
+                      )}
+                    </TabsContent>
+                  </Tabs>
+                </div>
+              </DialogContent>
+            </Dialog>
 
             <Link href="/arena">
               <Button variant="outline" className="w-full h-14 border-orange-500/20 bg-orange-500/5 hover:bg-orange-500/10 text-orange-500 font-bold uppercase tracking-widest group">
@@ -748,13 +1018,13 @@ export default function Rankings() {
                 Mural da Glória
               </Button>
             </Link>
-          </div>
+          </div >
 
-        </motion.div>
-      </section>
+        </motion.div >
+      </section >
 
       {/* Leaderboard & Activity Feed */}
-      <section className="grid grid-cols-1 lg:grid-cols-4 gap-8">
+      < section className="grid grid-cols-1 lg:grid-cols-4 gap-8" >
         <div className="lg:col-span-3 space-y-6">
           <div className="flex flex-col md:flex-row items-center justify-between border-b border-white/5 pb-4 gap-4">
             <h3 className="text-xl font-serif tracking-[0.3em] uppercase flex items-center gap-3">
@@ -888,6 +1158,14 @@ export default function Rankings() {
                         <p className="text-xl sm:text-3xl font-serif font-black">{player.points}</p>
                         <p className="text-[10px] uppercase tracking-[0.2em] sm:tracking-[0.3em] opacity-60 font-bold">PTS</p>
                       </div>
+
+                      {player.gloryPoints > 0 && (
+                        <div className="text-right min-w-[40px] hidden sm:block">
+                          <p className="text-lg font-serif font-black text-primary">{player.gloryPoints}</p>
+                          <p className="text-[8px] uppercase tracking-widest opacity-60 font-bold">GLÓRIA</p>
+                        </div>
+                      )}
+
                       <ChevronRight className="w-4 h-4 opacity-30 group-hover:opacity-100 transition-all" />
                     </div>
                   </motion.div>
@@ -901,8 +1179,8 @@ export default function Rankings() {
         <div className="lg:col-span-1 border-t lg:border-t-0 lg:border-l border-white/5 lg:pl-8 pt-8 lg:pt-0">
           <ActivityFeed />
         </div>
-      </section>
-    </div>
+      </section >
+    </div >
   );
 }
 

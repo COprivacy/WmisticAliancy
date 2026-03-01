@@ -26,7 +26,9 @@ import {
   History,
   KeyRound,
   Trash2,
-  AlertTriangle
+  AlertTriangle,
+  CreditCard,
+  Coins
 } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import { useQuery, useMutation } from "@tanstack/react-query";
@@ -72,6 +74,7 @@ export default function Admin() {
   const [searchQuery, setSearchQuery] = useState("");
   const [editPointsId, setEditPointsId] = useState<number | null>(null);
   const [newPoints, setNewPoints] = useState<number>(100);
+  const [newGlory, setNewGlory] = useState<number>(0);
 
   const { data: pendingMatches, isLoading: loadingMatches } = useQuery<MatchWithNames[]>({
     queryKey: ["/api/matches"],
@@ -89,6 +92,10 @@ export default function Admin() {
     queryKey: ["/api/season"],
   });
 
+  const { data: allTopups } = useQuery<any[]>({
+    queryKey: ["/api/glory/topups"], // This needs to be /api/admin/glory/topups probably
+  });
+
   const [selectedPlayerId, setSelectedPlayerId] = useState<number | null>(null);
   const [selectedRewardId, setSelectedRewardId] = useState<number | null>(null);
   const [rewardDuration, setRewardDuration] = useState<string>(""); // Days
@@ -98,6 +105,8 @@ export default function Admin() {
   const [relicRarity, setRelicRarity] = useState<string>("rare");
   const [relicEffect, setRelicEffect] = useState<string>("none");
   const [relicIsRankPrize, setRelicIsRankPrize] = useState<boolean>(false);
+  const [relicIsAvailable, setRelicIsAvailable] = useState<boolean>(true);
+  const [relicPrice, setRelicPrice] = useState<number>(0);
   const [seasonFontFamily, setSeasonFontFamily] = useState<string>("font-serif");
   const [seasonTitleEffect, setSeasonTitleEffect] = useState<string>("none");
   const [seasonName, setSeasonName] = useState<string>("");
@@ -125,10 +134,14 @@ export default function Admin() {
       setRelicRarity(editingRelic.rarity);
       setRelicEffect(editingRelic.effect || "none");
       setRelicIsRankPrize(editingRelic.isRankPrize || false);
+      setRelicIsAvailable(editingRelic.isAvailableInStore ?? true);
+      setRelicPrice(editingRelic.price || 0);
     } else {
       setRelicRarity("rare");
       setRelicEffect("none");
       setRelicIsRankPrize(false);
+      setRelicIsAvailable(true);
+      setRelicPrice(0);
     }
   }, [editingRelic]);
 
@@ -148,8 +161,8 @@ export default function Admin() {
   });
 
   const playerAdminMutation = useMutation({
-    mutationFn: async ({ id, points, isBanned, pin }: { id: number; points?: number; isBanned?: boolean; pin?: string | null }) => {
-      await apiRequest("PATCH", `/api/players/${id}/admin`, { points, isBanned, pin });
+    mutationFn: async ({ id, points, isBanned, pin, gloryPoints }: { id: number; points?: number; isBanned?: boolean; pin?: string | null; gloryPoints?: number }) => {
+      await apiRequest("PATCH", `/api/players/${id}/admin`, { points, isBanned, pin, gloryPoints });
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["/api/players"] });
@@ -213,6 +226,17 @@ export default function Admin() {
       }
       queryClient.invalidateQueries({ queryKey: ["/api/season"] });
       toast({ title: "Santuário Atualizado!", description: "As novas regras da temporada já estão em vigor." });
+    }
+  });
+
+  const topupStatusMutation = useMutation({
+    mutationFn: async ({ id, status }: { id: number; status: string }) => {
+      await apiRequest("POST", `/api/admin/glory/topup/${id}/status`, { status });
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/glory/topups"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/players"] });
+      toast({ title: "Status Atualizado", description: "O saldo do jogador foi ajustado se concluído." });
     }
   });
 
@@ -290,6 +314,10 @@ export default function Admin() {
           <TabsTrigger value="season" className="rounded-xl data-[state=active]:bg-primary data-[state=active]:text-primary-foreground uppercase text-[10px] font-black tracking-widest">
             <Flame className="w-3 h-3 mr-2" />
             Temporada
+          </TabsTrigger>
+          <TabsTrigger value="topups" className="rounded-xl data-[state=active]:bg-primary data-[state=active]:text-primary-foreground uppercase text-[10px] font-black tracking-widest">
+            <CreditCard className="w-3 h-3 mr-2" />
+            Recargas
           </TabsTrigger>
         </TabsList>
 
@@ -632,17 +660,36 @@ export default function Admin() {
                         </div>
                       </div>
 
-                      <div className="flex items-center gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
+                      <div className="flex items-center gap-2 transition-opacity">
                         <Button
                           size="sm"
                           variant="outline"
                           className="h-8 w-8 p-0 rounded-lg border-white/10"
                           onClick={() => {
                             setEditPointsId(player.id);
-                            setNewPoints(player.points);
+                            setNewPoints(player.points || 100);
+                            setNewGlory(player.gloryPoints || 0);
                           }}
                         >
                           <Edit2 className="w-3 h-3" />
+                        </Button>
+                        <Button
+                          size="sm"
+                          variant="outline"
+                          title="Recarga Manual"
+                          className="h-8 w-8 p-0 rounded-lg border-emerald-500/20 text-emerald-500 hover:bg-emerald-500/10"
+                          onClick={() => {
+                            const amountStr = prompt(`Quantos Pontos de Glória deseja ADICIONAR para ${player.gameName}?`, "100");
+                            if (amountStr) {
+                              const amount = parseInt(amountStr);
+                              if (!isNaN(amount)) {
+                                playerAdminMutation.mutate({ id: player.id, gloryPoints: (player.gloryPoints || 0) + amount });
+                                toast({ title: "Recarga Realizada", description: `+${amount} Glória para ${player.gameName}` });
+                              }
+                            }
+                          }}
+                        >
+                          <Coins className="w-3 h-3" />
                         </Button>
                         <Button
                           size="sm"
@@ -942,6 +989,8 @@ export default function Admin() {
                       rarity: relicRarity,
                       effect: relicEffect === "none" ? "" : relicEffect,
                       stars: parseInt(formData.get("stars") as string),
+                      price: relicPrice,
+                      isAvailableInStore: relicIsAvailable,
                       icon: iconUrl,
                       isRankPrize: relicIsRankPrize
                     };
@@ -1000,6 +1049,31 @@ export default function Admin() {
                           ))}
                         </SelectContent>
                       </Select>
+                    </div>
+                    <div className="space-y-2">
+                      <Label className="text-[10px] uppercase font-black">Prêço de Venda (Glória)</Label>
+                      <Input
+                        type="number"
+                        value={relicPrice}
+                        onChange={(e) => setRelicPrice(parseInt(e.target.value))}
+                        placeholder="Ex: 500"
+                        required
+                        className="bg-black/20 border-white/10 h-12"
+                      />
+                    </div>
+                    <div className="space-y-2">
+                      <Label className="text-[10px] uppercase font-black">Exibir na Loja?</Label>
+                      <div className="flex items-center gap-3 pt-3">
+                        <div
+                          className={`w-12 h-6 rounded-full transition-all cursor-pointer relative ${relicIsAvailable ? 'bg-emerald-500' : 'bg-white/10'}`}
+                          onClick={() => setRelicIsAvailable(!relicIsAvailable)}
+                        >
+                          <div className={`absolute top-1 w-4 h-4 rounded-full bg-white transition-all ${relicIsAvailable ? 'left-7' : 'left-1'}`} />
+                        </div>
+                        <span className="text-[10px] uppercase font-bold opacity-60">
+                          {relicIsAvailable ? 'Disponível' : 'Oculto'}
+                        </span>
+                      </div>
                     </div>
                     <div className="space-y-2">
                       <Label className="text-[10px] uppercase font-black">Ícone da Relíquia</Label>
@@ -1080,12 +1154,83 @@ export default function Admin() {
               ))}
             </div>
           </TabsContent>
+
+          <TabsContent value="topups" className="space-y-6">
+            <Card className="bg-white/5 border-white/10 rounded-[2rem]">
+              <CardHeader>
+                <div className="flex items-center gap-3">
+                  <div className="p-2 rounded-2xl bg-primary/20 text-primary">
+                    <CreditCard className="w-6 h-6" />
+                  </div>
+                  <CardTitle className="uppercase tracking-widest font-serif text-xl">Solicitações de Recarga (PIX)</CardTitle>
+                </div>
+                <CardDescription className="uppercase text-[10px] font-black opacity-60 tracking-widest">Valide os pagamentos e libere os pontos de glória</CardDescription>
+              </CardHeader>
+              <CardContent>
+                <div className="space-y-4">
+                  {!allTopups || allTopups.length === 0 ? (
+                    <div className="p-20 text-center border border-dashed border-white/10 rounded-[2rem] bg-white/5">
+                      <p className="text-muted-foreground uppercase tracking-widest text-xs italic">Nenhuma solicitação de glória pendente.</p>
+                    </div>
+                  ) : (
+                    allTopups.map((topup) => {
+                      const player = playersList?.find(p => p.id === topup.playerId);
+                      return (
+                        <div key={topup.id} className="group relative p-6 rounded-2xl border border-white/5 bg-white/5 hover:bg-white/10 transition-all flex flex-col md:flex-row items-center justify-between gap-6">
+                          <div className="flex items-center gap-6">
+                            <div className="h-14 w-14 rounded-2xl bg-primary/10 flex items-center justify-center border border-primary/20">
+                              <Coins className="w-8 h-8 text-primary" />
+                            </div>
+                            <div>
+                              <span className="block font-black uppercase text-lg text-white tracking-tight">{player?.gameName || "Soldado Desconhecido"}</span>
+                              <div className="flex items-center gap-2">
+                                <Badge className="bg-primary/20 text-primary border-none text-[10px] font-black uppercase">{topup.amount} PTS</Badge>
+                                <span className="text-[11px] font-black text-white/40 uppercase tracking-widest">VALOR: R${(topup.price / 100).toFixed(2).replace('.', ',')}</span>
+                              </div>
+                              <span className="text-[9px] text-muted-foreground/60 font-mono mt-1 block">ID DA TRANSAÇÃO: {topup.id} • {new Date(topup.createdAt || '').toLocaleString('pt-BR')}</span>
+                            </div>
+                          </div>
+
+                          <div className="flex items-center gap-4">
+                            <Badge variant="outline" className={`h-8 px-4 uppercase text-[10px] font-black tracking-widest rounded-xl ${topup.status === 'completed' ? 'border-emerald-500/40 text-emerald-500 bg-emerald-500/5' : topup.status === 'pending' ? 'border-amber-500/40 text-amber-500 bg-amber-500/5' : 'border-rose-500/40 text-rose-500 bg-rose-500/5'}`}>
+                              {topup.status === 'completed' ? 'CONCLUÍDO' : topup.status === 'pending' ? 'PENDENTE' : 'REJEITADO'}
+                            </Badge>
+
+                            {topup.status === 'pending' && (
+                              <div className="flex gap-2">
+                                <Button
+                                  size="sm"
+                                  variant="outline"
+                                  className="h-12 border-rose-500/20 text-rose-500 hover:bg-rose-500 hover:text-white rounded-xl uppercase font-black text-[10px] tracking-widest"
+                                  onClick={() => topupStatusMutation.mutate({ id: topup.id, status: 'rejected' })}
+                                  disabled={topupStatusMutation.isPending}
+                                >
+                                  Rejeitar
+                                </Button>
+                                <Button
+                                  size="sm"
+                                  className="h-12 bg-emerald-600 hover:bg-emerald-500 text-white rounded-xl px-6 uppercase font-black text-[10px] tracking-widest shadow-lg shadow-emerald-900/40"
+                                  onClick={() => topupStatusMutation.mutate({ id: topup.id, status: 'completed' })}
+                                  disabled={topupStatusMutation.isPending}
+                                >
+                                  Liberar Pontos
+                                </Button>
+                              </div>
+                            )}
+                          </div>
+                        </div>
+                      );
+                    })
+                  )}
+                </div>
+              </CardContent>
+            </Card>
+          </TabsContent>
         </div>
-      </Tabs >
+      </Tabs>
 
       {/* Point Edit Dialog */}
-      < Dialog open={!!editPointsId
-      } onOpenChange={(open) => !open && setEditPointsId(null)}>
+      <Dialog open={!!editPointsId} onOpenChange={(open) => !open && setEditPointsId(null)}>
         <DialogContent className="bg-[#020617] border-white/10 rounded-[2rem]">
           <DialogHeader>
             <DialogTitle className="uppercase tracking-[0.2em] font-serif text-primary">Alterar Pontuacão</DialogTitle>
@@ -1096,7 +1241,10 @@ export default function Admin() {
               <Input
                 type="number"
                 value={newPoints}
-                onChange={(e) => setNewPoints(parseInt(e.target.value))}
+                onChange={(e) => {
+                  const val = parseInt(e.target.value);
+                  setNewPoints(isNaN(val) ? 0 : val);
+                }}
                 className="h-14 bg-white/5 border-white/10 text-2xl font-black text-center"
               />
             </div>
@@ -1106,11 +1254,24 @@ export default function Admin() {
                 Alterar os pontos mudará automaticamente o Rank do jogador (Ex: Recruta para Elite). Use com sabedoria, mestre.
               </p>
             </div>
+
+            <div className="space-y-2">
+              <Label className="uppercase text-[10px] font-black tracking-widest opacity-60">Saldo de Glória</Label>
+              <Input
+                type="number"
+                value={newGlory}
+                onChange={(e) => {
+                  const val = parseInt(e.target.value);
+                  setNewGlory(isNaN(val) ? 0 : val);
+                }}
+                className="h-14 bg-white/5 border-white/10 text-2xl font-black text-center text-primary"
+              />
+            </div>
           </div>
           <DialogFooter>
             <Button
               className="w-full h-14 bg-primary text-primary-foreground font-black uppercase tracking-widest rounded-2xl shadow-lg shadow-primary/20"
-              onClick={() => editPointsId && playerAdminMutation.mutate({ id: editPointsId, points: newPoints })}
+              onClick={() => editPointsId && playerAdminMutation.mutate({ id: editPointsId, points: newPoints, gloryPoints: newGlory })}
               disabled={playerAdminMutation.isPending}
             >
               APLICAR MUDANÇA

@@ -58,6 +58,12 @@ export default function Layout({ children }: { children: ReactNode }) {
               </Button>
             </Link>
 
+            <Link href="/chat">
+              <Button variant="ghost" size="sm" className={`font-black uppercase tracking-widest text-[11px] h-8 ${location === '/chat' ? 'text-primary' : 'text-muted-foreground'}`}>
+                Taverna
+              </Button>
+            </Link>
+
             <Link href={`/player/${user.id}/${user.zoneId}`}>
               <Button variant="ghost" size="sm" className={`font-black uppercase tracking-widest text-[11px] h-8 ${location.includes('/player/') ? 'text-primary' : 'text-muted-foreground'}`}>
                 Meu Perfil

@@ -1,7 +1,8 @@
 import {
-  users, players, matches, rewards, playerRewards, seasons, challenges, activities, reactions, configs,
+  users, players, matches, rewards, playerRewards, seasons, challenges, activities, reactions, configs, globalMessages, gloryTopups,
   type User, type InsertUser, type Player, type InsertPlayer, type Match, type InsertMatch,
-  type Reward, type InsertReward, type Config, type InsertConfig
+  type Reward, type InsertReward, type Config, type InsertConfig, type Activity, type Reaction,
+  type GlobalMessage, type GloryTopup, type InsertGloryTopup
 } from "@shared/schema";
 import { db } from "./db";
 import { eq, and, sql } from "drizzle-orm";
@@ -35,6 +36,11 @@ export interface IStorage {
   deleteReward(id: number): Promise<void>;
   assignReward(playerId: number, rewardId: number, expiresAt?: Date): Promise<void>;
   getPlayerRewards(playerId: number): Promise<Reward[]>;
+  purchaseReward(playerId: number, rewardId: number): Promise<void>;
+  awardGloryPoints(playerId: number, points: number): Promise<void>;
+  createGloryTopup(topup: InsertGloryTopup): Promise<GloryTopup>;
+  updateGloryTopupStatus(id: number, status: string): Promise<GloryTopup>;
+  getGloryTopups(playerId?: number): Promise<GloryTopup[]>;
 
   // Season methods
   getSeasons(): Promise<any[]>;
@@ -58,6 +64,10 @@ export interface IStorage {
   clearActivities(): Promise<void>;
   clearMatches(): Promise<void>;
   clearChallenges(): Promise<void>;
+
+  // Chat methods
+  getGlobalMessages(limit?: number): Promise<GlobalMessage[]>;
+  createGlobalMessage(message: Omit<GlobalMessage, "id" | "createdAt">): Promise<GlobalMessage>;
 }
 
 export class DatabaseStorage implements IStorage {
@@ -96,7 +106,14 @@ export class DatabaseStorage implements IStorage {
       for (const reward of initialRewards) {
         const alreadyExists = existing.find(r => r.name === reward.name);
         if (!alreadyExists) {
+          console.log(`SEED: Creating reward ${reward.name}`);
           await this.createReward(reward);
+        } else if (alreadyExists.price !== reward.price || alreadyExists.isAvailableInStore !== reward.isAvailableInStore) {
+          console.log(`SEED: Updating reward ${reward.name} (Price: ${alreadyExists.price} -> ${reward.price})`);
+          await this.updateReward(alreadyExists.id, {
+            price: reward.price,
+            isAvailableInStore: reward.isAvailableInStore
+          });
         }
       }
     } catch (e) {
@@ -190,6 +207,14 @@ export class DatabaseStorage implements IStorage {
   async updateMatchStatus(id: number, status: string): Promise<Match> {
     const [match] = await db.update(matches).set({ status }).where(eq(matches.id, id)).returning();
     if (!match) throw new Error("Match not found");
+
+    if (status === "approved") {
+      const winner = await this.getPlayerByAccountId(match.winnerId, match.winnerZone);
+      if (winner) {
+        // Award 15 Glory Points for a win
+        await this.awardGloryPoints(winner.id, 15);
+      }
+    }
     return match;
   }
 
@@ -246,6 +271,67 @@ export class DatabaseStorage implements IStorage {
       .where(eq(playerRewards.playerId, playerId));
 
     return results.map(r => r.reward);
+  }
+
+  async purchaseReward(playerId: number, rewardId: number): Promise<void> {
+    const [player] = await db.select().from(players).where(eq(players.id, playerId));
+    const [reward] = await db.select().from(rewards).where(eq(rewards.id, rewardId));
+
+    if (!player || !reward) throw new Error("Player or Reward not found");
+    if (player.gloryPoints < reward.price) throw new Error("Saldo de Glória insuficiente");
+
+    // Process payment and assignment in a transaction if possible, or sequential
+    await db.update(players).set({
+      gloryPoints: player.gloryPoints - reward.price
+    }).where(eq(players.id, playerId));
+
+    await this.assignReward(playerId, rewardId);
+
+    // Log Activity
+    await this.createActivity("reward_purchased", player.id, player.gameName, {
+      rewardName: reward.name,
+      rewardIcon: reward.icon,
+      price: reward.price
+    });
+  }
+
+  async awardGloryPoints(playerId: number, points: number): Promise<void> {
+    const [player] = await db.select().from(players).where(eq(players.id, playerId));
+    if (player) {
+      await db.update(players).set({
+        gloryPoints: player.gloryPoints + points
+      }).where(eq(players.id, playerId));
+    }
+  }
+
+  async createGloryTopup(topup: InsertGloryTopup): Promise<GloryTopup> {
+    const [newTopup] = await db.insert(gloryTopups).values(topup).returning();
+    return newTopup;
+  }
+
+  async updateGloryTopupStatus(id: number, status: string): Promise<GloryTopup> {
+    const [topup] = await db.select().from(gloryTopups).where(eq(gloryTopups.id, id));
+    if (!topup) throw new Error("Top-up request not found");
+
+    if (status === "completed" && topup.status !== "completed") {
+      await this.awardGloryPoints(topup.playerId, topup.amount);
+      const [player] = await db.select().from(players).where(eq(players.id, topup.playerId));
+      if (player) {
+        await this.createActivity("glory_purchase_completed", player.id, player.gameName, {
+          amount: topup.amount
+        });
+      }
+    }
+
+    const [updated] = await db.update(gloryTopups).set({ status }).where(eq(gloryTopups.id, id)).returning();
+    return updated;
+  }
+
+  async getGloryTopups(playerId?: number): Promise<GloryTopup[]> {
+    if (playerId) {
+      return await db.select().from(gloryTopups).where(eq(gloryTopups.playerId, playerId)).orderBy(sql`${gloryTopups.createdAt} DESC`);
+    }
+    return await db.select().from(gloryTopups).orderBy(sql`${gloryTopups.createdAt} DESC`);
   }
 
   async getSeasons(): Promise<any[]> {
@@ -374,6 +460,53 @@ export class DatabaseStorage implements IStorage {
 
   async clearChallenges(): Promise<void> {
     await db.delete(challenges);
+  }
+
+  async getGlobalMessages(limit: number = 50): Promise<GlobalMessage[]> {
+    const msgs = await db.select().from(globalMessages).orderBy(sql`${globalMessages.createdAt} DESC`).limit(limit);
+
+    // Anexa as informações atualizadas de avatar e zoneId dos jogadores correspondentes
+    const enriched = await Promise.all(msgs.map(async (m) => {
+      if (m.authorId === "admin") {
+        return { ...m, authorZoneId: "0" } as any;
+      }
+      const [player] = await db.select().from(players).where(eq(players.accountId, m.authorId)).limit(1);
+      if (player) {
+        return {
+          ...m,
+          authorName: m.authorRank === "Moderador" ? `${player.gameName} (ADM)` : player.gameName,
+          authorAvatar: player.avatar || m.authorAvatar,
+          authorRank: m.authorRank === "Moderador" ? "Moderador" : player.rank,
+          authorZoneId: player.zoneId
+        } as any;
+      }
+      return { ...m, authorZoneId: "0" } as any;
+    }));
+
+    return enriched;
+  }
+
+  async createGlobalMessage(messageData: Omit<GlobalMessage, "id" | "createdAt">): Promise<GlobalMessage> {
+    const [message] = await db.insert(globalMessages).values({
+      ...messageData,
+      createdAt: new Date()
+    }).returning();
+
+    // Mantém apenas as 200 mensagens mais recentes, apagando as antigas para economizar espaço
+    try {
+      await db.execute(sql`
+        DELETE FROM ${globalMessages}
+        WHERE id NOT IN (
+          SELECT id FROM ${globalMessages}
+          ORDER BY created_at DESC
+          LIMIT 200
+        )
+      `);
+    } catch (err) {
+      console.error("Erro ao limpar mensagens antigas da taverna:", err);
+    }
+
+    return message;
   }
 }
 

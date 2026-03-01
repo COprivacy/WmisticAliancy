@@ -12,7 +12,7 @@ type User = {
 
 type AuthContextType = {
   user: User | null;
-  login: (username: string, id: string, zoneId: string) => Promise<void>;
+  login: (username: string, id: string, zoneId: string, pin?: string) => Promise<any>;
   logout: () => void;
   isLoading: boolean;
 };

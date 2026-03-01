@@ -29,6 +29,7 @@ export const players = pgTable("players", {
   isBanned: boolean("is_banned").notNull().default(false),
   pin: text("pin"),
   lastClaimedAt: timestamp("last_claimed_at"),
+  gloryPoints: integer("glory_points").notNull().default(0),
 });
 
 export const matches = pgTable("matches", {
@@ -53,6 +54,8 @@ export const rewards = pgTable("rewards", {
   icon: text("icon").notNull(),
   effect: text("effect"),
   isRankPrize: boolean("is_rank_prize").notNull().default(false),
+  price: integer("price").notNull().default(0),
+  isAvailableInStore: boolean("is_available_in_store").notNull().default(true),
 });
 
 export const playerRewards = pgTable("player_rewards", {
@@ -124,6 +127,15 @@ export const globalMessages = pgTable("global_messages", {
   createdAt: timestamp("created_at").notNull().defaultNow(),
 });
 
+export const gloryTopups = pgTable("glory_topups", {
+  id: serial("id").primaryKey(),
+  playerId: integer("player_id").notNull(),
+  amount: integer("amount").notNull(), // points amount
+  price: integer("price").notNull(), // cents
+  status: text("status").notNull().default("pending"), // pending, completed, rejected
+  createdAt: timestamp("created_at").notNull().defaultNow(),
+});
+
 export const insertUserSchema = createInsertSchema(users).pick({
   username: true,
   password: true,
@@ -152,7 +164,12 @@ export type Reward = typeof rewards.$inferSelect;
 export type PlayerReward = typeof playerRewards.$inferSelect;
 export type Config = typeof configs.$inferSelect;
 export type InsertConfig = typeof configs.$inferInsert;
+export type Activity = typeof activities.$inferSelect;
+export type Reaction = typeof reactions.$inferSelect;
 export type GlobalMessage = typeof globalMessages.$inferSelect;
+export type GloryTopup = typeof gloryTopups.$inferSelect;
+export const insertGloryTopupSchema = createInsertSchema(gloryTopups).omit({ id: true, createdAt: true });
+export type InsertGloryTopup = z.infer<typeof insertGloryTopupSchema>;
 
 export function calculateRank(points: number): string {
   if (points >= 2000) return "Grande Mestre";

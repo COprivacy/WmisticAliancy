@@ -4,6 +4,8 @@
         "description": "Concedida ao guerreiro que domina a arena por múltiplas temporadas consecutivas.",
         "rarity": "mythic",
         "stars": 7,
+        "price": 5000,
+        "isAvailableInStore": true,
         "icon": "/images/rewards/coroa-imortalidade.png"
     },
     {
@@ -11,6 +13,8 @@
         "description": "Campeão absoluto da temporada (Top 1).",
         "rarity": "mythic",
         "stars": 7,
+        "price": 3000,
+        "isAvailableInStore": true,
         "icon": "/images/rewards/mythic-sword.png"
     },
     {
@@ -18,6 +22,8 @@
         "description": "Top 3 da arena por 3 temporadas seguidas.",
         "rarity": "legendary",
         "stars": 6,
+        "price": 1500,
+        "isAvailableInStore": true,
         "icon": "/images/rewards/legendary-staff.png"
     },
     {
@@ -25,6 +31,8 @@
         "description": "Mais de 100 vitórias na temporada.",
         "rarity": "epic",
         "stars": 5,
+        "price": 1000,
+        "isAvailableInStore": true,
         "icon": "/images/rewards/epic-wings.svg"
     },
     {
@@ -32,6 +40,8 @@
         "description": "Participação em mais de 50 duelos.",
         "rarity": "rare",
         "stars": 3,
+        "price": 500,
+        "isAvailableInStore": true,
         "icon": "/images/rewards/rare-medal.svg"
     },
     {
@@ -39,6 +49,8 @@
         "description": "Concedida a todo guerreiro que inicia sua jornada na guilda.",
         "rarity": "rare",
         "stars": 2,
+        "price": 0,
+        "isAvailableInStore": false,
         "icon": "/images/recruit-badge.png"
     }
 ]
