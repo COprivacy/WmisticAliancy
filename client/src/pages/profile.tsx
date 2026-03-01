@@ -25,7 +25,8 @@ import {
     Loader2,
     Share2,
     Info,
-    Star
+    Star,
+    Shield
 } from "lucide-react";
 import { useAuth } from "@/lib/auth";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogFooter, DialogDescription } from "@/components/ui/dialog";
@@ -569,7 +570,7 @@ export default function Profile() {
                                             </div>
                                         </div>
                                         <div className="p-4 text-center border-t border-white/5">
-                                            <span className="text-xs font-black uppercase tracking-tighter truncate block mb-2">{reward.name}</span>
+                                            <span className={`text-xs font-black uppercase tracking-tighter truncate block mb-2 ${reward.effect || ''}`}>{reward.name}</span>
                                             <div className="flex justify-center gap-0.5">
                                                 {Array.from({ length: reward.stars || 1 }).map((_, s) => (
                                                     <Star key={s} className="w-2.5 h-2.5 fill-primary text-primary" />
@@ -614,7 +615,7 @@ export default function Profile() {
                                                     <Badge className="uppercase font-black tracking-[0.2em] bg-primary/20 text-primary border-primary/20">
                                                         {selectedReward.rarity}
                                                     </Badge>
-                                                    <DialogTitle className="text-4xl font-serif font-black uppercase text-white leading-tight">
+                                                    <DialogTitle className={`text-4xl font-serif font-black uppercase leading-tight ${selectedReward.effect || 'text-white'}`}>
                                                         {selectedReward.name}
                                                     </DialogTitle>
                                                 </div>

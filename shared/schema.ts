@@ -51,6 +51,8 @@ export const rewards = pgTable("rewards", {
   rarity: text("rarity").notNull(),
   stars: integer("stars").notNull().default(1),
   icon: text("icon").notNull(),
+  effect: text("effect"),
+  isRankPrize: boolean("is_rank_prize").notNull().default(false),
 });
 
 export const playerRewards = pgTable("player_rewards", {
@@ -93,12 +95,23 @@ export const activities = pgTable("activities", {
   createdAt: timestamp("created_at").notNull().defaultNow(),
 });
 
+export const configs = pgTable("configs", {
+  key: text("key").primaryKey(),
+  value: text("value").notNull(), // stringified JSON
+});
+
 export const reactions = pgTable("reactions", {
   id: serial("id").primaryKey(),
   activityId: integer("activity_id").notNull(),
   userId: text("user_id").notNull(),
   emoji: text("emoji").notNull(),
   createdAt: timestamp("created_at").notNull().defaultNow(),
+});
+
+export const session = pgTable("session", {
+  sid: text("sid").primaryKey(),
+  sess: text("sess").notNull(), // json stringified
+  expire: timestamp("expire").notNull(),
 });
 
 export const insertUserSchema = createInsertSchema(users).pick({
@@ -127,6 +140,8 @@ export const insertRewardSchema = createInsertSchema(rewards).omit({ id: true })
 export type InsertReward = z.infer<typeof insertRewardSchema>;
 export type Reward = typeof rewards.$inferSelect;
 export type PlayerReward = typeof playerRewards.$inferSelect;
+export type Config = typeof configs.$inferSelect;
+export type InsertConfig = typeof configs.$inferInsert;
 
 export function calculateRank(points: number): string {
   if (points >= 2000) return "Grande Mestre";

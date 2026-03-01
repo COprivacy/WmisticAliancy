@@ -115,7 +115,7 @@ export default function Rewards() {
                                 </div>
 
                                 <CardHeader className="relative pb-2">
-                                    <CardTitle className="text-xl font-black uppercase group-hover:text-primary transition-colors">{reward.name}</CardTitle>
+                                    <CardTitle className={`text-xl font-black uppercase transition-colors ${reward.effect ? reward.effect : 'group-hover:text-primary'}`}>{reward.name}</CardTitle>
                                 </CardHeader>
 
                                 <CardContent>
@@ -162,7 +162,7 @@ export default function Rewards() {
                                                 <Badge className={`uppercase font-black tracking-[0.2em] ${getRarityColor(selectedReward.rarity)}`}>
                                                     {selectedReward.rarity}
                                                 </Badge>
-                                                <DialogTitle className="text-4xl font-serif font-black uppercase text-white leading-tight">
+                                                <DialogTitle className={`text-4xl font-serif font-black uppercase leading-tight ${selectedReward.effect || 'text-white'}`}>
                                                     {selectedReward.name}
                                                 </DialogTitle>
                                             </div>

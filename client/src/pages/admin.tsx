@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useAuth } from "@/lib/auth";
 import { useLocation } from "wouter";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
@@ -17,6 +17,7 @@ import {
   Swords,
   ExternalLink,
   Gift,
+  Flame,
   Ban,
   Unlock,
   Edit2,
@@ -37,6 +38,31 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 
 type MatchWithNames = Match & { winnerName: string; loserName: string };
+
+const MAGIC_EFFECTS = [
+  { value: "none", label: "Nenhum" },
+  { value: "magic-text-mythic", label: "Mítico (Roxo/Brilho)" },
+  { value: "magic-text-legendary", label: "Lendário (Dourado/Ouro)" },
+  { value: "magic-text-epic", label: "Épico (Verde/Neon)" },
+  { value: "magic-text-champion", label: "Campeão (Fogo/Rubi)" },
+  { value: "magic-text-void", label: "Vazio (Sombrio/Roxo)" },
+  { value: "magic-text-silver", label: "Prateado (Vibrante)" },
+  { value: "magic-text-glitch", label: "Glitch (Cyberpunk)" },
+  { value: "magic-text-radioactive", label: "Radioativo (Neon)" },
+  { value: "magic-text-blood", label: "Sanguinário (Sombrio)" },
+  { value: "magic-text-cyber", label: "Cyber (Orbitron)" },
+  { value: "magic-text-diamond", label: "Diamante (Radiante)" },
+];
+
+const SEASON_FONTS = [
+  { value: "font-serif", label: "Cinzel (Clássico)" },
+  { value: "font-sans", label: "Rajdhani (Moderno)" },
+  { value: "font-bangers", label: "Bangers (HQ/Impacto)" },
+  { value: "font-marker", label: "Marker (Street)" },
+  { value: "font-orbitron", label: "Orbitron (Futurista)" },
+  { value: "font-medieval", label: "Medieval (Épico)" },
+  { value: "font-mistic", label: "Místico (Magia)" },
+];
 
 export default function Admin() {
   const { user } = useAuth();
@@ -59,10 +85,52 @@ export default function Admin() {
     queryKey: ["/api/rewards"],
   });
 
+  const { data: seasonConfig } = useQuery<any>({
+    queryKey: ["/api/season"],
+  });
+
   const [selectedPlayerId, setSelectedPlayerId] = useState<number | null>(null);
   const [selectedRewardId, setSelectedRewardId] = useState<number | null>(null);
   const [rewardDuration, setRewardDuration] = useState<string>(""); // Days
+  const [distributionMode, setDistributionMode] = useState<'player' | 'rank'>('player');
+  const [rankTarget, setRankTarget] = useState<string>('top1');
   const [editingRelic, setEditingRelic] = useState<Reward | null>(null);
+  const [relicRarity, setRelicRarity] = useState<string>("rare");
+  const [relicEffect, setRelicEffect] = useState<string>("none");
+  const [relicIsRankPrize, setRelicIsRankPrize] = useState<boolean>(false);
+  const [seasonFontFamily, setSeasonFontFamily] = useState<string>("font-serif");
+  const [seasonTitleEffect, setSeasonTitleEffect] = useState<string>("none");
+  const [seasonName, setSeasonName] = useState<string>("");
+  const [seasonFontSize, setSeasonFontSize] = useState<number>(72);
+  const [seasonEndsAt, setSeasonEndsAt] = useState<string>("");
+  const [seasonEffects, setSeasonEffects] = useState<Record<string, string>>({
+    "Top 1": "none",
+    "Top 2": "none",
+    "Top 3": "none",
+    "Top 10": "none"
+  });
+
+  useEffect(() => {
+    if (seasonConfig?.prizes) {
+      const effects: Record<string, string> = {};
+      seasonConfig.prizes.forEach((p: any) => {
+        effects[p.rank] = p.effect || "none";
+      });
+      setSeasonEffects(prev => ({ ...prev, ...effects }));
+    }
+  }, [seasonConfig]);
+
+  useEffect(() => {
+    if (editingRelic) {
+      setRelicRarity(editingRelic.rarity);
+      setRelicEffect(editingRelic.effect || "none");
+      setRelicIsRankPrize(editingRelic.isRankPrize || false);
+    } else {
+      setRelicRarity("rare");
+      setRelicEffect("none");
+      setRelicIsRankPrize(false);
+    }
+  }, [editingRelic]);
 
   const matchMutation = useMutation({
     mutationFn: async ({ id, action }: { id: number; action: "approve" | "reject" }) => {
@@ -90,6 +158,22 @@ export default function Admin() {
     }
   });
 
+  useEffect(() => {
+    if (seasonConfig) {
+      console.log("Season Config Sync:", {
+        font: seasonConfig.fontFamily,
+        effect: seasonConfig.titleEffect
+      });
+      setSeasonFontFamily(seasonConfig.fontFamily || "font-serif");
+      setSeasonTitleEffect(seasonConfig.titleEffect || "none");
+      setSeasonName(seasonConfig.name || "");
+      setSeasonFontSize(Number(seasonConfig.fontSize) || 72);
+      if (seasonConfig.endsAt) {
+        setSeasonEndsAt(new Date(seasonConfig.endsAt).toISOString().slice(0, 16));
+      }
+    }
+  }, [seasonConfig]);
+
   const assignRewardMutation = useMutation({
     mutationFn: async ({ playerId, rewardId, days }: { playerId: number; rewardId: number; days?: number }) => {
       let expiresAt: Date | undefined;
@@ -103,6 +187,32 @@ export default function Admin() {
       toast({ title: "Relíquia Concedida!", description: "O item agora brilha na vitrine." });
       setSelectedRewardId(null);
       setRewardDuration("");
+    }
+  });
+
+  const distributeRankRewardMutation = useMutation({
+    mutationFn: async ({ rankTarget, rewardId, days }: { rankTarget: string; rewardId: number; days?: number }) => {
+      await apiRequest("POST", "/api/admin/distribute-rank-rewards", { rankTarget, rewardId, days });
+    },
+    onSuccess: (_, variables) => {
+      toast({ title: "Prêmios do Ranking Concedidos!", description: `A relíquia foi entregue aos combatentes do ${variables.rankTarget}.` });
+      setSelectedRewardId(null);
+      setRewardDuration("");
+    }
+  });
+
+  const seasonConfigMutation = useMutation({
+    mutationFn: async (data: any) => {
+      const res = await apiRequest("POST", "/api/admin/season", data);
+      return res.json();
+    },
+    onSuccess: (data) => {
+      console.log("Mutation Success. New Config from Server:", data.config);
+      if (data.config) {
+        queryClient.setQueryData(["/api/season"], data.config);
+      }
+      queryClient.invalidateQueries({ queryKey: ["/api/season"] });
+      toast({ title: "Santuário Atualizado!", description: "As novas regras da temporada já estão em vigor." });
     }
   });
 
@@ -177,9 +287,249 @@ export default function Admin() {
             <Gift className="w-3 h-3 mr-2" />
             Relíquias
           </TabsTrigger>
+          <TabsTrigger value="season" className="rounded-xl data-[state=active]:bg-primary data-[state=active]:text-primary-foreground uppercase text-[10px] font-black tracking-widest">
+            <Flame className="w-3 h-3 mr-2" />
+            Temporada
+          </TabsTrigger>
         </TabsList>
 
         <div className="mt-8">
+          <TabsContent value="season" className="space-y-8">
+            <Card className="bg-white/5 border-white/10 rounded-[2.5rem] overflow-hidden">
+              <CardHeader>
+                <div className="flex items-center gap-3">
+                  <div className="p-2 rounded-2xl bg-primary/20 text-primary">
+                    <Flame className="w-6 h-6" />
+                  </div>
+                  <CardTitle className="uppercase tracking-widest font-serif text-xl">Configuração da Temporada</CardTitle>
+                </div>
+                <CardDescription className="uppercase text-[10px] font-black opacity-60 tracking-widest">Defina o nome, data de término e as recompensas principais</CardDescription>
+              </CardHeader>
+              <CardContent>
+                <form
+                  className="space-y-8"
+                  onSubmit={async (e) => {
+                    e.preventDefault();
+                    try {
+                      // We don't need FormData for selects/states anymore, 
+                      // but we still need it for prizes and images
+                      const formData = new FormData(e.currentTarget);
+                      const uploadImage = async (fileKey: string, currentUrl: string) => {
+                        const file = formData.get(fileKey) as File;
+                        if (file && file.size > 0) {
+                          const uploadFormData = new FormData();
+                          uploadFormData.append("file", file);
+                          const res = await fetch("/api/upload", { method: "POST", body: uploadFormData });
+                          if (!res.ok) throw new Error("Upload falhou");
+                          const data = await res.json();
+                          return data.url;
+                        }
+                        return currentUrl;
+                      };
+
+                      const [img1, img2, img3, img10] = await Promise.all([
+                        uploadImage("img_top1", seasonConfig?.prizes?.find((p: any) => p.rank === "Top 1")?.image || "/images/rewards/mythic-sword.png"),
+                        uploadImage("img_top2", seasonConfig?.prizes?.find((p: any) => p.rank === "Top 2")?.image || "/images/rewards/legendary-staff.png"),
+                        uploadImage("img_top3", seasonConfig?.prizes?.find((p: any) => p.rank === "Top 3")?.image || "/images/rewards/legendary-staff.png"),
+                        uploadImage("img_top10", seasonConfig?.prizes?.find((p: any) => p.rank === "Top 10")?.image || "/images/rewards/epic-wings.svg"),
+                      ]);
+
+                      const prizes = [
+                        { rank: "Top 1", prize: formData.get("prize_top1") as string, image: img1, effect: seasonEffects["Top 1"] === "none" ? "" : seasonEffects["Top 1"] },
+                        { rank: "Top 2", prize: formData.get("prize_top2") as string, image: img2, effect: seasonEffects["Top 2"] === "none" ? "" : seasonEffects["Top 2"] },
+                        { rank: "Top 3", prize: formData.get("prize_top3") as string, image: img3, effect: seasonEffects["Top 3"] === "none" ? "" : seasonEffects["Top 3"] },
+                        { rank: "Top 10", prize: formData.get("prize_top10") as string, image: img10, effect: seasonEffects["Top 10"] === "none" ? "" : seasonEffects["Top 10"] },
+                      ];
+
+                      if (!seasonEndsAt) throw new Error("Data de término é obrigatória");
+
+                      const mutationData = {
+                        name: seasonName,
+                        fontSize: seasonFontSize,
+                        fontFamily: seasonFontFamily,
+                        titleEffect: seasonTitleEffect,
+                        endsAt: new Date(seasonEndsAt).toISOString(),
+                        prizes
+                      };
+
+                      console.log("Submitting Season Mutation (Controlled State):", mutationData);
+                      seasonConfigMutation.mutate(mutationData);
+                    } catch (err: any) {
+                      toast({ title: "Erro na Reconfiguração", description: err.message || "Tente novamente mais tarde.", variant: "destructive" });
+                    }
+                  }}
+                >
+                  <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+                    <div className="space-y-4">
+                      <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                        <div className="md:col-span-2 space-y-2">
+                          <Label className="text-[10px] uppercase font-black tracking-[0.2em]">Nome da Temporada</Label>
+                          <Input value={seasonName} onChange={(e) => setSeasonName(e.target.value)} required className="bg-black/20 border-white/10 h-14 text-white text-lg" />
+                        </div>
+                        <div className="space-y-2">
+                          <Label className="text-[10px] uppercase font-black tracking-[0.2em]">Tam. Fonte</Label>
+                          <Input type="number" value={seasonFontSize} onChange={(e) => setSeasonFontSize(parseInt(e.target.value))} required className="bg-black/20 border-white/10 h-14 text-white text-lg" />
+                        </div>
+                        <div className="space-y-2">
+                          <Label className="text-[10px] uppercase font-black tracking-[0.2em]">Data de Término</Label>
+                          <Input
+                            type="datetime-local"
+                            value={seasonEndsAt}
+                            onChange={(e) => setSeasonEndsAt(e.target.value)}
+                            required
+                            className="bg-black/20 border-white/10 h-14 text-white uppercase text-[10px] font-black"
+                          />
+                        </div>
+                      </div>
+
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <div className="space-y-2">
+                          <Label className="text-[10px] uppercase font-black tracking-[0.2em]">Estilo da Fonte</Label>
+                          <Select value={seasonFontFamily} onValueChange={setSeasonFontFamily}>
+                            <SelectTrigger className="bg-black/20 border-white/10 h-14">
+                              <SelectValue />
+                            </SelectTrigger>
+                            <SelectContent className="bg-slate-900 border-white/10">
+                              {SEASON_FONTS.map(font => (
+                                <SelectItem key={font.value} value={font.value} className={font.value}>{font.label}</SelectItem>
+                              ))}
+                            </SelectContent>
+                          </Select>
+                        </div>
+                        <div className="space-y-2">
+                          <Label className="text-[10px] uppercase font-black tracking-[0.2em]">Efeito Especial (Título)</Label>
+                          <Select value={seasonTitleEffect} onValueChange={setSeasonTitleEffect}>
+                            <SelectTrigger className="bg-black/20 border-white/10 h-14">
+                              <SelectValue />
+                            </SelectTrigger>
+                            <SelectContent className="bg-slate-900 border-white/10">
+                              {MAGIC_EFFECTS.map(eff => (
+                                <SelectItem key={eff.value} value={eff.value} className={eff.value}>{eff.label}</SelectItem>
+                              ))}
+                            </SelectContent>
+                          </Select>
+                        </div>
+                      </div>
+
+                      {/* Hidden inputs to guarantee FormData capture */}
+                      <input type="hidden" name="font_family" value={seasonFontFamily} />
+                      <input type="hidden" name="title_effect" value={seasonTitleEffect} />
+                    </div>
+
+                    <div className="space-y-4 bg-white/5 p-6 rounded-[2rem] border border-white/5">
+                      <h4 className="text-[11px] font-black uppercase tracking-[0.3em] text-primary mb-2">Premiações de Rank</h4>
+                      <div className="space-y-6">
+                        <div className="space-y-3">
+                          <Label className="text-[9px] uppercase font-black opacity-60">Top 1 (Mítico)</Label>
+                          <div className="flex gap-4 items-end">
+                            <div className="flex-1 space-y-2">
+                              <Input name="prize_top1" defaultValue={seasonConfig?.prizes?.find((p: any) => p.rank === "Top 1")?.prize} required className="bg-black/40 border-white/5 h-12 text-sm" />
+                              <Input name="img_top1" type="file" accept="image/*" className="h-8 bg-black/40 border-white/5 text-[8px] pt-1" />
+                              <div className="space-y-1">
+                                <Label className="text-[8px] uppercase font-black opacity-40">Efeito Visual</Label>
+                                <Select value={seasonEffects["Top 1"]} onValueChange={(val) => setSeasonEffects(prev => ({ ...prev, "Top 1": val }))}>
+                                  <SelectTrigger className="h-8 bg-black/40 border-white/5 text-[9px] font-bold">
+                                    <SelectValue placeholder="Sem Efeito" />
+                                  </SelectTrigger>
+                                  <SelectContent className="bg-slate-900 border-white/10 text-white">
+                                    {MAGIC_EFFECTS.map(eff => (
+                                      <SelectItem key={eff.value} value={eff.value} className="text-[10px] uppercase font-bold">
+                                        <span className={eff.value}>{eff.label}</span>
+                                      </SelectItem>
+                                    ))}
+                                  </SelectContent>
+                                </Select>
+                              </div>
+                            </div>
+                            <img src={seasonConfig?.prizes?.find((p: any) => p.rank === "Top 1")?.image || "/images/rewards/mythic-sword.png"} className="w-16 h-16 rounded-xl border border-purple-500/20 bg-black/40 object-cover" />
+                          </div>
+                        </div>
+                        <div className="space-y-3">
+                          <Label className="text-[9px] uppercase font-black opacity-60">Top 2 (Lendário)</Label>
+                          <div className="flex gap-4 items-end">
+                            <div className="flex-1 space-y-2">
+                              <Input name="prize_top2" defaultValue={seasonConfig?.prizes?.find((p: any) => p.rank === "Top 2")?.prize} required className="bg-black/40 border-white/5 h-12 text-sm" />
+                              <Input name="img_top2" type="file" accept="image/*" className="h-8 bg-black/40 border-white/5 text-[8px] pt-1" />
+                              <div className="space-y-1">
+                                <Label className="text-[8px] uppercase font-black opacity-40">Efeito Visual</Label>
+                                <Select value={seasonEffects["Top 2"]} onValueChange={(val) => setSeasonEffects(prev => ({ ...prev, "Top 2": val }))}>
+                                  <SelectTrigger className="h-8 bg-black/40 border-white/5 text-[9px] font-bold">
+                                    <SelectValue placeholder="Sem Efeito" />
+                                  </SelectTrigger>
+                                  <SelectContent className="bg-slate-900 border-white/10 text-white">
+                                    {MAGIC_EFFECTS.map(eff => (
+                                      <SelectItem key={eff.value} value={eff.value} className="text-[10px] uppercase font-bold">
+                                        <span className={eff.value}>{eff.label}</span>
+                                      </SelectItem>
+                                    ))}
+                                  </SelectContent>
+                                </Select>
+                              </div>
+                            </div>
+                            <img src={seasonConfig?.prizes?.find((p: any) => p.rank === "Top 2")?.image || "/images/rewards/legendary-staff.png"} className="w-16 h-16 rounded-xl border border-yellow-500/20 bg-black/40 object-cover" />
+                          </div>
+                        </div>
+                        <div className="space-y-3">
+                          <Label className="text-[9px] uppercase font-black opacity-60">Top 3 (Lendário)</Label>
+                          <div className="flex gap-4 items-end">
+                            <div className="flex-1 space-y-2">
+                              <Input name="prize_top3" defaultValue={seasonConfig?.prizes?.find((p: any) => p.rank === "Top 3")?.prize} required className="bg-black/40 border-white/5 h-12 text-sm" />
+                              <Input name="img_top3" type="file" accept="image/*" className="h-8 bg-black/40 border-white/5 text-[8px] pt-1" />
+                              <div className="space-y-1">
+                                <Label className="text-[8px] uppercase font-black opacity-40">Efeito Visual</Label>
+                                <Select value={seasonEffects["Top 3"]} onValueChange={(val) => setSeasonEffects(prev => ({ ...prev, "Top 3": val }))}>
+                                  <SelectTrigger className="h-8 bg-black/40 border-white/5 text-[9px] font-bold">
+                                    <SelectValue placeholder="Sem Efeito" />
+                                  </SelectTrigger>
+                                  <SelectContent className="bg-slate-900 border-white/10 text-white">
+                                    {MAGIC_EFFECTS.map(eff => (
+                                      <SelectItem key={eff.value} value={eff.value} className="text-[10px] uppercase font-bold">
+                                        <span className={eff.value}>{eff.label}</span>
+                                      </SelectItem>
+                                    ))}
+                                  </SelectContent>
+                                </Select>
+                              </div>
+                            </div>
+                            <img src={seasonConfig?.prizes?.find((p: any) => p.rank === "Top 3")?.image || "/images/rewards/legendary-staff.png"} className="w-16 h-16 rounded-xl border border-yellow-500/20 bg-black/40 object-cover" />
+                          </div>
+                        </div>
+                        <div className="space-y-3">
+                          <Label className="text-[9px] uppercase font-black opacity-60">Top 10 (Épico)</Label>
+                          <div className="flex gap-4 items-end">
+                            <div className="flex-1 space-y-2">
+                              <Input name="prize_top10" defaultValue={seasonConfig?.prizes?.find((p: any) => p.rank === "Top 10")?.prize} required className="bg-black/40 border-white/5 h-12 text-sm" />
+                              <Input name="img_top10" type="file" accept="image/*" className="h-8 bg-black/40 border-white/5 text-[8px] pt-1" />
+                              <div className="space-y-1">
+                                <Label className="text-[8px] uppercase font-black opacity-40">Efeito Visual</Label>
+                                <Select value={seasonEffects["Top 10"]} onValueChange={(val) => setSeasonEffects(prev => ({ ...prev, "Top 10": val }))}>
+                                  <SelectTrigger className="h-8 bg-black/40 border-white/5 text-[9px] font-bold">
+                                    <SelectValue placeholder="Sem Efeito" />
+                                  </SelectTrigger>
+                                  <SelectContent className="bg-slate-900 border-white/10 text-white">
+                                    {MAGIC_EFFECTS.map(eff => (
+                                      <SelectItem key={eff.value} value={eff.value} className="text-[10px] uppercase font-bold">
+                                        <span className={eff.value}>{eff.label}</span>
+                                      </SelectItem>
+                                    ))}
+                                  </SelectContent>
+                                </Select>
+                              </div>
+                            </div>
+                            <img src={seasonConfig?.prizes?.find((p: any) => p.rank === "Top 10")?.image || "/images/rewards/epic-wings.svg"} className="w-16 h-16 rounded-xl border border-emerald-500/20 bg-black/40 object-cover" />
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+
+                  <Button type="submit" className="w-full h-16 bg-primary text-primary-foreground font-black uppercase tracking-[0.3em] rounded-2xl shadow-2xl shadow-primary/20 hover:scale-[1.01] transition-transform">
+                    RECONFIGURAR TEMPORADA ✨
+                  </Button>
+                </form>
+              </CardContent>
+            </Card>
+          </TabsContent>
           <TabsContent value="reports" className="space-y-6">
             <div className="grid grid-cols-1 gap-4">
               <AnimatePresence mode="popLayout">
@@ -456,52 +806,104 @@ export default function Admin() {
                 </div>
                 <CardDescription className="uppercase text-[10px] font-black opacity-60 tracking-widest">Conceder relíquias sagradas aos guerreiros</CardDescription>
               </CardHeader>
-              <CardContent className="flex flex-col md:flex-row gap-4">
-                <Select value={selectedPlayerId?.toString()} onValueChange={(val) => setSelectedPlayerId(parseInt(val))}>
-                  <SelectTrigger className="flex-1 h-14 bg-black/20 border-white/10 rounded-2xl">
-                    <SelectValue placeholder="QUEM RECEBERÁ?" />
-                  </SelectTrigger>
-                  <SelectContent className="bg-slate-900 border-white/10">
-                    {playersList?.map(p => (
-                      <SelectItem key={p.id} value={p.id.toString()} className="uppercase text-[10px] font-black">{p.gameName}</SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-
-                <Select value={selectedRewardId?.toString()} onValueChange={(val) => setSelectedRewardId(parseInt(val))}>
-                  <SelectTrigger className="flex-1 h-14 bg-black/20 border-white/10 rounded-2xl text-yellow-500">
-                    <SelectValue placeholder="QUAL É A RELÍQUIA?" />
-                  </SelectTrigger>
-                  <SelectContent className="bg-slate-900 border-white/10">
-                    {rewardsList?.map(r => (
-                      <SelectItem key={r.id} value={r.id.toString()} className="uppercase text-[10px] font-black">
-                        {r.name} ({r.rarity})
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-
-                <div className="w-32">
-                  <Input
-                    type="number"
-                    placeholder="DIAS"
-                    className="h-14 bg-black/20 border-white/10 rounded-2xl text-center"
-                    value={rewardDuration}
-                    onChange={(e) => setRewardDuration(e.target.value)}
-                  />
+              <CardContent className="space-y-6">
+                <div className="flex gap-2">
+                  <Button
+                    variant={distributionMode === 'player' ? 'default' : 'outline'}
+                    onClick={() => setDistributionMode('player')}
+                    className="flex-1 text-[10px] font-black uppercase tracking-widest h-10 rounded-xl"
+                  >
+                    Único Guerreiro
+                  </Button>
+                  <Button
+                    variant={distributionMode === 'rank' ? 'default' : 'outline'}
+                    onClick={() => setDistributionMode('rank')}
+                    className="flex-1 text-[10px] font-black uppercase tracking-widest h-10 rounded-xl"
+                  >
+                    Por Rank (Top)
+                  </Button>
                 </div>
 
-                <Button
-                  className="h-14 px-12 bg-yellow-500 text-yellow-950 font-black uppercase tracking-[0.2em] rounded-2xl hover:bg-yellow-400 shadow-xl shadow-yellow-500/20"
-                  onClick={() => selectedPlayerId && selectedRewardId && assignRewardMutation.mutate({
-                    playerId: selectedPlayerId,
-                    rewardId: selectedRewardId,
-                    days: rewardDuration ? parseInt(rewardDuration) : undefined
-                  })}
-                  disabled={!selectedPlayerId || !selectedRewardId || assignRewardMutation.isPending}
-                >
-                  ENTREGAR ✨
-                </Button>
+                <div className="flex flex-col md:flex-row gap-4">
+                  {distributionMode === 'player' ? (
+                    <Select value={selectedPlayerId?.toString()} onValueChange={(val) => setSelectedPlayerId(parseInt(val))}>
+                      <SelectTrigger className="flex-1 h-14 bg-black/20 border-white/10 rounded-2xl">
+                        <SelectValue placeholder="QUEM RECEBERÁ?" />
+                      </SelectTrigger>
+                      <SelectContent className="bg-slate-900 border-white/10">
+                        {playersList?.map(p => (
+                          <SelectItem key={p.id} value={p.id.toString()} className="uppercase text-[10px] font-black">{p.gameName}</SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  ) : (
+                    <Select value={rankTarget} onValueChange={setRankTarget}>
+                      <SelectTrigger className="flex-1 h-14 bg-black/20 border-white/10 rounded-2xl text-blue-400">
+                        <SelectValue placeholder="QUAL RANK?" />
+                      </SelectTrigger>
+                      <SelectContent className="bg-slate-900 border-white/10">
+                        <SelectItem value="top1" className="uppercase text-[10px] font-black">TOP 1 (CAMPEÃO)</SelectItem>
+                        <SelectItem value="top2" className="uppercase text-[10px] font-black">TOP 2 (LENDÁRIO)</SelectItem>
+                        <SelectItem value="top3" className="uppercase text-[10px] font-black">TOP 3 (ÉPICO)</SelectItem>
+                        <SelectItem value="top10" className="uppercase text-[10px] font-black">TOP 1 ao 10</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  )}
+
+                  <Select value={selectedRewardId?.toString()} onValueChange={(val) => setSelectedRewardId(parseInt(val))}>
+                    <SelectTrigger className="flex-1 h-14 bg-black/20 border-white/10 rounded-2xl text-yellow-500">
+                      <SelectValue placeholder="QUAL É A RELÍQUIA?" />
+                    </SelectTrigger>
+                    <SelectContent className="bg-slate-900 border-white/10">
+                      {rewardsList?.filter(r => distributionMode === 'rank' ? r.isRankPrize : !r.isRankPrize).map(r => (
+                        <SelectItem key={r.id} value={r.id.toString()} className="uppercase text-[10px] font-black">
+                          {r.name} ({r.rarity})
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+
+                  <div className="w-32">
+                    <Input
+                      type="number"
+                      placeholder="DIAS"
+                      className="h-14 bg-black/20 border-white/10 rounded-2xl text-center"
+                      value={rewardDuration}
+                      onChange={(e) => setRewardDuration(e.target.value)}
+                    />
+                  </div>
+
+                  <Button
+                    className="h-14 px-12 bg-yellow-500 text-yellow-950 font-black uppercase tracking-[0.2em] rounded-2xl hover:bg-yellow-400 shadow-xl shadow-yellow-500/20"
+                    onClick={() => {
+                      if (distributionMode === 'player') {
+                        if (selectedPlayerId && selectedRewardId) {
+                          assignRewardMutation.mutate({
+                            playerId: selectedPlayerId,
+                            rewardId: selectedRewardId,
+                            days: rewardDuration ? parseInt(rewardDuration) : undefined
+                          });
+                        }
+                      } else {
+                        if (selectedRewardId) {
+                          distributeRankRewardMutation.mutate({
+                            rankTarget,
+                            rewardId: selectedRewardId,
+                            days: rewardDuration ? parseInt(rewardDuration) : undefined
+                          });
+                        }
+                      }
+                    }}
+                    disabled={
+                      (distributionMode === 'player' && (!selectedPlayerId || !selectedRewardId)) ||
+                      (distributionMode === 'rank' && !selectedRewardId) ||
+                      assignRewardMutation.isPending ||
+                      distributeRankRewardMutation.isPending
+                    }
+                  >
+                    ENTREGAR ✨
+                  </Button>
+                </div>
               </CardContent>
             </Card>
           </TabsContent>
@@ -537,9 +939,11 @@ export default function Admin() {
                     const data = {
                       name: formData.get("name"),
                       description: formData.get("description"),
-                      rarity: formData.get("rarity"),
+                      rarity: relicRarity,
+                      effect: relicEffect === "none" ? "" : relicEffect,
                       stars: parseInt(formData.get("stars") as string),
-                      icon: iconUrl
+                      icon: iconUrl,
+                      isRankPrize: relicIsRankPrize
                     };
 
                     try {
@@ -565,7 +969,7 @@ export default function Admin() {
                     </div>
                     <div className="space-y-2">
                       <Label className="text-[10px] uppercase font-black">Raridade</Label>
-                      <Select name="rarity" defaultValue={editingRelic?.rarity || "rare"}>
+                      <Select value={relicRarity} onValueChange={setRelicRarity}>
                         <SelectTrigger className="h-12 bg-black/20 border-white/10">
                           <SelectValue />
                         </SelectTrigger>
@@ -583,9 +987,35 @@ export default function Admin() {
                       <Input name="stars" defaultValue={editingRelic?.stars || 1} type="number" min="1" max="7" required className="bg-black/20 border-white/10 h-12" />
                     </div>
                     <div className="space-y-2">
+                      <Label className="text-[10px] uppercase font-black">Efeito de Texto Místico</Label>
+                      <Select value={relicEffect} onValueChange={setRelicEffect}>
+                        <SelectTrigger className="h-12 bg-black/20 border-white/10 font-bold">
+                          <SelectValue placeholder="Sem Efeito" />
+                        </SelectTrigger>
+                        <SelectContent className="bg-slate-900 border-white/10 text-white">
+                          {MAGIC_EFFECTS.map(eff => (
+                            <SelectItem key={eff.value} value={eff.value} className="font-bold flex items-center gap-2">
+                              <span className={eff.value}>{eff.label}</span>
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                    </div>
+                    <div className="space-y-2">
                       <Label className="text-[10px] uppercase font-black">Ícone da Relíquia</Label>
                       <Input name="icon" type="file" accept="image/*" className="bg-black/20 border-white/10 h-12 pt-2" />
                       {editingRelic && <p className="text-[8px] opacity-40 uppercase font-bold">Mantenha vazio para não alterar a imagem atual</p>}
+                    </div>
+                    <div className="flex items-center gap-3 space-x-2 pt-4">
+                      <div
+                        className={`w-12 h-6 rounded-full transition-all cursor-pointer relative ${relicIsRankPrize ? 'bg-primary' : 'bg-white/10'}`}
+                        onClick={() => setRelicIsRankPrize(!relicIsRankPrize)}
+                      >
+                        <div className={`absolute top-1 w-4 h-4 rounded-full bg-white transition-all ${relicIsRankPrize ? 'left-7' : 'left-1'}`} />
+                      </div>
+                      <Label className="text-[10px] uppercase font-black cursor-pointer" onClick={() => setRelicIsRankPrize(!relicIsRankPrize)}>
+                        Marcar como Prêmio de Rank
+                      </Label>
                     </div>
                     <div className="col-span-full space-y-2">
                       <Label className="text-[10px] uppercase font-black">Descrição da Lenda</Label>
@@ -651,10 +1081,11 @@ export default function Admin() {
             </div>
           </TabsContent>
         </div>
-      </Tabs>
+      </Tabs >
 
       {/* Point Edit Dialog */}
-      <Dialog open={!!editPointsId} onOpenChange={(open) => !open && setEditPointsId(null)}>
+      < Dialog open={!!editPointsId
+      } onOpenChange={(open) => !open && setEditPointsId(null)}>
         <DialogContent className="bg-[#020617] border-white/10 rounded-[2rem]">
           <DialogHeader>
             <DialogTitle className="uppercase tracking-[0.2em] font-serif text-primary">Alterar Pontuacão</DialogTitle>
@@ -686,8 +1117,8 @@ export default function Admin() {
             </Button>
           </DialogFooter>
         </DialogContent>
-      </Dialog>
-    </div>
+      </Dialog >
+    </div >
   );
 }
 

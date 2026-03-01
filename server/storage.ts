@@ -1,4 +1,8 @@
-import { users, players, matches, rewards, playerRewards, seasons, challenges, activities, reactions, type User, type InsertUser, type Player, type InsertPlayer, type Match, type InsertMatch, type Reward, type InsertReward } from "@shared/schema";
+import {
+  users, players, matches, rewards, playerRewards, seasons, challenges, activities, reactions, configs,
+  type User, type InsertUser, type Player, type InsertPlayer, type Match, type InsertMatch,
+  type Reward, type InsertReward, type Config, type InsertConfig
+} from "@shared/schema";
 import { db } from "./db";
 import { eq, and, sql } from "drizzle-orm";
 
@@ -46,6 +50,10 @@ export interface IStorage {
   getLatestActivities(limit?: number): Promise<any[]>;
   toggleReaction(activityId: number, userId: string, emoji: string): Promise<void>;
 
+  // Config methods
+  getConfig(key: string): Promise<any>;
+  setConfig(key: string, value: any): Promise<void>;
+
   // Clear methods
   clearActivities(): Promise<void>;
   clearMatches(): Promise<void>;
@@ -55,6 +63,23 @@ export interface IStorage {
 export class DatabaseStorage implements IStorage {
   constructor() {
     this.seedRewards();
+    this.seedConfig();
+  }
+
+  async seedConfig() {
+    const existing = await this.getConfig("active_season");
+    if (!existing) {
+      const defaultSeason = {
+        name: "Temporada de Abertura: O Despertar da Aliança",
+        endsAt: new Date("2026-03-26T00:00:00Z").toISOString(),
+        prizes: [
+          { rank: "Top 1", prize: "Espada Suprema da Aliança (Mítica) + 1000 Diamantes", image: "/images/rewards/mythic-sword.png" },
+          { rank: "Top 3", prize: "Cajado do Arcanista (Lendário) + 500 Diamantes", image: "/images/rewards/legendary-staff.png" },
+          { rank: "Top 10", prize: "Asas da Vitória (Épica)", image: "/images/rewards/epic-wings.svg" }
+        ]
+      };
+      await this.setConfig("active_season", defaultSeason);
+    }
   }
 
   async seedRewards() {
@@ -321,6 +346,21 @@ export class DatabaseStorage implements IStorage {
         createdAt: new Date()
       });
     }
+  }
+
+  async getConfig(key: string): Promise<any> {
+    const [config] = await db.select().from(configs).where(eq(configs.key, key));
+    return config ? JSON.parse(config.value) : null;
+  }
+
+  async setConfig(key: string, value: any): Promise<void> {
+    const stringValue = JSON.stringify(value);
+    await db.insert(configs)
+      .values({ key, value: stringValue })
+      .onConflictDoUpdate({
+        target: configs.key,
+        set: { value: stringValue }
+      });
   }
 
   async clearActivities(): Promise<void> {

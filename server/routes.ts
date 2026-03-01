@@ -182,17 +182,88 @@ export async function registerRoutes(
 
   // Season Info Route
   app.get("/api/season", asyncHandler(async (_req, res) => {
-    // Hardcoded for now, can be moved to storage later
-    const seasonEnd = new Date("2026-03-26T00:00:00Z");
+    const activeSeason = await storage.getConfig("active_season");
+    // Ensure all fields are present with safe defaults
+    const sanitizedSeason = {
+      name: (activeSeason && activeSeason.name) || "O Despertar da Aliança",
+      endsAt: (activeSeason && activeSeason.endsAt) || new Date("2026-03-27T00:00:00Z").toISOString(),
+      prizes: (activeSeason && activeSeason.prizes) || [],
+      fontSize: (activeSeason && Number(activeSeason.fontSize)) || 72,
+      fontFamily: (activeSeason && activeSeason.fontFamily) || "font-serif",
+      titleEffect: (activeSeason && activeSeason.titleEffect) || "none",
+    };
+    res.json(sanitizedSeason);
+  }));
+
+  // Update Season Info (Admin only)
+  app.post("/api/admin/season", asyncHandler(async (req, res) => {
+    if (!req.session.user?.isAdmin) {
+      res.status(403).json({ message: "Apenas guardiões supremos podem alterar o destino da temporada." });
+      return;
+    }
+
+    const { name, endsAt, prizes, fontSize, fontFamily, titleEffect } = req.body;
+
+    // Explicitly build the config object to ensure it has all fields
+    const newConfig = {
+      name: String(name || "Temporada de Abertura"),
+      endsAt: String(endsAt || new Date().toISOString()),
+      prizes: prizes || [],
+      fontSize: Number(fontSize) || 72,
+      fontFamily: String(fontFamily || "font-serif"),
+      titleEffect: String(titleEffect || "none")
+    };
+
+    console.log("-----------------------------------------");
+    console.log("!!! ADMIN SEASON UPDATE ATTEMPT !!!");
+    console.log("Raw Body:", JSON.stringify(req.body));
+    console.log("Processed Config:", JSON.stringify(newConfig));
+
+    await storage.setConfig("active_season", newConfig);
+
+    // Verify save by reading back
+    const verifyConfig = await storage.getConfig("active_season");
+    console.log("DB Confirmation:", JSON.stringify(verifyConfig));
+    console.log("-----------------------------------------");
+
     res.json({
-      name: "Temporada de Abertura: O Despertar da Aliança",
-      endsAt: seasonEnd.toISOString(),
-      prizes: [
-        { rank: "Top 1", prize: "Espada Suprema da Aliança (Mítica) + 1000 Diamantes" },
-        { rank: "Top 3", prize: "Cajado do Arcanista (Lendário) + 500 Diamantes" },
-        { rank: "Top 10", prize: "Asas da Vitória (Épica)" }
-      ]
+      message: "Temporada reconfigurada com sucesso.",
+      config: verifyConfig || newConfig
     });
+  }));
+
+  // Batch Distribution by Rank
+  app.post("/api/admin/distribute-rank-rewards", requireAdmin, asyncHandler(async (req, res) => {
+    const { rankTarget, rewardId, days } = req.body;
+    const playersList = await storage.getPlayers();
+    playersList.sort((a, b) => b.points - a.points);
+
+    let targets: any[] = [];
+    if (rankTarget === "top1" && playersList[0]) targets = [playersList[0]];
+    else if (rankTarget === "top2" && playersList[1]) targets = [playersList[1]];
+    else if (rankTarget === "top3" && playersList[2]) targets = [playersList[2]];
+    else if (rankTarget === "top10") targets = playersList.slice(0, 10);
+
+    const expiresAt = days ? new Date() : undefined;
+    if (expiresAt && days) expiresAt.setDate(expiresAt.getDate() + parseInt(days));
+
+    const rewards = await storage.getRewards();
+    const reward = rewards.find(r => r.id === rewardId);
+
+    if (!reward) {
+      res.status(404).json({ message: "Relíquia não encontrada" });
+      return;
+    }
+
+    for (const player of targets) {
+      await storage.assignReward(player.id, rewardId, expiresAt);
+      await storage.createActivity("reward_earned", player.id, player.gameName, {
+        rewardName: reward.name,
+        rewardIcon: reward.icon
+      });
+    }
+
+    res.json({ success: true, count: targets.length });
   }));
 
   // Get single player details
@@ -341,8 +412,8 @@ export async function registerRoutes(
     res.json(match);
   }));
 
-  // Image Upload Route (Persist to Supabase if available)
-  app.post("/api/upload", upload.single('file'), asyncHandler(async (req, res) => {
+  // Image Upload Route (Persist to Supabase or local storage)
+  app.post("/api/upload", requireAdmin, upload.single('file'), asyncHandler(async (req, res) => {
     if (!req.file) {
       res.status(400).json({ message: "Nenhum arquivo enviado." });
       return;
@@ -356,8 +427,16 @@ export async function registerRoutes(
       }
     }
 
-    // Fallback if supabase not configured
-    res.status(503).json({ message: "Serviço de armazenamento não configurado." });
+    // Local fallback: write buffer to file since we use memoryStorage
+    const fileName = `${Date.now()}-${Math.round(Math.random() * 1e9)}${path.extname(req.file.originalname)}`;
+    const uploadDir = path.resolve(process.cwd(), "uploads");
+    if (!fs.existsSync(uploadDir)) {
+      fs.mkdirSync(uploadDir, { recursive: true });
+    }
+    const filePath = path.join(uploadDir, fileName);
+    fs.writeFileSync(filePath, req.file.buffer);
+
+    res.json({ url: `/uploads/${fileName}` });
   }));
 
   // Avatar Upload Route
@@ -477,13 +556,6 @@ export async function registerRoutes(
     res.json(allSeasons);
   }));
 
-  app.post("/api/upload", requireAdmin, upload.single("file"), (req, res) => {
-    if (!req.file) {
-      return res.status(400).json({ message: "Nenhum arquivo enviado" });
-    }
-    const publicUrl = `/uploads/${req.file.filename}`;
-    res.json({ url: publicUrl });
-  });
 
   app.post("/api/players/:id/rewards", requireAdmin, asyncHandler(async (req, res) => {
     const playerId = parseInt(req.params.id as string);

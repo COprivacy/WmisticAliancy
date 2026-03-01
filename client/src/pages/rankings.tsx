@@ -28,6 +28,7 @@ import {
   Star,
   Sparkles,
   Award,
+  Shield,
   Timer as ClockIcon
 } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
@@ -43,7 +44,10 @@ type PlayerWithRewards = Player & { rewards: Reward[] };
 type SeasonInfo = {
   name: string;
   endsAt: string;
-  prizes: { rank: string; prize: string }[];
+  fontSize?: number;
+  fontFamily?: string;
+  titleEffect?: string;
+  prizes: { rank: string; prize: string; image?: string; effect?: string }[];
 };
 
 export default function Rankings() {
@@ -69,7 +73,8 @@ export default function Rankings() {
 
   const getPrizeRarity = (rank: string) => {
     if (rank.includes("1")) return "mythic";
-    if (rank.includes("3")) return "legendary";
+    if (rank.includes("2")) return "legendary";
+    if (rank.includes("3")) return "epic";
     return "epic";
   };
 
@@ -191,7 +196,7 @@ export default function Rankings() {
     return "from-blue-500/10 to-blue-600/5 text-blue-100 border-white/5";
   };
 
-  if (isLoading) {
+  if (isLoading || !season) {
     return (
       <div className="flex items-center justify-center min-h-[60vh]">
         <Loader2 className="w-10 h-10 animate-spin text-primary" />
@@ -218,6 +223,12 @@ export default function Rankings() {
 
   const getMagicClass = (player: PlayerWithRewards) => {
     if (!player.rewards) return "";
+
+    // First, check for any custom "effect" assigned in admin
+    const customEffect = player.rewards.find(r => r.effect)?.effect;
+    if (customEffect) return customEffect;
+
+    // Fallback to tier-based effects
     if (player.rewards.some(r => r.rarity === 'mythic')) return "magic-text-mythic";
     if (player.rewards.some(r => r.rarity === 'legendary')) return "magic-text-legendary";
     if (player.rewards.some(r => r.rarity === 'epic')) return "magic-text-epic";
@@ -349,7 +360,10 @@ export default function Rankings() {
 
                       {/* Season Title with Elegant Glitch */}
                       <div className="space-y-4 max-w-4xl mx-auto relative px-4">
-                        <h2 className="text-4xl md:text-7xl font-serif font-black uppercase tracking-tighter text-white leading-tight drop-shadow-2xl">
+                        <h2
+                          className={`font-black uppercase tracking-tighter text-white leading-tight drop-shadow-2xl ${season.fontFamily || 'font-serif'} ${season.titleEffect || ''}`}
+                          style={{ fontSize: season.fontSize ? `${season.fontSize}px` : undefined }}
+                        >
                           {season.name.split(':')[0]}
                           {season.name.includes(':') && (
                             <span className="text-lg md:text-2xl text-primary font-black italic tracking-[0.4em] uppercase mt-2 block opacity-80">
@@ -394,53 +408,133 @@ export default function Rankings() {
                         <h2 className="text-3xl md:text-5xl font-serif text-white uppercase tracking-tighter italic">Relíquias da Vitória</h2>
                       </div>
 
-                      {/* Visual Prize Gallery */}
-                      <div className="grid grid-cols-1 md:grid-cols-3 gap-6 w-full max-w-5xl mx-auto">
-                        {season.prizes.map((p, i) => {
-                          const rarity = getPrizeRarity(p.rank);
-                          return (
-                            <motion.div
-                              key={i}
-                              initial={{ opacity: 0, y: 20 }}
-                              animate={{ opacity: 1, y: 0 }}
-                              transition={{ delay: i * 0.1 }}
-                              className="group/prize-card relative p-1 rounded-[2rem] bg-gradient-to-br from-white/10 to-transparent border border-white/5 overflow-hidden"
-                            >
-                              <div className="absolute inset-0 bg-grid-white/5 opacity-20" />
-                              <div className="relative z-10 p-6 flex flex-col items-center text-center space-y-4 h-full">
-                                <div className="relative w-32 h-32 md:w-40 md:h-40 flex items-center justify-center">
-                                  {/* Item Glow Effects */}
-                                  <div className={`absolute inset-4 blur-2xl opacity-40 rounded-full transition-all duration-500 group-hover/prize-card:scale-150 ${rarity === 'mythic' ? 'bg-purple-600' : rarity === 'legendary' ? 'bg-yellow-600' : 'bg-emerald-600'}`} />
+                      {/* Visual Prize Gallery - Podium Layout */}
+                      <div className="flex flex-col lg:flex-row gap-10 w-full max-w-7xl mx-auto items-start">
+                        {/* Podium Section */}
+                        <div className="flex-[3] grid grid-cols-1 md:grid-cols-3 gap-6 items-end w-full">
+                          {(() => {
+                            if (!season?.prizes) return null;
+                            const podiumRanks = ["Top 1", "Top 2", "Top 3"];
+                            const podiumPrizes = season.prizes.filter(p => podiumRanks.includes(p.rank));
 
-                                  <img
-                                    src={PRIZE_IMAGES[p.rank] || "/images/rewards/rare-medal.svg"}
-                                    alt={p.prize}
-                                    className="relative z-10 w-full h-full object-contain drop-shadow-[0_0_15px_rgba(255,255,255,0.2)] group-hover/prize-card:scale-110 transition-transform duration-500"
-                                  />
+                            // Forced Podium Mapping: [Top 2, Top 1, Top 3]
+                            const podiumSlots = [
+                              { rank: "Top 2", data: podiumPrizes.find(p => p.rank === "Top 2") },
+                              { rank: "Top 1", data: podiumPrizes.find(p => p.rank === "Top 1") },
+                              { rank: "Top 3", data: podiumPrizes.find(p => p.rank === "Top 3") }
+                            ];
 
-                                  {/* Rarity Tag */}
-                                  <div className={`absolute -top-2 -right-2 px-3 py-1 rounded-full text-[9px] font-black uppercase tracking-widest border transition-all duration-500 group-hover/prize-card:scale-110 ${rarity === 'mythic' ? 'bg-purple-500/20 text-purple-400 border-purple-500/40 shadow-[0_0_15px_rgba(168,85,247,0.4)]' : rarity === 'legendary' ? 'bg-yellow-500/20 text-yellow-400 border-yellow-500/40 shadow-[0_0_15px_rgba(234,179,8,0.4)]' : 'bg-emerald-500/20 text-emerald-400 border-emerald-500/40 shadow-[0_0_15px_rgba(34,197,94,0.4)]'}`}>
-                                    {rarity}
+                            return podiumSlots.map((slot, i) => {
+                              const p = slot.data;
+                              if (!p) return <div key={slot.rank} className="hidden md:block" />; // Keep grid spot for desktop
+
+                              const isCenter = p.rank === 'Top 1';
+                              const rarity = getPrizeRarity(p.rank);
+
+                              return (
+                                <motion.div
+                                  key={p.rank}
+                                  initial={{ opacity: 0, y: isCenter ? 40 : 20 }}
+                                  animate={{ opacity: 1, y: 0 }}
+                                  transition={{ delay: i * 0.1, duration: 0.8 }}
+                                  className={`group/prize-card relative p-1 rounded-[2.5rem] bg-gradient-to-br from-white/10 to-transparent border border-white/5 overflow-hidden ${isCenter ? 'md:order-2 scale-110 md:-translate-y-8 z-20' : i === 0 ? 'md:order-1' : 'md:order-3'}`}
+                                >
+                                  {/* Magic Sparkle Background */}
+                                  <div className="absolute inset-0 overflow-hidden pointer-events-none">
+                                    {[...Array(20)].map((_, pi) => (
+                                      <div
+                                        key={pi}
+                                        className="magic-particle"
+                                        style={{
+                                          left: `${Math.random() * 100}%`,
+                                          top: `${Math.random() * 100}%`,
+                                          width: `${Math.random() * 3 + 1}px`,
+                                          height: `${Math.random() * 3 + 1}px`,
+                                          animationDelay: `${Math.random() * 3}s`,
+                                          background: rarity === 'mythic' ? '#d946ef' : rarity === 'legendary' ? '#eab308' : '#10b981',
+                                          boxShadow: `0 0 8px ${rarity === 'mythic' ? '#d946ef' : rarity === 'legendary' ? '#eab308' : '#10b981'}`
+                                        }}
+                                      />
+                                    ))}
+                                  </div>
+
+                                  <div className="absolute inset-0 bg-grid-white/5 opacity-10" />
+                                  <div className="relative z-10 p-6 flex flex-col items-center text-center space-y-4 h-full">
+                                    <div className="relative aspect-[3/4] w-full flex items-center justify-center rounded-[2rem] overflow-hidden border border-white/10 bg-black/80 shadow-[0_20px_50px_rgba(0,0,0,0.5)]">
+                                      {/* Cinematic Ambient Glow */}
+                                      <div className={`absolute inset-0 opacity-10 transition-all duration-700 group-hover/prize-card:opacity-40 animate-pulse ${rarity === 'mythic' ? 'bg-[radial-gradient(circle_at_50%_50%,#9333ea,transparent)]' : rarity === 'legendary' ? 'bg-[radial-gradient(circle_at_50%_50%,#eab308,transparent)]' : 'bg-[radial-gradient(circle_at_50%_50%,#10b981,transparent)]'}`} />
+
+                                      {/* Enhanced Magic Overlay */}
+                                      <div className={`absolute inset-0 z-20 opacity-0 group-hover/prize-card:opacity-100 transition-opacity duration-1000 ${rarity === 'mythic' ? 'bg-[radial-gradient(circle_at_50%_50%,rgba(147,51,234,0.1),transparent)]' : 'bg-[radial-gradient(circle_at_50%_50%,rgba(234,179,8,0.1),transparent)]'}`} />
+
+                                      <img
+                                        src={p.image || PRIZE_IMAGES[p.rank] || "/images/rewards/rare-medal.svg"}
+                                        alt={p.prize}
+                                        className="relative z-10 w-full h-full object-cover transition-transform duration-1000 group-hover/prize-card:scale-110"
+                                      />
+
+                                      <div className="absolute inset-0 z-30 bg-gradient-to-tr from-white/10 via-transparent to-transparent opacity-0 group-hover/prize-card:opacity-100 transition-opacity duration-700" />
+
+                                      <div className={`absolute top-4 right-4 z-40 px-3 py-1 rounded-full text-[9px] font-black uppercase tracking-widest border backdrop-blur-md shadow-lg ${rarity === 'mythic' ? 'bg-purple-900/60 text-purple-300 border-purple-500/40' : rarity === 'legendary' ? 'bg-yellow-900/60 text-yellow-300 border-yellow-500/40' : 'bg-emerald-900/60 text-emerald-300 border-emerald-500/40'}`}>
+                                        {rarity}
+                                      </div>
+                                    </div>
+
+                                    <div className="space-y-1 w-full mt-2">
+                                      <span className={`text-[10px] font-black uppercase tracking-[0.4em] mb-1 ${rarity === 'mythic' ? 'text-purple-400' : rarity === 'legendary' ? 'text-yellow-400' : 'text-emerald-400'}`}>
+                                        {p.rank}
+                                      </span>
+                                      <p className={`text-sm md:text-base font-serif uppercase tracking-wider leading-tight px-4 text-center h-[50px] flex items-center justify-center ${p.effect ? p.effect :
+                                        rarity === 'mythic' ? 'magic-text-mythic scale-110 drop-shadow-[0_0_15px_rgba(147,51,234,0.5)]' :
+                                          rarity === 'legendary' ? 'magic-text-legendary' :
+                                            rarity === 'epic' ? 'magic-text-epic' :
+                                              'text-white'}`}>
+                                        {p.prize}
+                                      </p>
+                                    </div>
+                                  </div>
+                                </motion.div>
+                              );
+                            });
+                          })()}
+                        </div>
+
+                        {/* Sidebar: Small Spoils (Top 10 etc.) */}
+                        <div className="flex-1 w-full lg:max-w-xs space-y-6">
+                          <h3 className="text-xs font-black uppercase tracking-[0.4em] text-primary/60 border-l-2 border-primary/40 pl-4 py-1">Pequenos Espólios</h3>
+                          <div className="space-y-4">
+                            {season?.prizes?.filter(p => !["Top 1", "Top 2", "Top 3"].includes(p.rank)).map((p, i) => (
+                              <motion.div
+                                key={p.rank}
+                                initial={{ opacity: 0, x: 20 }}
+                                animate={{ opacity: 1, x: 0 }}
+                                transition={{ delay: 0.5 + i * 0.1 }}
+                                className="group/small-prize relative p-4 rounded-2xl bg-white/5 border border-white/5 hover:bg-white/10 transition-colors"
+                              >
+                                <div className="flex items-center gap-4">
+                                  <div className="relative w-16 h-20 rounded-lg overflow-hidden border border-white/5">
+                                    <img src={p.image || "/images/rewards/rare-medal.svg"} className="w-full h-full object-cover group-hover/small-prize:scale-110 transition-transform duration-500" />
+                                    <div className="absolute inset-0 bg-gradient-to-t from-black/80 to-transparent" />
+                                  </div>
+                                  <div className="space-y-1 flex-1">
+                                    <span className="text-[9px] font-black uppercase tracking-[0.2em] text-emerald-400/80">{p.rank}</span>
+                                    <p className={`text-xs font-medium leading-snug ${p.effect ? p.effect : 'text-white/90'}`}>{p.prize}</p>
                                   </div>
                                 </div>
+                              </motion.div>
+                            ))}
+                          </div>
 
-                                <div className="space-y-1">
-                                  <span className={`text-[10px] font-black uppercase tracking-[0.3em] ${rarity === 'mythic' ? 'text-purple-400' : rarity === 'legendary' ? 'text-yellow-400' : 'text-emerald-400'}`}>
-                                    {p.rank}
-                                  </span>
-                                  <p className={`text-sm font-serif uppercase tracking-widest leading-tight px-4 min-h-[40px] flex items-center justify-center ${rarity === 'mythic' ? 'magic-text-mythic' : rarity === 'legendary' ? 'magic-text-legendary' : 'text-white'}`}>
-                                    {p.prize}
-                                  </p>
-                                </div>
-                              </div>
-                            </motion.div>
-                          );
-                        })}
+                          <div className="p-6 rounded-[2rem] bg-gradient-to-br from-primary/5 to-transparent border border-primary/10 space-y-3">
+                            <Sparkles className="w-5 h-5 text-primary animate-pulse" />
+                            <p className="text-[10px] text-muted-foreground uppercase font-black tracking-[0.2em] leading-relaxed">
+                              O Conselho da Aliança fará a entrega das relíquias ao final de 24 dias através do correio místico.
+                            </p>
+                          </div>
+                        </div>
                       </div>
 
-                      <p className="text-[10px] text-muted-foreground uppercase font-black tracking-[0.3em] font-sans">
-                        O Conselho da Aliança fará a entrega das relíquias ao final de 24 dias.
-                      </p>
+                      {/* The old <p> tag is removed from here, as it's moved into the sidebar */}
                     </motion.div>
                   )}
                 </AnimatePresence>
