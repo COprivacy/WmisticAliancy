@@ -270,8 +270,8 @@ export default function Admin() {
       </div>
 
       <Tabs defaultValue="reports" className="w-full">
-        <TabsList className="bg-white/5 border border-white/5 h-16 p-2 rounded-2xl w-full max-w-2xl mx-auto grid grid-cols-3 gap-2">
-          <TabsTrigger value="reports" className="rounded-xl data-[state=active]:bg-primary data-[state=active]:text-primary-foreground uppercase text-[10px] font-black tracking-widest">
+        <TabsList className="bg-white/5 border border-white/5 h-16 p-2 rounded-2xl w-full max-w-4xl mx-auto grid grid-cols-5 gap-2">
+          <TabsTrigger value="reports" className="rounded-xl data-[state=active]:bg-primary data-[state=active]:text-primary-foreground uppercase text-[10px] font-black tracking-widest ">
             <History className="w-3 h-3 mr-2" />
             Relatórios ({stats.pendingReports})
           </TabsTrigger>

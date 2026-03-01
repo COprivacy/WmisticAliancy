@@ -1,4 +1,4 @@
-import { useState } from "react";
+﻿import { useState } from "react";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Link } from "wouter";
 import { Button } from "@/components/ui/button";
@@ -311,252 +311,127 @@ export default function Rankings() {
             animate={{ opacity: 1, y: 0 }}
             className="mb-16 relative"
           >
-            {/* Soft Ambient Glow */}
-            <div className={`absolute -inset-4 transition-all duration-700 ${showPrizes ? 'bg-purple-500/10' : 'bg-primary/5'} blur-[80px] rounded-full opacity-50 pointer-events-none`} />
+            {/* Ambient Glow */}
+            <div className="absolute -inset-4 bg-primary/5 blur-[80px] rounded-full opacity-50 pointer-events-none" />
 
-            <div className="relative overflow-hidden rounded-[2.5rem] border border-white/10 bg-[#020617]/60 backdrop-blur-3xl p-6 md:p-12 min-h-[400px] flex flex-col justify-center">
-              {/* Subtle Scanning Line Effect */}
-              <div className="absolute inset-0 bg-[linear-gradient(rgba(255,255,255,0.02)_1px,transparent_1px)] bg-[size:100%_4px] pointer-events-none opacity-20" />
+            <div className="relative overflow-hidden rounded-[2.5rem] border border-white/10 bg-[#020617]/70 backdrop-blur-3xl">
+              <div className="absolute inset-0 bg-[linear-gradient(rgba(255,255,255,0.015)_1px,transparent_1px)] bg-[size:100%_4px] pointer-events-none opacity-20" />
+              <div className="absolute top-0 left-0 right-0 h-px bg-gradient-to-r from-transparent via-primary/60 to-transparent" />
+              <div className="absolute top-0 left-0 w-10 h-10 border-t-2 border-l-2 border-primary/30 rounded-tl-[2.5rem] pointer-events-none" />
+              <div className="absolute bottom-0 right-0 w-10 h-10 border-b-2 border-r-2 border-primary/20 rounded-br-[2.5rem] pointer-events-none" />
 
-              <div className="relative z-10 flex flex-col items-center text-center space-y-10">
-                {/* Mode Toggle Button */}
-                <div className="absolute top-0 right-0 p-4 md:p-6 flex gap-2">
-                  <Button
-                    variant="ghost"
-                    onClick={() => setShowPrizes(!showPrizes)}
-                    className="rounded-2xl bg-white/5 border border-white/10 hover:bg-white/10 text-xs font-black uppercase tracking-widest"
-                  >
-                    {showPrizes ? (
-                      <><Calendar className="w-4 h-4 mr-2" /> Info Temporada</>
-                    ) : (
-                      <><Gift className="w-4 h-4 mr-2" /> Ver Premiação</>
+              <div className="relative z-10 grid grid-cols-1 lg:grid-cols-[1fr_auto_1fr]">
+
+                {/* LEFT PANEL: Season Identity */}
+                <div className="flex flex-col justify-center p-8 md:p-12 space-y-6 border-b lg:border-b-0 lg:border-r border-white/5">
+                  <div className="flex items-center gap-3 flex-wrap">
+                    <div className="flex items-center gap-2 px-3 py-1 rounded-full bg-primary/10 border border-primary/20">
+                      <div className="w-1.5 h-1.5 rounded-full bg-primary animate-pulse" />
+                      <span className="text-[10px] font-black uppercase tracking-[0.3em] text-primary font-sans">Arena Ativa</span>
+                    </div>
+                    <div className="flex items-center gap-1.5 text-muted-foreground/50">
+                      <ClockIcon className="w-3 h-3" />
+                      <span className="text-[10px] font-black uppercase tracking-widest font-sans">{getTimeLeft(season.endsAt)}</span>
+                    </div>
+                  </div>
+
+                  <div>
+                    <h2
+                      className={`font-black uppercase leading-none drop-shadow-2xl ${season.fontFamily || 'font-serif'} ${season.titleEffect || ''}`}
+                      style={{ fontSize: season.fontSize ? `${Math.min(season.fontSize, 64)}px` : '52px' }}
+                    >
+                      {season.name.split(':')[0]}
+                    </h2>
+                    {season.name.includes(':') && (
+                      <p className="text-base text-primary font-black italic tracking-[0.4em] uppercase mt-2 opacity-80 font-sans">
+                        {season.name.split(':')[1]}
+                      </p>
                     )}
-                  </Button>
+                  </div>
+
+                  <div className="flex items-center gap-6 pt-2">
+                    <div className="group/stat">
+                      <span className="block text-3xl font-serif font-black text-white group-hover/stat:text-primary transition-colors">{sortedPlayers.length}</span>
+                      <span className="text-[9px] font-black text-muted-foreground/60 uppercase tracking-[0.3em] font-sans">Guerreiros</span>
+                    </div>
+                    <div className="w-px h-8 bg-white/10" />
+                    <div className="group/stat">
+                      <span className="block text-3xl font-serif font-black text-white group-hover/stat:text-primary transition-colors">
+                        {players?.reduce((acc, p) => acc + p.wins, 0) || 0}
+                      </span>
+                      <span className="text-[9px] font-black text-muted-foreground/60 uppercase tracking-[0.3em] font-sans">Combates</span>
+                    </div>
+                    <div className="w-px h-8 bg-white/10" />
+                    <div className="group/stat">
+                      <span className="block text-3xl font-serif font-black text-white group-hover/stat:text-primary transition-colors">
+                        {sortedPlayers[0]?.points || 0}
+                      </span>
+                      <span className="text-[9px] font-black text-muted-foreground/60 uppercase tracking-[0.3em] font-sans">Lider PTS</span>
+                    </div>
+                  </div>
                 </div>
 
-                <AnimatePresence mode="wait">
-                  {!showPrizes ? (
-                    <motion.div
-                      key="season-info"
-                      initial={{ opacity: 0, x: -20 }}
-                      animate={{ opacity: 1, x: 0 }}
-                      exit={{ opacity: 0, x: 20 }}
-                      className="space-y-8 w-full"
-                    >
-                      {/* Top Status Bar */}
-                      <div className="flex flex-wrap items-center justify-center gap-6">
-                        <div className="flex items-center gap-2 px-4 py-1.5 rounded-full bg-primary/10 border border-primary/20">
-                          <div className="w-1.5 h-1.5 rounded-full bg-primary animate-pulse" />
-                          <span className="text-xs font-black uppercase tracking-[0.3em] text-primary font-sans">Arena Ativa</span>
-                        </div>
+                {/* CENTER DIVIDER */}
+                <div className="hidden lg:flex flex-col items-center justify-center px-6 gap-4">
+                  <div className="w-px flex-1 bg-gradient-to-b from-transparent via-white/10 to-transparent" />
+                  <div className="w-10 h-10 rounded-full bg-primary/10 border border-primary/20 flex items-center justify-center">
+                    <Swords className="w-4 h-4 text-primary" />
+                  </div>
+                  <div className="w-px flex-1 bg-gradient-to-b from-transparent via-white/10 to-transparent" />
+                </div>
 
-                        <div className="flex items-center gap-3 text-muted-foreground/60">
-                          <div className="w-px h-4 bg-white/10" />
-                          <ClockIcon className="w-3.5 h-3.5" />
-                          <span className="text-xs font-black uppercase tracking-[0.2em] font-sans">Encerramento:</span>
-                          <span className="text-white font-mono text-sm tracking-widest">{getTimeLeft(season.endsAt).toLowerCase()}</span>
-                        </div>
-                      </div>
+                {/* RIGHT PANEL: Prizes */}
+                <div className="flex flex-col justify-center p-8 md:p-12 space-y-4">
+                  <div className="flex items-center gap-2 mb-1">
+                    <Gift className="w-4 h-4 text-primary" />
+                    <span className="text-[10px] font-black uppercase tracking-[0.3em] text-primary font-sans">Premiacao da Temporada</span>
+                  </div>
 
-                      {/* Season Title with Elegant Glitch */}
-                      <div className="space-y-4 max-w-4xl mx-auto relative px-4">
-                        <h2
-                          className={`font-black uppercase tracking-tighter text-white leading-tight drop-shadow-2xl ${season.fontFamily || 'font-serif'} ${season.titleEffect || ''}`}
-                          style={{ fontSize: season.fontSize ? `${season.fontSize}px` : undefined }}
+                  <div className="grid grid-cols-2 gap-3">
+                    {season?.prizes?.map((prize, i) => {
+                      const rarity = getPrizeRarity(prize.rank);
+                      const rc = rarity === 'mythic'
+                        ? { border: 'border-purple-500/30', bg: 'from-purple-900/20', label: 'text-purple-400' }
+                        : rarity === 'legendary'
+                          ? { border: 'border-yellow-500/30', bg: 'from-yellow-900/20', label: 'text-yellow-400' }
+                          : rarity === 'epic'
+                            ? { border: 'border-emerald-500/30', bg: 'from-emerald-900/20', label: 'text-emerald-400' }
+                            : { border: 'border-blue-500/20', bg: 'from-blue-900/10', label: 'text-blue-400' };
+                      return (
+                        <motion.div
+                          key={prize.rank}
+                          initial={{ opacity: 0, scale: 0.9 }}
+                          animate={{ opacity: 1, scale: 1 }}
+                          transition={{ delay: i * 0.07 }}
+                          className={`group relative flex gap-3 items-center p-3 rounded-2xl border ${rc.border} bg-gradient-to-br ${rc.bg} to-transparent hover:scale-[1.02] transition-all duration-300 cursor-default`}
                         >
-                          {season.name.split(':')[0]}
-                          {season.name.includes(':') && (
-                            <span className="text-lg md:text-2xl text-primary font-black italic tracking-[0.4em] uppercase mt-2 block opacity-80">
-                              {season.name.split(':')[1]}
-                            </span>
-                          )}
-                        </h2>
-                      </div>
-
-                      {/* Quick Summary Icons */}
-                      <div className="flex items-center justify-center gap-12 pt-8">
-                        <div className="flex flex-col items-center gap-3">
-                          <div className="w-12 h-12 rounded-2xl bg-white/5 border border-white/10 flex items-center justify-center">
-                            <Trophy className="w-6 h-6 text-primary" />
+                          <div className="relative w-12 h-14 rounded-xl overflow-hidden border border-white/5 bg-black/40 shrink-0">
+                            <img
+                              src={prize.image || PRIZE_IMAGES[prize.rank] || "/images/rewards/rare-medal.svg"}
+                              alt={prize.rank}
+                              className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500"
+                            />
+                            <div className="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent" />
                           </div>
-                          <span className="text-[10px] font-black uppercase tracking-widest text-muted-foreground">Competição</span>
-                        </div>
-                        <div className="flex flex-col items-center gap-3">
-                          <div className="w-12 h-12 rounded-2xl bg-white/5 border border-white/10 flex items-center justify-center">
-                            <Zap className="w-6 h-6 text-blue-400" />
-                          </div>
-                          <span className="text-[10px] font-black uppercase tracking-widest text-muted-foreground">Velocidade</span>
-                        </div>
-                        <div className="flex flex-col items-center gap-3">
-                          <div className="w-12 h-12 rounded-2xl bg-white/5 border border-white/10 flex items-center justify-center">
-                            <Shield className="w-6 h-6 text-emerald-400" />
-                          </div>
-                          <span className="text-[10px] font-black uppercase tracking-widest text-muted-foreground">Domínio</span>
-                        </div>
-                      </div>
-                    </motion.div>
-                  ) : (
-                    <motion.div
-                      key="prizes-page"
-                      initial={{ opacity: 0, x: 20 }}
-                      animate={{ opacity: 1, x: 0 }}
-                      exit={{ opacity: 0, x: -20 }}
-                      className="space-y-10 w-full"
-                    >
-                      <div className="space-y-2">
-                        <Badge className="bg-primary/20 text-primary border-primary/30 uppercase tracking-[0.4em] px-6 text-[10px]">Santuário de Recompensas</Badge>
-                        <h2 className="text-3xl md:text-5xl font-serif text-white uppercase tracking-tighter italic">Relíquias da Vitória</h2>
-                      </div>
-
-                      {/* Visual Prize Gallery - Podium Layout */}
-                      <div className="flex flex-col lg:flex-row gap-10 w-full max-w-7xl mx-auto items-start">
-                        {/* Podium Section */}
-                        <div className="flex-[3] grid grid-cols-1 md:grid-cols-3 gap-6 items-end w-full">
-                          {(() => {
-                            if (!season?.prizes) return null;
-                            const podiumRanks = ["Top 1", "Top 2", "Top 3"];
-                            const podiumPrizes = season.prizes.filter(p => podiumRanks.includes(p.rank));
-
-                            // Forced Podium Mapping: [Top 2, Top 1, Top 3]
-                            const podiumSlots = [
-                              { rank: "Top 2", data: podiumPrizes.find(p => p.rank === "Top 2") },
-                              { rank: "Top 1", data: podiumPrizes.find(p => p.rank === "Top 1") },
-                              { rank: "Top 3", data: podiumPrizes.find(p => p.rank === "Top 3") }
-                            ];
-
-                            return podiumSlots.map((slot, i) => {
-                              const p = slot.data;
-                              if (!p) return <div key={slot.rank} className="hidden md:block" />; // Keep grid spot for desktop
-
-                              const isCenter = p.rank === 'Top 1';
-                              const rarity = getPrizeRarity(p.rank);
-
-                              return (
-                                <motion.div
-                                  key={p.rank}
-                                  initial={{ opacity: 0, y: isCenter ? 40 : 20 }}
-                                  animate={{ opacity: 1, y: 0 }}
-                                  transition={{ delay: i * 0.1, duration: 0.8 }}
-                                  className={`group/prize-card relative p-1 rounded-[2.5rem] bg-gradient-to-br from-white/10 to-transparent border border-white/5 overflow-hidden ${isCenter ? 'md:order-2 scale-110 md:-translate-y-8 z-20' : i === 0 ? 'md:order-1' : 'md:order-3'}`}
-                                >
-                                  {/* Magic Sparkle Background */}
-                                  <div className="absolute inset-0 overflow-hidden pointer-events-none">
-                                    {[...Array(20)].map((_, pi) => (
-                                      <div
-                                        key={pi}
-                                        className="magic-particle"
-                                        style={{
-                                          left: `${Math.random() * 100}%`,
-                                          top: `${Math.random() * 100}%`,
-                                          width: `${Math.random() * 3 + 1}px`,
-                                          height: `${Math.random() * 3 + 1}px`,
-                                          animationDelay: `${Math.random() * 3}s`,
-                                          background: rarity === 'mythic' ? '#d946ef' : rarity === 'legendary' ? '#eab308' : '#10b981',
-                                          boxShadow: `0 0 8px ${rarity === 'mythic' ? '#d946ef' : rarity === 'legendary' ? '#eab308' : '#10b981'}`
-                                        }}
-                                      />
-                                    ))}
-                                  </div>
-
-                                  <div className="absolute inset-0 bg-grid-white/5 opacity-10" />
-                                  <div className="relative z-10 p-6 flex flex-col items-center text-center space-y-4 h-full">
-                                    <div className="relative aspect-[3/4] w-full flex items-center justify-center rounded-[2rem] overflow-hidden border border-white/10 bg-black/80 shadow-[0_20px_50px_rgba(0,0,0,0.5)]">
-                                      {/* Cinematic Ambient Glow */}
-                                      <div className={`absolute inset-0 opacity-10 transition-all duration-700 group-hover/prize-card:opacity-40 animate-pulse ${rarity === 'mythic' ? 'bg-[radial-gradient(circle_at_50%_50%,#9333ea,transparent)]' : rarity === 'legendary' ? 'bg-[radial-gradient(circle_at_50%_50%,#eab308,transparent)]' : 'bg-[radial-gradient(circle_at_50%_50%,#10b981,transparent)]'}`} />
-
-                                      {/* Enhanced Magic Overlay */}
-                                      <div className={`absolute inset-0 z-20 opacity-0 group-hover/prize-card:opacity-100 transition-opacity duration-1000 ${rarity === 'mythic' ? 'bg-[radial-gradient(circle_at_50%_50%,rgba(147,51,234,0.1),transparent)]' : 'bg-[radial-gradient(circle_at_50%_50%,rgba(234,179,8,0.1),transparent)]'}`} />
-
-                                      <img
-                                        src={p.image || PRIZE_IMAGES[p.rank] || "/images/rewards/rare-medal.svg"}
-                                        alt={p.prize}
-                                        className="relative z-10 w-full h-full object-cover transition-transform duration-1000 group-hover/prize-card:scale-110"
-                                      />
-
-                                      <div className="absolute inset-0 z-30 bg-gradient-to-tr from-white/10 via-transparent to-transparent opacity-0 group-hover/prize-card:opacity-100 transition-opacity duration-700" />
-
-                                      <div className={`absolute top-4 right-4 z-40 px-3 py-1 rounded-full text-[9px] font-black uppercase tracking-widest border backdrop-blur-md shadow-lg ${rarity === 'mythic' ? 'bg-purple-900/60 text-purple-300 border-purple-500/40' : rarity === 'legendary' ? 'bg-yellow-900/60 text-yellow-300 border-yellow-500/40' : 'bg-emerald-900/60 text-emerald-300 border-emerald-500/40'}`}>
-                                        {rarity}
-                                      </div>
-                                    </div>
-
-                                    <div className="space-y-1 w-full mt-2">
-                                      <span className={`text-[10px] font-black uppercase tracking-[0.4em] mb-1 ${rarity === 'mythic' ? 'text-purple-400' : rarity === 'legendary' ? 'text-yellow-400' : 'text-emerald-400'}`}>
-                                        {p.rank}
-                                      </span>
-                                      <p className={`text-sm md:text-base font-serif uppercase tracking-wider leading-tight px-4 text-center h-[50px] flex items-center justify-center ${p.effect ? p.effect :
-                                        rarity === 'mythic' ? 'magic-text-mythic scale-110 drop-shadow-[0_0_15px_rgba(147,51,234,0.5)]' :
-                                          rarity === 'legendary' ? 'magic-text-legendary' :
-                                            rarity === 'epic' ? 'magic-text-epic' :
-                                              'text-white'}`}>
-                                        {p.prize}
-                                      </p>
-                                    </div>
-                                  </div>
-                                </motion.div>
-                              );
-                            });
-                          })()}
-                        </div>
-
-                        {/* Sidebar: Small Spoils (Top 10 etc.) */}
-                        <div className="flex-1 w-full lg:max-w-xs space-y-6">
-                          <h3 className="text-xs font-black uppercase tracking-[0.4em] text-primary/60 border-l-2 border-primary/40 pl-4 py-1">Pequenos Espólios</h3>
-                          <div className="space-y-4">
-                            {season?.prizes?.filter(p => !["Top 1", "Top 2", "Top 3"].includes(p.rank)).map((p, i) => (
-                              <motion.div
-                                key={p.rank}
-                                initial={{ opacity: 0, x: 20 }}
-                                animate={{ opacity: 1, x: 0 }}
-                                transition={{ delay: 0.5 + i * 0.1 }}
-                                className="group/small-prize relative p-4 rounded-2xl bg-white/5 border border-white/5 hover:bg-white/10 transition-colors"
-                              >
-                                <div className="flex items-center gap-4">
-                                  <div className="relative w-16 h-20 rounded-lg overflow-hidden border border-white/5">
-                                    <img src={p.image || "/images/rewards/rare-medal.svg"} className="w-full h-full object-cover group-hover/small-prize:scale-110 transition-transform duration-500" />
-                                    <div className="absolute inset-0 bg-gradient-to-t from-black/80 to-transparent" />
-                                  </div>
-                                  <div className="space-y-1 flex-1">
-                                    <span className="text-[9px] font-black uppercase tracking-[0.2em] text-emerald-400/80">{p.rank}</span>
-                                    <p className={`text-xs font-medium leading-snug ${p.effect ? p.effect : 'text-white/90'}`}>{p.prize}</p>
-                                  </div>
-                                </div>
-                              </motion.div>
-                            ))}
-                          </div>
-
-                          <div className="p-6 rounded-[2rem] bg-gradient-to-br from-primary/5 to-transparent border border-primary/10 space-y-3">
-                            <Sparkles className="w-5 h-5 text-primary animate-pulse" />
-                            <p className="text-[10px] text-muted-foreground uppercase font-black tracking-[0.2em] leading-relaxed">
-                              O Conselho da Aliança fará a entrega das relíquias ao final de 24 dias através do correio místico.
+                          <div className="flex-1 min-w-0 space-y-0.5">
+                            <span className={`block text-[8px] font-black uppercase tracking-[0.25em] ${rc.label}`}>{prize.rank}</span>
+                            <p className={`text-[10px] font-serif font-black leading-tight uppercase line-clamp-2 ${prize.effect ? prize.effect : 'text-white/90'}`}>
+                              {prize.prize}
                             </p>
                           </div>
-                        </div>
-                      </div>
-
-                      {/* The old <p> tag is removed from here, as it's moved into the sidebar */}
-                    </motion.div>
-                  )}
-                </AnimatePresence>
-
-                {/* Arena Stats Hook (Simplified in Prize View) */}
-                <div className="flex items-center gap-12 pt-4 border-t border-white/5 w-full justify-center">
-                  <div className="text-center group/stat">
-                    <span className="block text-2xl font-serif font-black text-white group-hover/stat:text-primary transition-colors">{sortedPlayers.length}</span>
-                    <span className="text-[10px] font-black text-muted-foreground uppercase tracking-[0.3em] font-sans">Guerreiros Ativos</span>
+                        </motion.div>
+                      );
+                    })}
                   </div>
-                  <div className="text-center group/stat">
-                    <span className="block text-2xl font-serif font-black text-white group-hover/stat:text-primary transition-colors">
-                      {players?.reduce((acc, p) => acc + p.wins, 0) || 0}
-                    </span>
-                    <span className="text-[10px] font-black text-muted-foreground uppercase tracking-[0.3em] font-sans">Combates Travados</span>
+
+                  <div className="flex items-center gap-2 pt-1">
+                    <Sparkles className="w-3 h-3 text-primary/60 shrink-0 animate-pulse" />
+                    <p className="text-[9px] text-muted-foreground/50 uppercase font-black tracking-widest">
+                      Entrega via correio mistico ao fim da temporada.
+                    </p>
                   </div>
                 </div>
               </div>
-
-              {/* Decorative Corner Accents */}
-              <div className="absolute top-0 left-0 w-8 h-8 border-t border-l border-white/20 rounded-tl-3xl opacity-30" />
-              <div className="absolute bottom-0 right-0 w-8 h-8 border-b border-r border-white/20 rounded-br-3xl opacity-30" />
             </div>
           </motion.div>
         )}

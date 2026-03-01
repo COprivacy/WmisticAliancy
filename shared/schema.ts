@@ -114,6 +114,16 @@ export const session = pgTable("session", {
   expire: timestamp("expire").notNull(),
 });
 
+export const globalMessages = pgTable("global_messages", {
+  id: serial("id").primaryKey(),
+  authorId: text("author_id").notNull(),
+  authorName: text("author_name").notNull(),
+  authorAvatar: text("author_avatar"),
+  authorRank: text("author_rank"),
+  content: text("content").notNull(),
+  createdAt: timestamp("created_at").notNull().defaultNow(),
+});
+
 export const insertUserSchema = createInsertSchema(users).pick({
   username: true,
   password: true,
@@ -142,6 +152,7 @@ export type Reward = typeof rewards.$inferSelect;
 export type PlayerReward = typeof playerRewards.$inferSelect;
 export type Config = typeof configs.$inferSelect;
 export type InsertConfig = typeof configs.$inferInsert;
+export type GlobalMessage = typeof globalMessages.$inferSelect;
 
 export function calculateRank(points: number): string {
   if (points >= 2000) return "Grande Mestre";
