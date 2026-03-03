@@ -41,6 +41,7 @@ import ActivityFeed from "@/components/activity-feed";
 import { SearchableSelect } from "@/components/searchable-select";
 import { MLBB_HEROES } from "@/lib/constants";
 import { Coins, QrCode, Wallet, ShoppingCart } from "lucide-react";
+import { PlayerAvatar } from "@/components/player-avatar";
 
 type PlayerWithRewards = Player & { rewards: Reward[] };
 type SeasonInfo = {
@@ -651,17 +652,7 @@ export default function Rankings() {
                 >
                   <Link href={`/player/${sortedPlayers[1].accountId}/${sortedPlayers[1].zoneId}`} className="block">
                     <div className="relative mb-6">
-                      <div className={`w-24 h-24 md:w-32 md:h-32 rounded-full border-4 overflow-hidden shadow-2xl relative z-10 mx-auto transition-all duration-500 ${getRankGlow(1)}`}>
-                        <img
-                          src={sortedPlayers[1].avatar || `https://api.dicebear.com/7.x/avataaars/svg?seed=${sortedPlayers[1].accountId}`}
-                          className="w-full h-full object-cover"
-                          alt={sortedPlayers[1].gameName}
-                          onError={(e) => {
-                            (e.target as HTMLImageElement).onerror = null;
-                            (e.target as HTMLImageElement).src = `https://api.dicebear.com/7.x/avataaars/svg?seed=${sortedPlayers[1].accountId}&backgroundColor=b6e3f4`;
-                          }}
-                        />
-                      </div>
+                      <PlayerAvatar player={sortedPlayers[1]} size="lg" />
                       <div className="absolute -bottom-4 left-1/2 -translate-x-1/2 bg-slate-400 text-slate-950 font-black px-4 py-1 rounded-full text-sm z-20">2º</div>
                     </div>
                     <h3 className={`text-xl text-center group-hover:scale-110 transition-transform ${getMagicClass(sortedPlayers[1])}`}>
@@ -687,17 +678,7 @@ export default function Rankings() {
                         <motion.div animate={{ rotate: [0, 5, -5, 0] }} transition={{ repeat: Infinity, duration: 4 }} className="absolute -top-12 left-1/2 -translate-x-1/2 text-primary drop-shadow-[0_0_15px_rgba(234,179,8,0.8)]">
                           <Crown className="w-16 h-16 fill-primary" />
                         </motion.div>
-                        <div className={`w-32 h-32 md:w-44 md:h-44 rounded-full border-8 overflow-hidden relative z-10 mx-auto transition-all duration-700 ${getRankGlow(0)}`}>
-                          <img
-                            src={sortedPlayers[0].avatar || `https://api.dicebear.com/7.x/avataaars/svg?seed=${sortedPlayers[0].accountId}`}
-                            className="w-full h-full object-cover"
-                            alt={sortedPlayers[0].gameName}
-                            onError={(e) => {
-                              (e.target as HTMLImageElement).onerror = null;
-                              (e.target as HTMLImageElement).src = `https://api.dicebear.com/7.x/avataaars/svg?seed=${sortedPlayers[0].accountId}&backgroundColor=b6e3f4`;
-                            }}
-                          />
-                        </div>
+                        <PlayerAvatar player={sortedPlayers[0]} size="lg" showCrown />
                         <div className="absolute -bottom-4 left-1/2 -translate-x-1/2 bg-primary text-primary-foreground font-black px-6 py-2 rounded-full text-xl z-20 shadow-xl">1º</div>
                       </div>
                       <h3 className={`text-3xl text-center group-hover:scale-110 transition-transform ${getMagicClass(sortedPlayers[0])}`}>
@@ -721,17 +702,7 @@ export default function Rankings() {
                   >
                     <Link href={`/player/${sortedPlayers[2].accountId}/${sortedPlayers[2].zoneId}`} className="block">
                       <div className="relative mb-6">
-                        <div className={`w-24 h-24 md:w-32 md:h-32 rounded-full border-4 overflow-hidden shadow-2xl relative z-10 mx-auto transition-all duration-500 ${getRankGlow(2)}`}>
-                          <img
-                            src={sortedPlayers[2].avatar || `https://api.dicebear.com/7.x/avataaars/svg?seed=${sortedPlayers[2].accountId}`}
-                            className="w-full h-full object-cover"
-                            alt={sortedPlayers[2].gameName}
-                            onError={(e) => {
-                              (e.target as HTMLImageElement).onerror = null;
-                              (e.target as HTMLImageElement).src = `https://api.dicebear.com/7.x/avataaars/svg?seed=${sortedPlayers[2].accountId}&backgroundColor=b6e3f4`;
-                            }}
-                          />
-                        </div>
+                        <PlayerAvatar player={sortedPlayers[2]} size="lg" />
                         <div className="absolute -bottom-4 left-1/2 -translate-x-1/2 bg-amber-800 text-white font-black px-4 py-1 rounded-full text-sm z-20">3º</div>
                       </div>
                       <h3 className={`text-xl text-center group-hover:scale-110 transition-transform ${getMagicClass(sortedPlayers[2])}`}>
@@ -1200,17 +1171,7 @@ export default function Rankings() {
                         {index + 1}
                       </span>
 
-                      <div className="relative">
-                        <img
-                          src={player.avatar || `https://api.dicebear.com/7.x/avataaars/svg?seed=${player.accountId}&backgroundColor=b6e3f4`}
-                          className="w-10 h-10 sm:w-14 sm:h-14 rounded-full border-2 border-white/10 shadow-lg object-cover bg-black/20"
-                          onError={(e) => {
-                            (e.target as HTMLImageElement).onerror = null;
-                            (e.target as HTMLImageElement).src = `https://api.dicebear.com/7.x/avataaars/svg?seed=${player.accountId}&backgroundColor=b6e3f4`;
-                          }}
-                        />
-                        {index === 0 && <Crown className="absolute -top-2 -right-2 w-4 h-4 text-yellow-500 animate-bounce" />}
-                      </div>
+                      <PlayerAvatar player={player} size="md" showCrown={index === 0} />
 
                       <div className="flex flex-col min-w-0">
                         <span className={`text-base sm:text-xl font-bold tracking-tight truncate pr-2 flex items-center gap-2 ${getMagicClass(player)}`}>

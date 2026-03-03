@@ -26,7 +26,8 @@ import {
     Share2,
     Info,
     Star,
-    Shield
+    Shield,
+    Zap
 } from "lucide-react";
 import { useAuth } from "@/lib/auth";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogFooter, DialogDescription } from "@/components/ui/dialog";
@@ -38,6 +39,8 @@ import { motion, AnimatePresence } from "framer-motion";
 import { useToast } from "@/hooks/use-toast";
 import { RankCard } from "@/components/rank-card";
 import { EvolutionChart } from "@/components/evolution-chart";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { PlayerAvatar } from "@/components/player-avatar";
 
 type ProfileData = {
     player: Player;
@@ -256,29 +259,7 @@ export default function Profile() {
                     )}
                     <div className="flex flex-col md:flex-row items-center gap-8 relative z-10">
                         <div className="relative group cursor-pointer" onClick={() => fileInputRef.current?.click()}>
-                            <div className="absolute -inset-2 bg-gradient-to-tr from-primary to-blue-500 rounded-full blur opacity-40 animate-pulse" />
-                            <div className="relative w-32 h-32 z-10">
-                                {player.activeFrame && (
-                                    <div
-                                        className="absolute -inset-4 z-20 pointer-events-none"
-                                        style={{
-                                            backgroundImage: `url(${player.activeFrame})`,
-                                            backgroundSize: 'contain',
-                                            backgroundRepeat: 'no-repeat',
-                                            backgroundPosition: 'center'
-                                        }}
-                                    />
-                                )}
-                                <img
-                                    src={player.avatar || `https://api.dicebear.com/7.x/avataaars/svg?seed=${player.gameName}`}
-                                    className="w-full h-full rounded-full border-4 border-white/10 bg-[#0c1120] object-cover"
-                                    alt={player.gameName}
-                                    onError={(e) => {
-                                        (e.target as HTMLImageElement).onerror = null;
-                                        (e.target as HTMLImageElement).src = `https://api.dicebear.com/7.x/avataaars/svg?seed=${player.gameName}`;
-                                    }}
-                                />
-                            </div>
+                            <PlayerAvatar player={player} size="xl" />
                             <div className="absolute inset-0 flex items-center justify-center bg-black/50 rounded-full opacity-0 group-hover:opacity-100 transition-opacity z-20">
                                 {uploadingAvatar ? (
                                     <Loader2 className="w-8 h-8 text-white animate-spin" />
