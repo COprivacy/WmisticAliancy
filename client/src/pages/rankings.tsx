@@ -775,7 +775,7 @@ export default function Rankings() {
                 disabled={isDailyClaimed() || dailyClaimMutation.isPending}
                 className={`w-full h-10 uppercase text-xs font-black tracking-widest rounded-xl transition-all ${isDailyClaimed() ? 'bg-white/5 text-muted-foreground' : 'bg-primary text-primary-foreground hover:bg-white hover:text-primary shadow-xl shadow-primary/20'}`}
               >
-                {isDailyClaimed() ? "RESGATADO" : "+15 PONTOS"}
+                {dailyClaimMutation.isPending ? <Loader2 className="w-4 h-4 animate-spin" /> : (isDailyClaimed() ? "RESGATADO" : "+15 PONTOS")}
               </Button>
 
               <p className="text-[10px] uppercase tracking-widest text-muted-foreground font-bold">
@@ -899,8 +899,8 @@ export default function Rankings() {
                     disabled={!reportOpponentId || isUploading || reportMutation.isPending}
                     className="w-full h-14 bg-primary text-primary-foreground font-black uppercase tracking-widest shadow-lg shadow-primary/20"
                   >
-                    {isUploading ? (
-                      <><Loader2 className="w-5 h-5 mr-2 animate-spin" /> ENVIANDO PROVA...</>
+                    {isUploading || reportMutation.isPending ? (
+                      <><Loader2 className="w-5 h-5 mr-2 animate-spin" /> {isUploading ? "ENVIANDO PROVA..." : "PROCESSANDO..."}</>
                     ) : (
                       "Confirmar Destino do Oponente"
                     )}

@@ -408,9 +408,10 @@ export default function Profile() {
                                                                                         size="sm"
                                                                                         variant={active === item.effect ? "default" : "outline"}
                                                                                         className="h-7 text-[8px] font-black uppercase tracking-widest px-3"
+                                                                                        disabled={customizeMutation.isPending}
                                                                                         onClick={() => customizeMutation.mutate({ type, rewardId: active === item.effect ? null : item.id })}
                                                                                     >
-                                                                                        {active === item.effect ? "REMOVER" : "EQUIPAR"}
+                                                                                        {customizeMutation.isPending ? <Loader2 className="w-3 h-3 animate-spin" /> : (active === item.effect ? "REMOVER" : "EQUIPAR")}
                                                                                     </Button>
                                                                                 </div>
                                                                             ))

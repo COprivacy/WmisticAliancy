@@ -128,6 +128,7 @@ export default function Admin() {
     "Top 3": "none",
     "Top 10": "none"
   });
+  const [isSavingRelic, setIsSavingRelic] = useState(false);
 
   useEffect(() => {
     if (seasonConfig?.prizes) {
@@ -563,8 +564,8 @@ export default function Admin() {
                     </div>
                   </div>
 
-                  <Button type="submit" className="w-full h-16 bg-primary text-primary-foreground font-black uppercase tracking-[0.3em] rounded-2xl shadow-2xl shadow-primary/20 hover:scale-[1.01] transition-transform">
-                    RECONFIGURAR TEMPORADA ✨
+                  <Button type="submit" disabled={seasonConfigMutation.isPending} className="w-full h-16 bg-primary text-primary-foreground font-black uppercase tracking-[0.3em] rounded-2xl shadow-2xl shadow-primary/20 hover:scale-[1.01] transition-transform">
+                    {seasonConfigMutation.isPending ? <Loader2 className="w-6 h-6 animate-spin" /> : "RECONFIGURAR TEMPORADA ✨"}
                   </Button>
                 </form>
               </CardContent>
@@ -620,14 +621,14 @@ export default function Admin() {
                               onClick={() => matchMutation.mutate({ id: match.id, action: "reject" })}
                               disabled={matchMutation.isPending}
                             >
-                              Invalidar
+                              {matchMutation.isPending && matchMutation.variables?.id === match.id && matchMutation.variables?.action === "reject" ? <Loader2 className="w-4 h-4 animate-spin" /> : "Invalidar"}
                             </Button>
                             <Button
                               className="bg-emerald-600 hover:bg-emerald-500 text-white h-12 px-8 rounded-xl uppercase font-black text-xs shadow-lg shadow-emerald-600/20"
                               onClick={() => matchMutation.mutate({ id: match.id, action: "approve" })}
                               disabled={matchMutation.isPending}
                             >
-                              Confirmar Vitória
+                              {matchMutation.isPending && matchMutation.variables?.id === match.id && matchMutation.variables?.action === "approve" ? <Loader2 className="w-4 h-4 animate-spin" /> : "Confirmar Vitória"}
                             </Button>
                           </div>
                         </div>
@@ -842,7 +843,9 @@ export default function Admin() {
                           <p className="text-sm uppercase font-bold text-muted-foreground">Apagar dados de <span className="text-white">{reset.title}</span>?</p>
                         </div>
                         <DialogFooter>
-                          <Button variant="destructive" className="w-full h-14 font-black uppercase tracking-widest" onClick={() => dataResetMutation.mutate(reset.type)}>CONFIRMAR</Button>
+                          <Button variant="destructive" className="w-full h-14 font-black uppercase tracking-widest" disabled={dataResetMutation.isPending} onClick={() => dataResetMutation.mutate(reset.type)}>
+                            {dataResetMutation.isPending && dataResetMutation.variables === reset.type ? <Loader2 className="animate-spin" /> : "CONFIRMAR"}
+                          </Button>
                         </DialogFooter>
                       </DialogContent>
                     </Dialog>
@@ -1006,6 +1009,7 @@ export default function Admin() {
                     };
 
                     try {
+                      setIsSavingRelic(true);
                       if (editingRelic) {
                         await apiRequest("PATCH", `/api/rewards/${editingRelic.id}`, data);
                         toast({ title: "Relíquia Atualizada!" });
@@ -1018,6 +1022,8 @@ export default function Admin() {
                       (e.target as HTMLFormElement).reset();
                     } catch (err) {
                       toast({ title: "Erro na Operação", variant: "destructive" });
+                    } finally {
+                      setIsSavingRelic(false);
                     }
                   }}
                 >
@@ -1148,8 +1154,8 @@ export default function Admin() {
                         Cancelar Edição
                       </Button>
                     )}
-                    <Button type="submit" className="flex-[2] h-14 bg-primary text-primary-foreground font-black uppercase tracking-widest rounded-2xl">
-                      {editingRelic ? "SALVAR ALTERAÇÕES" : "ADICIONAR AO SANTUÁRIO"}
+                    <Button type="submit" disabled={isSavingRelic} className="flex-[2] h-14 bg-primary text-primary-foreground font-black uppercase tracking-widest rounded-2xl">
+                      {isSavingRelic ? <Loader2 className="w-5 h-5 animate-spin" /> : (editingRelic ? "SALVAR ALTERAÇÕES" : "ADICIONAR AO SANTUÁRIO")}
                     </Button>
                   </div>
                 </form>
