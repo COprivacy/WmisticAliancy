@@ -605,6 +605,52 @@ export async function registerRoutes(
     res.json(allRewards);
   }));
 
+  // Equip customization
+  app.post("/api/players/customize", requireAuth, asyncHandler(async (req, res) => {
+    const { type, rewardId } = req.body; // type: 'frame', 'background', 'music'
+    const player = await storage.getPlayerByAccountId(req.session.user!.id, req.session.user!.zoneId);
+
+    if (!player) {
+      res.status(404).json({ message: "Jogador não encontrado." });
+      return;
+    }
+
+    // If rewardId is null, unequip
+    if (rewardId === null) {
+      const update: any = {};
+      if (type === 'frame') update.activeFrame = null;
+      if (type === 'background') update.activeBackground = null;
+      if (type === 'music') update.activeMusic = null;
+
+      await storage.updatePlayer(player.id, update);
+      res.json({ success: true, message: "Item removido." });
+      return;
+    }
+
+    // Verify ownership
+    const ownedRewards = await storage.getPlayerRewards(player.id);
+    const reward = ownedRewards.find(r => r.id === rewardId);
+
+    if (!reward) {
+      res.status(403).json({ message: "Você não possui este item." });
+      return;
+    }
+
+    // Verify reward type
+    if (reward.type !== type) {
+      res.status(400).json({ message: "Tipo de item inválido." });
+      return;
+    }
+
+    const update: any = {};
+    if (type === 'frame') update.activeFrame = reward.effect; // Effect field will store the URL or CSS class
+    if (type === 'background') update.activeBackground = reward.effect;
+    if (type === 'music') update.activeMusic = reward.effect;
+
+    await storage.updatePlayer(player.id, update);
+    res.json({ success: true, message: "Customização aplicada!" });
+  }));
+
   app.post("/api/rewards", requireAdmin, asyncHandler(async (req, res) => {
     const reward = await storage.createReward(req.body);
     res.json(reward);

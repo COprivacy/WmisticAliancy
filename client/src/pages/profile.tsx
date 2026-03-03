@@ -61,6 +61,8 @@ export default function Profile() {
     const [uploadingAvatar, setUploadingAvatar] = useState(false);
     const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
     const [selectedReward, setSelectedReward] = useState<Reward | null>(null);
+    const audioRef = useRef<HTMLAudioElement>(null);
+    const [isPlaying, setIsPlaying] = useState(false);
 
     // Form state for profile editing
     const [editBio, setEditBio] = useState("");
@@ -105,6 +107,24 @@ export default function Profile() {
             setIsChallengeDialogOpen(false);
             setChallengeMessage("");
             setChallengeDate("");
+        }
+    });
+
+    const customizeMutation = useMutation({
+        mutationFn: async ({ type, rewardId }: { type: string, rewardId: number | null }) => {
+            const res = await apiRequest("POST", "/api/players/customize", { type, rewardId });
+            return res.json();
+        },
+        onSuccess: (data) => {
+            queryClient.invalidateQueries({ queryKey: [`/api/players/${accountId}/${zoneId}`] });
+            toast({ title: "✨ Customização Aplicada", description: data.message });
+        },
+        onError: (err: any) => {
+            toast({
+                title: "Falha na Customização",
+                description: err?.response?.data?.message || "Erro desconhecido",
+                variant: "destructive"
+            });
         }
     });
 
@@ -205,20 +225,60 @@ export default function Profile() {
                 <motion.div
                     initial={{ opacity: 0, y: 30 }}
                     animate={{ opacity: 1, y: 0 }}
-                    className="relative p-8 rounded-[2.5rem] border border-white/10 bg-white/5 backdrop-blur-xl mb-8 overflow-hidden"
+                    className="relative p-8 rounded-[2.5rem] border border-white/10 bg-white/5 backdrop-blur-xl mb-8 overflow-hidden group/profile-card"
+                    style={player.activeBackground ? {
+                        backgroundImage: `linear-gradient(rgba(2, 6, 23, 0.7), rgba(2, 6, 23, 0.8)), url(${player.activeBackground})`,
+                        backgroundSize: 'cover',
+                        backgroundPosition: 'center',
+                    } : {}}
                 >
+                    {player.activeMusic && (
+                        <div className="absolute top-4 right-8 z-50">
+                            <audio ref={audioRef} src={player.activeMusic} loop />
+                            <Button
+                                variant="outline"
+                                size="icon"
+                                className="rounded-full bg-white/10 border-white/20 h-10 w-10 hover:bg-white/20 transition-all animate-pulse"
+                                onClick={() => {
+                                    if (audioRef.current) {
+                                        if (isPlaying) {
+                                            audioRef.current.pause();
+                                        } else {
+                                            audioRef.current.play();
+                                        }
+                                        setIsPlaying(!isPlaying);
+                                    }
+                                }}
+                            >
+                                <Zap className={`w-4 h-4 ${isPlaying ? 'text-primary fill-primary' : 'text-white'}`} />
+                            </Button>
+                        </div>
+                    )}
                     <div className="flex flex-col md:flex-row items-center gap-8 relative z-10">
                         <div className="relative group cursor-pointer" onClick={() => fileInputRef.current?.click()}>
                             <div className="absolute -inset-2 bg-gradient-to-tr from-primary to-blue-500 rounded-full blur opacity-40 animate-pulse" />
-                            <img
-                                src={player.avatar || `https://api.dicebear.com/7.x/avataaars/svg?seed=${player.gameName}`}
-                                className="w-32 h-32 rounded-full border-4 border-white/10 relative z-10 bg-[#0c1120] object-cover"
-                                alt={player.gameName}
-                                onError={(e) => {
-                                    (e.target as HTMLImageElement).onerror = null;
-                                    (e.target as HTMLImageElement).src = `https://api.dicebear.com/7.x/avataaars/svg?seed=${player.gameName}`;
-                                }}
-                            />
+                            <div className="relative w-32 h-32 z-10">
+                                {player.activeFrame && (
+                                    <div
+                                        className="absolute -inset-4 z-20 pointer-events-none"
+                                        style={{
+                                            backgroundImage: `url(${player.activeFrame})`,
+                                            backgroundSize: 'contain',
+                                            backgroundRepeat: 'no-repeat',
+                                            backgroundPosition: 'center'
+                                        }}
+                                    />
+                                )}
+                                <img
+                                    src={player.avatar || `https://api.dicebear.com/7.x/avataaars/svg?seed=${player.gameName}`}
+                                    className="w-full h-full rounded-full border-4 border-white/10 bg-[#0c1120] object-cover"
+                                    alt={player.gameName}
+                                    onError={(e) => {
+                                        (e.target as HTMLImageElement).onerror = null;
+                                        (e.target as HTMLImageElement).src = `https://api.dicebear.com/7.x/avataaars/svg?seed=${player.gameName}`;
+                                    }}
+                                />
+                            </div>
                             <div className="absolute inset-0 flex items-center justify-center bg-black/50 rounded-full opacity-0 group-hover:opacity-100 transition-opacity z-20">
                                 {uploadingAvatar ? (
                                     <Loader2 className="w-8 h-8 text-white animate-spin" />
@@ -278,63 +338,109 @@ export default function Profile() {
                                         </DialogTrigger>
                                         <DialogContent className="bg-[#020617]/95 border-white/10 backdrop-blur-2xl">
                                             <DialogHeader>
-                                                <DialogTitle className="font-serif text-2xl uppercase tracking-widest text-primary">Personalizar Avatar</DialogTitle>
+                                                <DialogTitle className="font-serif text-2xl uppercase tracking-widest text-primary">Personalizar Perfil</DialogTitle>
                                             </DialogHeader>
-                                            <div className="space-y-4 py-4">
-                                                <div className="space-y-2">
-                                                    <Label className="text-xs uppercase tracking-widest font-bold opacity-70">Bio / Frase de Impacto</Label>
-                                                    <Input
-                                                        value={editBio}
-                                                        onChange={(e) => setEditBio(e.target.value)}
-                                                        placeholder="Diga algo sobre você..."
-                                                        className="bg-white/5 border-white/10 h-12"
-                                                    />
-                                                </div>
-                                                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                                            <Tabs defaultValue="info" className="w-full">
+                                                <TabsList className="grid w-full grid-cols-2 bg-white/5 p-1 mb-4 h-10 rounded-xl">
+                                                    <TabsTrigger value="info" className="uppercase text-[9px] font-black tracking-widest">Informações</TabsTrigger>
+                                                    <TabsTrigger value="style" className="uppercase text-[9px] font-black tracking-widest">Estilo & Itens</TabsTrigger>
+                                                </TabsList>
+
+                                                <TabsContent value="info" className="space-y-4">
                                                     <div className="space-y-2">
-                                                        <Label className="text-xs uppercase tracking-widest font-bold opacity-70">Instagram</Label>
+                                                        <Label className="text-xs uppercase tracking-widest font-bold opacity-70">Bio / Frase de Impacto</Label>
                                                         <Input
-                                                            value={editInsta}
-                                                            onChange={(e) => setEditInsta(e.target.value)}
-                                                            placeholder="@user"
-                                                            className="bg-white/5 border-white/10 h-10"
+                                                            value={editBio}
+                                                            onChange={(e) => setEditBio(e.target.value)}
+                                                            placeholder="Diga algo sobre você..."
+                                                            className="bg-white/5 border-white/10 h-12"
                                                         />
                                                     </div>
-                                                    <div className="space-y-2">
-                                                        <Label className="text-xs uppercase tracking-widest font-bold opacity-70">Twitch</Label>
-                                                        <Input
-                                                            value={editTwitch}
-                                                            onChange={(e) => setEditTwitch(e.target.value)}
-                                                            placeholder="streamer"
-                                                            className="bg-white/5 border-white/10 h-10"
-                                                        />
+                                                    <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                                                        <div className="space-y-2">
+                                                            <Label className="text-xs uppercase tracking-widest font-bold opacity-70">Instagram</Label>
+                                                            <Input
+                                                                value={editInsta}
+                                                                onChange={(e) => setEditInsta(e.target.value)}
+                                                                placeholder="@user"
+                                                                className="bg-white/5 border-white/10 h-10"
+                                                            />
+                                                        </div>
+                                                        <div className="space-y-2">
+                                                            <Label className="text-xs uppercase tracking-widest font-bold opacity-70">Twitch</Label>
+                                                            <Input
+                                                                value={editTwitch}
+                                                                onChange={(e) => setEditTwitch(e.target.value)}
+                                                                placeholder="streamer"
+                                                                className="bg-white/5 border-white/10 h-10"
+                                                            />
+                                                        </div>
+                                                        <div className="space-y-2">
+                                                            <Label className="text-xs uppercase tracking-widest font-bold opacity-70">YouTube</Label>
+                                                            <Input
+                                                                value={editYoutube}
+                                                                onChange={(e) => setEditYoutube(e.target.value)}
+                                                                placeholder="channel"
+                                                                className="bg-white/5 border-white/10 h-10"
+                                                            />
+                                                        </div>
                                                     </div>
-                                                    <div className="space-y-2">
-                                                        <Label className="text-xs uppercase tracking-widest font-bold opacity-70">YouTube</Label>
-                                                        <Input
-                                                            value={editYoutube}
-                                                            onChange={(e) => setEditYoutube(e.target.value)}
-                                                            placeholder="canal"
-                                                            className="bg-white/5 border-white/10 h-10"
-                                                        />
+                                                    <Button
+                                                        className="w-full h-12 bg-primary text-primary-foreground font-black uppercase tracking-widest mt-4"
+                                                        disabled={updateProfileMutation.isPending}
+                                                        onClick={() => updateProfileMutation.mutate({
+                                                            bio: editBio,
+                                                            instagram: editInsta,
+                                                            twitch: editTwitch,
+                                                            youtube: editYoutube
+                                                        })}
+                                                    >
+                                                        {updateProfileMutation.isPending ? <Loader2 className="w-4 h-4 animate-spin" /> : "Salvar Alterações"}
+                                                    </Button>
+                                                </TabsContent>
+
+                                                <TabsContent value="style" className="space-y-6 pt-2">
+                                                    <div className="space-y-4 max-h-[400px] overflow-y-auto pr-2 custom-scrollbar">
+                                                        {['frame', 'background', 'music'].map(type => {
+                                                            const owned = data.rewards?.filter(r => r.type === type) || [];
+                                                            const active = type === 'frame' ? player.activeFrame : (type === 'background' ? player.activeBackground : player.activeMusic);
+
+                                                            return (
+                                                                <div key={type} className="space-y-2">
+                                                                    <Label className="text-[10px] uppercase font-bold text-primary/60 tracking-[0.2em]">
+                                                                        {type === 'frame' ? 'Molduras de Avatar' : type === 'background' ? 'Fundo de Perfil' : 'Trilha Sonora'}
+                                                                    </Label>
+                                                                    <div className="grid grid-cols-1 gap-2">
+                                                                        {owned.length === 0 ? (
+                                                                            <p className="text-[10px] uppercase opacity-40 py-2">Nenhum item desta categoria</p>
+                                                                        ) : (
+                                                                            owned.map(item => (
+                                                                                <div key={item.id} className={`flex items-center justify-between p-3 rounded-xl border ${active === item.effect ? 'bg-primary/10 border-primary/40' : 'bg-white/5 border-white/10'}`}>
+                                                                                    <div className="flex items-center gap-3">
+                                                                                        <img src={item.icon} className="w-8 h-8 rounded-lg object-cover" alt="" />
+                                                                                        <div>
+                                                                                            <p className="text-xs font-bold uppercase tracking-widest">{item.name}</p>
+                                                                                            <p className="text-[8px] uppercase opacity-60 italic">{item.rarity}</p>
+                                                                                        </div>
+                                                                                    </div>
+                                                                                    <Button
+                                                                                        size="sm"
+                                                                                        variant={active === item.effect ? "default" : "outline"}
+                                                                                        className="h-7 text-[8px] font-black uppercase tracking-widest px-3"
+                                                                                        onClick={() => customizeMutation.mutate({ type, rewardId: active === item.effect ? null : item.id })}
+                                                                                    >
+                                                                                        {active === item.effect ? "REMOVER" : "EQUIPAR"}
+                                                                                    </Button>
+                                                                                </div>
+                                                                            ))
+                                                                        )}
+                                                                    </div>
+                                                                </div>
+                                                            );
+                                                        })}
                                                     </div>
-                                                </div>
-                                            </div>
-                                            <DialogFooter>
-                                                <Button
-                                                    className="w-full h-12 bg-primary text-primary-foreground font-black uppercase tracking-widest"
-                                                    disabled={updateProfileMutation.isPending}
-                                                    onClick={() => updateProfileMutation.mutate({
-                                                        accountId: player.accountId,
-                                                        bio: editBio,
-                                                        instagram: editInsta,
-                                                        twitch: editTwitch,
-                                                        youtube: editYoutube
-                                                    })}
-                                                >
-                                                    {updateProfileMutation.isPending ? <Loader2 className="w-4 h-4 animate-spin" /> : "Salvar Alterações"}
-                                                </Button>
-                                            </DialogFooter>
+                                                </TabsContent>
+                                            </Tabs>
                                         </DialogContent>
                                     </Dialog>
                                 )}

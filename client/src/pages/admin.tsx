@@ -115,6 +115,7 @@ export default function Admin() {
   const [relicIsRankPrize, setRelicIsRankPrize] = useState<boolean>(false);
   const [relicIsAvailable, setRelicIsAvailable] = useState<boolean>(true);
   const [relicPrice, setRelicPrice] = useState<number>(0);
+  const [relicType, setRelicType] = useState<string>("relic");
   const [seasonFontFamily, setSeasonFontFamily] = useState<string>("font-serif");
   const [seasonTitleEffect, setSeasonTitleEffect] = useState<string>("none");
   const [seasonName, setSeasonName] = useState<string>("");
@@ -144,12 +145,14 @@ export default function Admin() {
       setRelicIsRankPrize(editingRelic.isRankPrize || false);
       setRelicIsAvailable(editingRelic.isAvailableInStore ?? true);
       setRelicPrice(editingRelic.price || 0);
+      setRelicType(editingRelic.type || "relic");
     } else {
       setRelicRarity("rare");
       setRelicEffect("none");
       setRelicIsRankPrize(false);
       setRelicIsAvailable(true);
       setRelicPrice(0);
+      setRelicType("relic");
     }
   }, [editingRelic]);
 
@@ -996,11 +999,12 @@ export default function Admin() {
                       description: formData.get("description"),
                       rarity: relicRarity,
                       effect: relicEffect === "none" ? "" : relicEffect,
-                      stars: parseInt(formData.get("stars") as string),
+                      stars: parseInt(formData.get("stars") as string || "1"),
                       price: relicPrice,
-                      isAvailableInStore: relicIsAvailable,
                       icon: iconUrl,
-                      isRankPrize: relicIsRankPrize
+                      isRankPrize: relicIsRankPrize,
+                      isAvailableInStore: relicIsAvailable,
+                      type: relicType
                     };
 
                     try {
@@ -1020,6 +1024,20 @@ export default function Admin() {
                   }}
                 >
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <div className="space-y-2">
+                      <Label className="text-[10px] uppercase font-black">Categoria do Item</Label>
+                      <Select value={relicType} onValueChange={setRelicType}>
+                        <SelectTrigger className="h-12 bg-black/20 border-white/10 font-bold">
+                          <SelectValue />
+                        </SelectTrigger>
+                        <SelectContent className="bg-slate-900 border-white/10">
+                          <SelectItem value="relic">Relíquia (Atributos)</SelectItem>
+                          <SelectItem value="frame">Moldura de Avatar</SelectItem>
+                          <SelectItem value="background">Fundo de Perfil</SelectItem>
+                          <SelectItem value="music">Música de Perfil</SelectItem>
+                        </SelectContent>
+                      </Select>
+                    </div>
                     <div className="space-y-2">
                       <Label className="text-[10px] uppercase font-black">Nome da Relíquia</Label>
                       <Input name="name" defaultValue={editingRelic?.name} placeholder="Ex: Martelo de Thor" required className="bg-black/20 border-white/10 h-12" />
@@ -1043,21 +1061,33 @@ export default function Admin() {
                       <Label className="text-[10px] uppercase font-black">Nível de Estrelas (1-7)</Label>
                       <Input name="stars" defaultValue={editingRelic?.stars || 1} type="number" min="1" max="7" required className="bg-black/20 border-white/10 h-12" />
                     </div>
-                    <div className="space-y-2">
-                      <Label className="text-[10px] uppercase font-black">Efeito de Texto Místico</Label>
-                      <Select value={relicEffect} onValueChange={setRelicEffect}>
-                        <SelectTrigger className="h-12 bg-black/20 border-white/10 font-bold">
-                          <SelectValue placeholder="Sem Efeito" />
-                        </SelectTrigger>
-                        <SelectContent className="bg-slate-900 border-white/10 text-white max-h-[300px] overflow-y-auto">
-                          {MAGIC_EFFECTS.map(eff => (
-                            <SelectItem key={eff.value} value={eff.value} className="font-bold flex items-center gap-2">
-                              <span className={eff.value}>{eff.label}</span>
-                            </SelectItem>
-                          ))}
-                        </SelectContent>
-                      </Select>
-                    </div>
+                    {relicType === 'relic' ? (
+                      <div className="space-y-2">
+                        <Label className="text-[10px] uppercase font-black">Efeito de Texto Místico</Label>
+                        <Select value={relicEffect} onValueChange={setRelicEffect}>
+                          <SelectTrigger className="h-12 bg-black/20 border-white/10 font-bold">
+                            <SelectValue placeholder="Sem Efeito" />
+                          </SelectTrigger>
+                          <SelectContent className="bg-slate-900 border-white/10 text-white max-h-[300px] overflow-y-auto">
+                            {MAGIC_EFFECTS.map(eff => (
+                              <SelectItem key={eff.value} value={eff.value} className="font-bold flex items-center gap-2">
+                                <span className={eff.value}>{eff.label}</span>
+                              </SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
+                      </div>
+                    ) : (
+                      <div className="space-y-2">
+                        <Label className="text-[10px] uppercase font-black">URL do Recurso (MP3/Imagem/CSS)</Label>
+                        <Input
+                          value={relicEffect}
+                          onChange={(e) => setRelicEffect(e.target.value)}
+                          placeholder={relicType === 'music' ? "Link do MP3..." : "URL da Imagem ou Classe CSS..."}
+                          className="bg-black/20 border-white/10 h-12"
+                        />
+                      </div>
+                    )}
                     <div className="space-y-2">
                       <Label className="text-[10px] uppercase font-black">Prêço de Venda (Glória)</Label>
                       <Input

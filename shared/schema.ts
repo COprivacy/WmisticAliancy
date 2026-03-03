@@ -30,6 +30,9 @@ export const players = pgTable("players", {
   pin: text("pin"),
   lastClaimedAt: timestamp("last_claimed_at"),
   gloryPoints: integer("glory_points").notNull().default(0),
+  activeFrame: text("active_frame"),
+  activeBackground: text("active_background"),
+  activeMusic: text("active_music"),
 });
 
 export const matches = pgTable("matches", {
@@ -56,6 +59,7 @@ export const rewards = pgTable("rewards", {
   isRankPrize: boolean("is_rank_prize").notNull().default(false),
   price: integer("price").notNull().default(0),
   isAvailableInStore: boolean("is_available_in_store").notNull().default(true),
+  type: text("type").notNull().default("relic"), // relic, frame, background, music
 });
 
 export const playerRewards = pgTable("player_rewards", {

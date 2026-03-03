@@ -63,6 +63,7 @@ export default function Rankings() {
   const [loserHero, setLoserHero] = useState<string>("");
   const [isAnalyzing, setIsAnalyzing] = useState(false);
   const [ocrResult, setOcrResult] = useState<{ isVictory: boolean, detectedNames: string[] } | null>(null);
+  const [storeCategory, setStoreCategory] = useState<string>("relic");
 
   const heroOptions = MLBB_HEROES.map(h => ({ label: h, value: h }));
 
@@ -979,9 +980,29 @@ export default function Rankings() {
                       </TabsTrigger>
                     </TabsList>
 
-                    <TabsContent value="relics" className="mt-6">
+                    <TabsContent value="relics" className="mt-6 space-y-6">
+                      <div className="flex gap-2 overflow-x-auto pb-2 custom-scrollbar">
+                        {[
+                          { id: 'relic', label: 'Relíquias', icon: Trophy },
+                          { id: 'frame', label: 'Molduras', icon: Shield },
+                          { id: 'background', label: 'Fundos', icon: Image },
+                          { id: 'music', label: 'Músicas', icon: Zap }
+                        ].map(cat => (
+                          <Button
+                            key={cat.id}
+                            variant={storeCategory === cat.id ? "default" : "outline"}
+                            size="sm"
+                            className="h-9 rounded-full uppercase text-[10px] font-black px-4 flex-shrink-0"
+                            onClick={() => setStoreCategory(cat.id)}
+                          >
+                            <cat.icon className="w-3 h-3 mr-2" />
+                            {cat.label}
+                          </Button>
+                        ))}
+                      </div>
+
                       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                        {allRewards.filter(r => r.isAvailableInStore).map((reward) => {
+                        {allRewards.filter(r => r.isAvailableInStore && (r.type || 'relic') === storeCategory).map((reward) => {
                           const isAffordable = myPlayer ? myPlayer.gloryPoints >= reward.price : false;
                           const alreadyHas = myPlayer?.rewards?.some(r => r.id === reward.id);
 
