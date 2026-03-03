@@ -38,6 +38,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { PlayerAvatar } from "@/components/player-avatar";
 
 type MatchWithNames = Match & { winnerName: string; loserName: string };
 
@@ -657,10 +658,7 @@ export default function Admin() {
                   {filteredPlayers?.map(player => (
                     <div key={player.id} className="flex items-center justify-between p-4 rounded-2xl bg-white/5 border border-white/5 group hover:border-primary/20 transition-all">
                       <div className="flex items-center gap-4">
-                        <div className="relative">
-                          <img src={player.avatar || ""} className={`w-12 h-12 rounded-xl object-cover ${player.isBanned ? 'grayscale opacity-30' : ''}`} />
-                          {player.isBanned && <Ban className="absolute inset-0 m-auto text-rose-500 w-6 h-6" />}
-                        </div>
+                        <PlayerAvatar player={player} size="sm" />
                         <div>
                           <span className={`block font-black uppercase text-sm ${player.isBanned ? 'text-rose-500 line-through' : ''}`}>{player.gameName}</span>
                           <div className="flex items-center gap-2 text-[8px] text-muted-foreground font-black uppercase tracking-widest">

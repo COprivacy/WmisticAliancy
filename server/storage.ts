@@ -274,24 +274,37 @@ export class DatabaseStorage implements IStorage {
   }
 
   async purchaseReward(playerId: number, rewardId: number): Promise<void> {
-    const [player] = await db.select().from(players).where(eq(players.id, playerId));
-    const [reward] = await db.select().from(rewards).where(eq(rewards.id, rewardId));
+    await db.transaction(async (tx) => {
+      const [player] = await tx.select().from(players).where(eq(players.id, playerId));
+      const [reward] = await tx.select().from(rewards).where(eq(rewards.id, rewardId));
 
-    if (!player || !reward) throw new Error("Player or Reward not found");
-    if (player.gloryPoints < reward.price) throw new Error("Saldo de Glória insuficiente");
+      if (!player || !reward) throw new Error("Player or Reward not found");
+      if (player.gloryPoints < reward.price) throw new Error("Saldo de Glória insuficiente");
 
-    // Process payment and assignment in a transaction if possible, or sequential
-    await db.update(players).set({
-      gloryPoints: player.gloryPoints - reward.price
-    }).where(eq(players.id, playerId));
+      await tx.update(players).set({
+        gloryPoints: player.gloryPoints - reward.price
+      }).where(eq(players.id, playerId));
 
-    await this.assignReward(playerId, rewardId);
+      await tx.insert(playerRewards).values({
+        playerId,
+        rewardId,
+        assignedAt: new Date(),
+        expiresAt: null
+      });
 
-    // Log Activity
-    await this.createActivity("reward_purchased", player.id, player.gameName, {
-      rewardName: reward.name,
-      rewardIcon: reward.icon,
-      price: reward.price
+      // Log Activity: we use 'this' but since we are in a transaction we should be careful. 
+      // Activities and logging are secondary, but let's keep it consistent.
+      await tx.insert(activities).values({
+        type: "reward_purchased",
+        playerId: player.id,
+        playerGameName: player.gameName,
+        data: JSON.stringify({
+          rewardName: reward.name,
+          rewardIcon: reward.icon,
+          price: reward.price
+        }),
+        createdAt: new Date()
+      });
     });
   }
 
@@ -310,21 +323,30 @@ export class DatabaseStorage implements IStorage {
   }
 
   async updateGloryTopupStatus(id: number, status: string): Promise<GloryTopup> {
-    const [topup] = await db.select().from(gloryTopups).where(eq(gloryTopups.id, id));
-    if (!topup) throw new Error("Top-up request not found");
+    return await db.transaction(async (tx) => {
+      const [topup] = await tx.select().from(gloryTopups).where(eq(gloryTopups.id, id));
+      if (!topup) throw new Error("Top-up request not found");
 
-    if (status === "completed" && topup.status !== "completed") {
-      await this.awardGloryPoints(topup.playerId, topup.amount);
-      const [player] = await db.select().from(players).where(eq(players.id, topup.playerId));
-      if (player) {
-        await this.createActivity("glory_purchase_completed", player.id, player.gameName, {
-          amount: topup.amount
-        });
+      if (status === "completed" && topup.status !== "completed") {
+        const [player] = await tx.select().from(players).where(eq(players.id, topup.playerId));
+        if (player) {
+          await tx.update(players).set({
+            gloryPoints: player.gloryPoints + topup.amount
+          }).where(eq(players.id, topup.playerId));
+
+          await tx.insert(activities).values({
+            type: "glory_purchase_completed",
+            playerId: player.id,
+            playerGameName: player.gameName,
+            data: JSON.stringify({ amount: topup.amount }),
+            createdAt: new Date()
+          });
+        }
       }
-    }
 
-    const [updated] = await db.update(gloryTopups).set({ status }).where(eq(gloryTopups.id, id)).returning();
-    return updated;
+      const [updated] = await tx.update(gloryTopups).set({ status }).where(eq(gloryTopups.id, id)).returning();
+      return updated;
+    });
   }
 
   async getGloryTopups(playerId?: number): Promise<GloryTopup[]> {

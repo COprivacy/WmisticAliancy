@@ -259,8 +259,11 @@ export async function registerRoutes(
     else if (rankTarget === "top3" && playersList[2]) targets = [playersList[2]];
     else if (rankTarget === "top10") targets = playersList.slice(0, 10);
 
-    const expiresAt = days ? new Date() : undefined;
-    if (expiresAt && days) expiresAt.setDate(expiresAt.getDate() + parseInt(days));
+    let expiresAt: Date | undefined = undefined;
+    if (days && parseInt(String(days)) > 0) {
+      expiresAt = new Date();
+      expiresAt.setDate(expiresAt.getDate() + parseInt(String(days)));
+    }
 
     const rewards = await storage.getRewards();
     const reward = rewards.find(r => r.id === rewardId);
@@ -360,7 +363,7 @@ export async function registerRoutes(
   }));
 
   // Get pending matches (Admin)
-  app.get("/api/matches", asyncHandler(async (_req, res) => {
+  app.get("/api/matches", requireAdmin, asyncHandler(async (_req, res) => {
     const pending = await storage.getPendingMatches();
     res.json(pending);
   }));
@@ -487,7 +490,7 @@ export async function registerRoutes(
   }));
 
   // Avatar Upload Route
-  app.post("/api/players/:id/avatar", upload.single('avatar'), asyncHandler(async (req, res) => {
+  app.post("/api/players/:id/avatar", requireAuth, upload.single('avatar'), asyncHandler(async (req, res) => {
     const playerId = parseInt(req.params.id as string);
     if (!req.file) {
       res.status(400).json({ message: "Nenhum arquivo enviado." });
@@ -565,12 +568,13 @@ export async function registerRoutes(
       else if (position <= 10) gloryBonus = 200;
       else gloryBonus = 50; // Participation bonus
 
+      const resetPoints = 100;
       await storage.updatePlayer(p.id, {
-        points: 100,
+        points: resetPoints,
         wins: 0,
         losses: 0,
         streak: 0,
-        rank: "Recruta",
+        rank: calculateRank(resetPoints),
         gloryPoints: p.gloryPoints + gloryBonus
       });
 
@@ -820,16 +824,19 @@ export async function registerRoutes(
     const id = parseInt(req.params.id as string);
     const action = req.params.action as string;
 
-    if (action === "approve") {
-      const matches_list = await storage.getPendingMatches();
-      const match = matches_list.find(m => m.id === id);
-      if (!match) {
-        res.status(404).json({ message: "Combate não encontrado." });
-        return;
-      }
+    const matches_list = await storage.getPendingMatches();
+    const match = matches_list.find(m => m.id === id);
 
+    if (!match) {
+      res.status(404).json({ message: "Combate não encontrado ou já processado." });
+      return;
+    }
+
+    if (action === "approve") {
       // Update Winner
       const winner = await storage.getPlayerByAccountId(match.winnerId, match.winnerZone);
+      const loser = await storage.getPlayerByAccountId(match.loserId, match.loserZone);
+
       if (winner) {
         const newPoints = winner.points + 50;
         const newRank = calculateRank(newPoints);
@@ -842,8 +849,6 @@ export async function registerRoutes(
           rank: newRank
         });
 
-        const loser = await storage.getPlayerByAccountId(match.loserId, match.loserZone);
-
         // Log Activity: Match Win
         await storage.createActivity("match_approved", winner.id, winner.gameName, {
           opponentName: loser?.gameName || "Oponente",
@@ -851,7 +856,6 @@ export async function registerRoutes(
           proofImage: match.proofImage
         });
 
-        // Log Activity: Rank Up
         if (rankUp) {
           await storage.createActivity("rank_up", winner.id, winner.gameName, {
             newRank: newRank
@@ -860,7 +864,6 @@ export async function registerRoutes(
       }
 
       // Update Loser
-      const loser = await storage.getPlayerByAccountId(match.loserId, match.loserZone);
       if (loser) {
         const newPoints = Math.max(0, loser.points - 20);
         await storage.updatePlayer(loser.id, {

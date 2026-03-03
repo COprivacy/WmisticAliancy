@@ -1,7 +1,8 @@
 import { Player } from "@shared/schema";
 import { motion } from "framer-motion";
-import { Crown, Flame } from "lucide-react";
+import { Crown, Flame, Ban } from "lucide-react";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
+import { cn } from "@/lib/utils";
 
 interface PlayerAvatarProps {
     player: Player;
@@ -50,13 +51,23 @@ export function PlayerAvatar({ player, size = "md", showCrown = false, showStrea
                 {/* Main Avatar Image */}
                 <img
                     src={player.avatar || `https://api.dicebear.com/7.x/avataaars/svg?seed=${player.accountId}&backgroundColor=b6e3f4`}
-                    className="w-full h-full rounded-full border-2 border-white/10 bg-[#0c1120] object-cover"
+                    className={cn(
+                        "w-full h-full rounded-full border-2 border-white/10 bg-[#0c1120] object-cover transition-all duration-500",
+                        player.isBanned && "grayscale opacity-30"
+                    )}
                     alt={player.gameName}
                     onError={(e) => {
                         (e.target as HTMLImageElement).onerror = null;
                         (e.target as HTMLImageElement).src = `https://api.dicebear.com/7.x/avataaars/svg?seed=${player.accountId}&backgroundColor=b6e3f4`;
                     }}
                 />
+
+                {/* Banned Overlay */}
+                {player.isBanned && (
+                    <div className="absolute inset-0 flex items-center justify-center z-30">
+                        <Ban className="w-1/2 h-1/2 text-rose-500 opacity-80" />
+                    </div>
+                )}
 
                 {/* Streak Flame Overlay */}
                 {showStreak && player.streak >= 3 && (
