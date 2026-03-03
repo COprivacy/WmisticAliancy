@@ -985,7 +985,7 @@ export default function Rankings() {
                         {[
                           { id: 'relic', label: 'Relíquias', icon: Trophy },
                           { id: 'frame', label: 'Molduras', icon: Shield },
-                          { id: 'background', label: 'Fundos', icon: Image },
+                          { id: 'background', label: 'Fundos', icon: ImageIcon },
                           { id: 'music', label: 'Músicas', icon: Zap }
                         ].map(cat => (
                           <Button
