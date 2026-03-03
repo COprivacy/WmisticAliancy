@@ -8,6 +8,7 @@ import multer from "multer";
 import path from "path";
 import fs from "fs";
 import { createClient } from "@supabase/supabase-js";
+import { processMatchScreenshot } from "./lib/ocr";
 
 // Supabase configuration for persistent storage
 const supabaseUrl = process.env.SUPABASE_URL || `https://${process.env.SUPABASE_PROJECT_ID}.supabase.co`;
@@ -392,7 +393,7 @@ export async function registerRoutes(
 
   // Hero Stats / Global Meta
   app.get("/api/activities", asyncHandler(async (_req, res) => {
-    const latest = await storage.getLatestActivities(15);
+    const latest = await storage.getLatestActivities(10);
     res.json(latest);
   }));
 
@@ -451,6 +452,38 @@ export async function registerRoutes(
     fs.writeFileSync(filePath, req.file.buffer);
 
     res.json({ url: `/uploads/${fileName}` });
+  }));
+
+  // OCR Analysis Route
+  app.post("/api/ocr/analyze", requireAuth, upload.single('file'), asyncHandler(async (req, res) => {
+    if (!req.file) {
+      res.status(400).json({ message: "Nenhum print enviado." });
+      return;
+    }
+
+    try {
+      const result = await processMatchScreenshot(req.file.buffer);
+
+      // Attempt to find matching players from our database
+      const allPlayers = await storage.getPlayers();
+      const detectedNames: string[] = [];
+      const normalizedText = result.text.toLowerCase();
+
+      for (const p of allPlayers) {
+        if (p.gameName && normalizedText.includes(p.gameName.toLowerCase())) {
+          detectedNames.push(p.gameName);
+        }
+      }
+
+      res.json({
+        ...result,
+        detectedNames,
+        message: result.isVictory ? "Vitória detectada! 🎉" : "Derrota ou print inconclusivo."
+      });
+    } catch (err) {
+      console.error("OCR Error:", err);
+      res.status(500).json({ message: "Falha ao processar o print." });
+    }
   }));
 
   // Avatar Upload Route

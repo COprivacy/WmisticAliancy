@@ -54,6 +54,14 @@ const MAGIC_EFFECTS = [
   { value: "magic-text-blood", label: "Sanguinário (Sombrio)" },
   { value: "magic-text-cyber", label: "Cyber (Orbitron)" },
   { value: "magic-text-diamond", label: "Diamante (Radiante)" },
+  { value: "magic-text-frost", label: "Gelo (Cinzel/Frio)" },
+  { value: "magic-text-magma", label: "Magma (Bangers/Fogo)" },
+  { value: "magic-text-galaxy", label: "Galáxia (Cósmico)" },
+  { value: "magic-text-specter", label: "Espectro (Fantasmagórico)" },
+  { value: "magic-text-emerald", label: "Esmeralda (Dracônico)" },
+  { value: "magic-text-rainbow", label: "Arco-Íris (Chroma)" },
+  { value: "magic-text-steampunk", label: "Steampunk (Bronze/Engrenagem)" },
+  { value: "magic-text-divine", label: "Divino (Brilho Celestial)" },
 ];
 
 const SEASON_FONTS = [
@@ -430,7 +438,7 @@ export default function Admin() {
                             <SelectTrigger className="bg-black/20 border-white/10 h-14">
                               <SelectValue />
                             </SelectTrigger>
-                            <SelectContent className="bg-slate-900 border-white/10">
+                            <SelectContent className="bg-slate-900 border-white/10 max-h-[300px] overflow-y-auto">
                               {MAGIC_EFFECTS.map(eff => (
                                 <SelectItem key={eff.value} value={eff.value} className={eff.value}>{eff.label}</SelectItem>
                               ))}
@@ -810,7 +818,7 @@ export default function Admin() {
                 {[
                   { title: "Radar da Arena", desc: "Apaga todo o feed de atividades e reações.", type: "activities" as const },
                   { title: "Histórico de Lutas", desc: "Apaga todas as partidas (aprovadas e pendentes).", type: "matches" as const },
-                  { title: "War Room", desc: "Apaga todos os pedidos de desafios (agendas).", type: "challenges" as const }
+                  { title: "Sala de Guerra", desc: "Apaga todos os pedidos de desafios (agendas).", type: "challenges" as const }
                 ].map((reset) => (
                   <div key={reset.type} className="flex flex-col gap-4 p-6 rounded-3xl bg-black/20 border border-white/5 hover:border-blue-500/20 transition-all">
                     <div>
@@ -1041,7 +1049,7 @@ export default function Admin() {
                         <SelectTrigger className="h-12 bg-black/20 border-white/10 font-bold">
                           <SelectValue placeholder="Sem Efeito" />
                         </SelectTrigger>
-                        <SelectContent className="bg-slate-900 border-white/10 text-white">
+                        <SelectContent className="bg-slate-900 border-white/10 text-white max-h-[300px] overflow-y-auto">
                           {MAGIC_EFFECTS.map(eff => (
                             <SelectItem key={eff.value} value={eff.value} className="font-bold flex items-center gap-2">
                               <span className={eff.value}>{eff.label}</span>
@@ -1079,6 +1087,11 @@ export default function Admin() {
                       <Label className="text-[10px] uppercase font-black">Ícone da Relíquia</Label>
                       <Input name="icon" type="file" accept="image/*" className="bg-black/20 border-white/10 h-12 pt-2" />
                       {editingRelic && <p className="text-[8px] opacity-40 uppercase font-bold">Mantenha vazio para não alterar a imagem atual</p>}
+                      {relicIsAvailable && relicEffect !== "none" && (
+                        <p className="text-[9px] text-primary font-black uppercase tracking-widest mt-2 animate-pulse">
+                          ✨ EFEITO EXCLUSIVO ATIVADO PARA ESTE ITEM NA LOJA
+                        </p>
+                      )}
                     </div>
                     <div className="flex items-center gap-3 space-x-2 pt-4">
                       <div

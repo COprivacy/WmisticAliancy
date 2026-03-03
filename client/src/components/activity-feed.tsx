@@ -35,7 +35,50 @@ export default function ActivityFeed() {
         mutationFn: async ({ activityId, emoji }: { activityId: number, emoji: string }) => {
             await apiRequest("POST", `/api/activities/${activityId}/react`, { emoji });
         },
-        onSuccess: () => {
+        onMutate: async ({ activityId, emoji }) => {
+            // Cancel any outgoing refetches (so they don't overwrite our optimistic update)
+            await queryClient.cancelQueries({ queryKey: ["/api/activities"] });
+
+            // Snapshot the previous value
+            const previousActivities = queryClient.getQueryData<Activity[]>(["/api/activities"]);
+
+            // Optimistically update to the new value
+            queryClient.setQueryData<Activity[]>(["/api/activities"], (old) => {
+                if (!old) return [];
+                return old.map(activity => {
+                    if (activity.id === activityId) {
+                        const reactions = [...(activity.reactions || [])];
+                        const existingIndex = reactions.findIndex(r => r.userId === user?.id && r.emoji === emoji);
+
+                        if (existingIndex > -1) {
+                            // Remove reaction
+                            reactions.splice(existingIndex, 1);
+                        } else {
+                            // Add reaction
+                            reactions.push({
+                                id: Math.random(), // Temporary ID
+                                activityId,
+                                userId: user?.id || "",
+                                emoji
+                            });
+                        }
+                        return { ...activity, reactions };
+                    }
+                    return activity;
+                });
+            });
+
+            // Return a context object with the snapshotted value
+            return { previousActivities };
+        },
+        onError: (_err, _newReaction, context) => {
+            // If the mutation fails, use the context returned from onMutate to roll back
+            if (context?.previousActivities) {
+                queryClient.setQueryData(["/api/activities"], context.previousActivities);
+            }
+        },
+        onSettled: () => {
+            // Always refetch after error or success to ensure we're in sync with the server
             queryClient.invalidateQueries({ queryKey: ["/api/activities"] });
         }
     });
@@ -129,7 +172,7 @@ export default function ActivityFeed() {
             <CardContent className="p-4">
                 <div className="space-y-6">
                     <AnimatePresence initial={false}>
-                        {activities?.map((activity, i) => {
+                        {activities?.slice(0, 6).map((activity, i) => {
                             // Group reactions by emoji
                             const groupedReactions = activity.reactions?.reduce((acc, curr) => {
                                 acc[curr.emoji] = (acc[curr.emoji] || 0) + 1;

@@ -31,7 +31,7 @@ export default function ArenaPage() {
         return (
             <div className="flex flex-col items-center justify-center min-h-[60vh] gap-4">
                 <Loader2 className="w-10 h-10 animate-spin text-primary" />
-                <p className="uppercase tracking-[0.3em] font-black text-xs text-primary/60">Sincronizando War Room...</p>
+                <p className="uppercase tracking-[0.3em] font-black text-xs text-primary/60">Sincronizando Sala de Guerra...</p>
             </div>
         );
     }
@@ -44,11 +44,11 @@ export default function ArenaPage() {
                     animate={{ opacity: 1, scale: 1 }}
                 >
                     <Badge className="bg-orange-600 text-white border-orange-500/30 px-6 py-2 uppercase tracking-[0.4em] font-black text-xs shadow-lg shadow-orange-500/20">
-                        CENTRALE DE COMBATE
+                        CENTRAL DE COMBATE
                     </Badge>
                 </motion.div>
                 <div className="space-y-2">
-                    <h1 className="text-4xl sm:text-6xl font-serif font-black uppercase tracking-widest text-glow leading-none">War Room</h1>
+                    <h1 className="text-4xl sm:text-6xl font-serif font-black uppercase tracking-widest text-glow leading-none">Sala de Guerra</h1>
                     <div className="h-1 w-24 bg-primary mx-auto rounded-full" />
                 </div>
                 <p className="text-muted-foreground uppercase tracking-widest text-xs font-bold opacity-60">Prepare seu coração: os duelos mais esperados do clã acontecem aqui.</p>

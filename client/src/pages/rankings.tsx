@@ -61,6 +61,8 @@ export default function Rankings() {
   const [isUploading, setIsUploading] = useState(false);
   const [winnerHero, setWinnerHero] = useState<string>("");
   const [loserHero, setLoserHero] = useState<string>("");
+  const [isAnalyzing, setIsAnalyzing] = useState(false);
+  const [ocrResult, setOcrResult] = useState<{ isVictory: boolean, detectedNames: string[] } | null>(null);
 
   const heroOptions = MLBB_HEROES.map(h => ({ label: h, value: h }));
 
@@ -200,6 +202,62 @@ export default function Rankings() {
       lastClaimed.getFullYear() === now.getFullYear();
   };
 
+  const handleFileChange = async (file: File | null) => {
+    setProofFile(file);
+    if (!file) {
+      setOcrResult(null);
+      return;
+    }
+
+    setIsAnalyzing(true);
+    try {
+      const formData = new FormData();
+      formData.append("file", file);
+
+      const res = await fetch("/api/ocr/analyze", {
+        method: "POST",
+        body: formData,
+      });
+
+      if (!res.ok) throw new Error("OCR Failed");
+
+      const result = await res.json();
+      setOcrResult(result);
+
+      // Auto-pre-fill logic
+      if (result.detectedNames.length > 0) {
+        // Try to find the opponent (the one who is not the current user)
+        const opponent = players?.find(p =>
+          result.detectedNames.includes(p.gameName) && p.accountId !== user?.id
+        );
+        if (opponent) {
+          setReportOpponentId(opponent.id);
+          toast({
+            title: "Oponente Detectado!",
+            description: `A IA identificou ${opponent.gameName} no seu print.`,
+          });
+        }
+      }
+
+      if (result.isVictory) {
+        toast({
+          title: "Vitória Confirmada!",
+          description: "A IA validou que este é um print de vitória. 🎉",
+        });
+      } else {
+        toast({
+          title: "Análise Concluída",
+          description: "Não conseguimos confirmar a vitória automaticamente. O admin revisará manualmente.",
+          variant: "destructive"
+        });
+      }
+    } catch (err) {
+      console.error("OCR Client Error:", err);
+    } finally {
+      setIsAnalyzing(false);
+    }
+  };
+
   const handleReportWin = async () => {
     if (!reportOpponentId || !user) return;
     const loser = players?.find(p => p.id === reportOpponentId);
@@ -278,11 +336,22 @@ export default function Rankings() {
   const getMagicClass = (player: PlayerWithRewards) => {
     if (!player.rewards) return "";
 
-    // First, check for any custom "effect" assigned in admin
-    const customEffect = player.rewards.find(r => r.effect)?.effect;
-    if (customEffect) return customEffect;
+    // IMPORTANT: Exclusivity logic. 
+    // We only apply effects from rewards that were purchased (available in store).
+    // This makes the "magic text" a premium feature.
+    const purchasedRewardWithEffect = player.rewards.find(r => r.isAvailableInStore && r.effect);
+    if (purchasedRewardWithEffect) return purchasedRewardWithEffect.effect!;
 
-    // Fallback to tier-based effects
+    // Fallback: If no purchased effect, check for ANY reward with an effect (e.g. rank prizes assigned by admin)
+    // but the user's specific request was to prioritize/limit this to store purchases.
+    // If we want it strictly for store:
+    // return ""; 
+
+    // However, the current code has fallback for tiers. Let's keep it but prioritize store effects.
+    const anyEffect = player.rewards.find(r => r.effect)?.effect;
+    if (anyEffect) return anyEffect;
+
+    // Fallback to tier-based effects (optional, based on user preference)
     if (player.rewards.some(r => r.rarity === 'mythic')) return "magic-text-mythic";
     if (player.rewards.some(r => r.rarity === 'legendary')) return "magic-text-legendary";
     if (player.rewards.some(r => r.rarity === 'epic')) return "magic-text-epic";
@@ -805,11 +874,18 @@ export default function Rankings() {
                           <Input
                             type="file"
                             accept="image/*"
-                            onChange={(e) => setProofFile(e.target.files?.[0] || null)}
+                            onChange={(e) => handleFileChange(e.target.files?.[0] || null)}
                             className="absolute inset-0 opacity-0 cursor-pointer"
+                            disabled={isAnalyzing}
                           />
-                          <ImageIcon className="w-8 h-8 text-primary/40 group-hover:scale-110 transition-transform mb-2" />
-                          <p className="text-xs uppercase tracking-widest text-muted-foreground">Clique para anexar o print</p>
+                          {isAnalyzing ? (
+                            <Loader2 className="w-8 h-8 text-primary animate-spin mb-2" />
+                          ) : (
+                            <ImageIcon className="w-8 h-8 text-primary/40 group-hover:scale-110 transition-transform mb-2" />
+                          )}
+                          <p className="text-xs uppercase tracking-widest text-muted-foreground">
+                            {isAnalyzing ? "Analisando Print..." : "Clique para anexar o print"}
+                          </p>
                         </div>
                       ) : (
                         <div className="relative rounded-2xl border border-primary/20 overflow-hidden group">
@@ -829,6 +905,17 @@ export default function Rankings() {
                           >
                             <X className="w-3 h-3" />
                           </Button>
+                          {ocrResult && (
+                            <div className="absolute bottom-2 left-2 right-2 bg-black/80 backdrop-blur-sm p-2 rounded-lg border border-white/10">
+                              <p className="text-[9px] font-black uppercase tracking-widest flex items-center gap-2">
+                                {ocrResult.isVictory ? (
+                                  <Badge className="bg-emerald-500 h-4 text-[8px] px-1">VITÓRIA VALIDADA ✨</Badge>
+                                ) : (
+                                  <Badge variant="outline" className="border-amber-500 text-amber-500 h-4 text-[8px] px-1">REVISÃO NECESSÁRIA ⚠️</Badge>
+                                )}
+                              </p>
+                            </div>
+                          )}
                         </div>
                       )}
                     </div>

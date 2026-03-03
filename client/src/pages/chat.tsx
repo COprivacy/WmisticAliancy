@@ -145,7 +145,7 @@ export default function Chat() {
                     ) : error ? (
                         <div className="h-full flex items-center justify-center text-destructive gap-2">
                             <AlertCircle className="w-5 h-5" />
-                            Falha ao conectar com a Taverna.
+                            Falha ao conectar com o Chat Global.
                         </div>
                     ) : messages.length === 0 ? (
                         <div className="h-full flex items-center justify-center text-muted-foreground italic">

@@ -42,7 +42,7 @@ export default function Layout({ children }: { children: ReactNode }) {
 
             <Link href="/arena">
               <Button variant="ghost" size="sm" className={`font-black uppercase tracking-widest text-[11px] h-8 ${location === '/arena' ? 'text-primary' : 'text-muted-foreground'}`}>
-                War Room
+                Sala de Guerra
               </Button>
             </Link>
 
@@ -60,7 +60,7 @@ export default function Layout({ children }: { children: ReactNode }) {
 
             <Link href="/chat">
               <Button variant="ghost" size="sm" className={`font-black uppercase tracking-widest text-[11px] h-8 ${location === '/chat' ? 'text-primary' : 'text-muted-foreground'}`}>
-                Taverna
+                Chat Global
               </Button>
             </Link>
 
