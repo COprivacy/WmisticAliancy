@@ -120,6 +120,7 @@ export default function Profile() {
         },
         onSuccess: (data) => {
             queryClient.invalidateQueries({ queryKey: [`/api/players/${accountId}/${zoneId}`] });
+            queryClient.invalidateQueries({ queryKey: ["/api/players"] });
             toast({ title: "✨ Customização Aplicada", description: data.message });
         },
         onError: (err: any) => {
@@ -609,6 +610,116 @@ export default function Profile() {
                         </div>
                     </div>
                 </div>
+
+                {/* --- NOVA SEÇÃO: PROGRESSÃO DE PATENTE --- */}
+                {(() => {
+                    const rankTiers = [
+                        { name: "Recruta", min: 0, max: 99, icon: "🪖", color: "bg-slate-500", glow: "bg-slate-400/10", text: "text-slate-400", border: "border-slate-500/30" },
+                        { name: "Soldado", min: 100, max: 299, icon: "⚔️", color: "bg-blue-500", glow: "bg-blue-400/10", text: "text-blue-400", border: "border-blue-500/30" },
+                        { name: "Guerreiro", min: 300, max: 599, icon: "🛡️", color: "bg-emerald-500", glow: "bg-emerald-400/10", text: "text-emerald-400", border: "border-emerald-500/30" },
+                        { name: "Elite", min: 600, max: 999, icon: "🔥", color: "bg-orange-500", glow: "bg-orange-400/10", text: "text-orange-400", border: "border-orange-500/30" },
+                        { name: "Mestre", min: 1000, max: 1999, icon: "👑", color: "bg-primary", glow: "bg-primary/10", text: "text-primary", border: "border-primary/30" },
+                        { name: "Grande Mestre", min: 2000, max: 9999, icon: "⚡", color: "bg-yellow-400", glow: "bg-yellow-400/10", text: "text-yellow-400", border: "border-yellow-400/30" },
+                    ];
+                    const pts = player.points || 0;
+                    const currentTierIdx = rankTiers.findLastIndex(t => pts >= t.min);
+                    const currentTier = rankTiers[currentTierIdx];
+                    const nextTier = rankTiers[currentTierIdx + 1];
+                    const progressInTier = nextTier
+                        ? Math.min(100, Math.round(((pts - currentTier.min) / (nextTier.min - currentTier.min)) * 100))
+                        : 100;
+                    const ptsToNext = nextTier ? nextTier.min - pts : 0;
+
+                    return (
+                        <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.1 }} className="mb-8">
+                            <div className="flex items-center gap-3 border-b border-white/5 pb-4 mb-6">
+                                <Shield className="w-5 h-5 text-primary" />
+                                <h3 className="text-xl font-serif uppercase tracking-widest">Progressão de Patente</h3>
+                            </div>
+
+                            {/* Current Rank Hero Banner */}
+                            <div className={`relative overflow-hidden p-6 rounded-3xl border ${currentTier.border} ${currentTier.glow} mb-6`}>
+                                <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/[0.02] to-transparent pointer-events-none" />
+                                <div className="flex flex-col sm:flex-row items-center sm:items-start gap-6">
+                                    <div className="text-6xl drop-shadow-2xl select-none">{currentTier.icon}</div>
+                                    <div className="flex-1 text-center sm:text-left">
+                                        <span className="text-[10px] uppercase font-black tracking-[0.3em] text-muted-foreground block mb-1">Patente Atual</span>
+                                        <h4 className={`text-3xl font-serif font-black uppercase tracking-widest ${currentTier.text}`}>{currentTier.name}</h4>
+                                        <div className="flex items-center justify-center sm:justify-start gap-3 mt-2 flex-wrap">
+                                            <span className="text-sm font-black text-foreground">{pts.toLocaleString('pt-BR')} PTS</span>
+                                            {nextTier && (
+                                                <>
+                                                    <span className="text-muted-foreground/40 text-xs">•</span>
+                                                    <span className={`text-xs font-bold ${currentTier.text}`}>
+                                                        Faltam <strong>{ptsToNext}</strong> pts para {nextTier.name}
+                                                    </span>
+                                                </>
+                                            )}
+                                            {!nextTier && (
+                                                <span className="text-xs font-black text-yellow-400 uppercase tracking-widest">✨ Patente Máxima!</span>
+                                            )}
+                                        </div>
+
+                                        {/* Progress bar */}
+                                        {nextTier && (
+                                            <div className="mt-4 space-y-1">
+                                                <div className="flex justify-between items-center text-[10px] font-black uppercase tracking-widest text-muted-foreground">
+                                                    <span>{currentTier.name}</span>
+                                                    <span>{progressInTier}%</span>
+                                                    <span>{nextTier.name}</span>
+                                                </div>
+                                                <div className="w-full h-2.5 rounded-full bg-white/5 border border-white/5 overflow-hidden">
+                                                    <motion.div
+                                                        initial={{ width: 0 }}
+                                                        animate={{ width: `${progressInTier}%` }}
+                                                        transition={{ duration: 1.2, ease: "easeOut", delay: 0.3 }}
+                                                        className={`h-full rounded-full ${currentTier.color} shadow-[0_0_10px_currentColor]`}
+                                                    />
+                                                </div>
+                                            </div>
+                                        )}
+                                        {!nextTier && (
+                                            <div className="mt-4">
+                                                <div className="w-full h-2.5 rounded-full overflow-hidden bg-gradient-to-r from-yellow-500 via-primary to-yellow-400 shadow-[0_0_15px_rgba(245,158,11,0.4)]" />
+                                            </div>
+                                        )}
+                                    </div>
+                                </div>
+                            </div>
+
+                            {/* Tiers roadmap */}
+                            <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-6 gap-2">
+                                {rankTiers.map((tier, i) => {
+                                    const isCompleted = pts >= tier.min;
+                                    const isCurrent = i === currentTierIdx;
+                                    return (
+                                        <div
+                                            key={tier.name}
+                                            className={`relative flex flex-col items-center justify-center gap-2 p-3 rounded-2xl border transition-all
+                                                ${isCurrent ? `${tier.border} ${tier.glow} scale-105 shadow-lg` : isCompleted ? 'border-white/10 bg-white/5 opacity-80' : 'border-white/5 bg-white/[0.02] opacity-40'}`}
+                                        >
+                                            {isCurrent && (
+                                                <div className="absolute -top-2 left-1/2 -translate-x-1/2 px-2 py-0.5 rounded-full bg-primary text-primary-foreground text-[7px] font-black uppercase tracking-widest whitespace-nowrap">
+                                                    Atual
+                                                </div>
+                                            )}
+                                            <span className="text-2xl">{tier.icon}</span>
+                                            <span className={`text-[9px] font-black uppercase tracking-wider text-center leading-tight ${isCurrent ? tier.text : isCompleted ? 'text-foreground' : 'text-muted-foreground'}`}>
+                                                {tier.name}
+                                            </span>
+                                            <span className="text-[8px] font-bold text-muted-foreground/60 tracking-widest">
+                                                {tier.min >= 9999 ? '2000+' : `${tier.min} pts`}
+                                            </span>
+                                            {isCompleted && !isCurrent && (
+                                                <div className={`w-4 h-4 rounded-full ${tier.color} flex items-center justify-center text-[8px]`}>✓</div>
+                                            )}
+                                        </div>
+                                    );
+                                })}
+                            </div>
+                        </motion.div>
+                    );
+                })()}
 
                 {/* --- NOVA SEÇÃO: VITRINE DE CONQUISTAS --- */}
                 <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.2 }} className="mb-12">

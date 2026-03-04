@@ -126,6 +126,7 @@ export const globalMessages = pgTable("global_messages", {
   authorId: text("author_id").notNull(),
   authorName: text("author_name").notNull(),
   authorAvatar: text("author_avatar"),
+  authorFrame: text("author_frame"),
   authorRank: text("author_rank"),
   content: text("content").notNull(),
   createdAt: timestamp("created_at").notNull().defaultNow(),

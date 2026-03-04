@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useAuth } from "@/lib/auth";
 import { useLocation } from "wouter";
 import { Button } from "@/components/ui/button";
@@ -20,8 +20,14 @@ export default function Login() {
   const [pin, setPin] = useState("");
   const [loginStep, setLoginStep] = useState<"initial" | "pin_entry" | "pin_setup">("initial");
 
-  const { login, isLoading: authLoading } = useAuth();
-  const [, setLocation] = useLocation();
+  const { user, login, isLoading: authLoading } = useAuth();
+  const [location, setLocation] = useLocation();
+
+  useEffect(() => {
+    if (user && location === "/") {
+      setLocation("/rankings");
+    }
+  }, [user, location, setLocation]);
   const { toast } = useToast();
   const [mlbbInfo, setMlbbInfo] = useState<{ name: string; rank: string; avatarImage: string } | null>(null);
   const [isValidating, setIsValidating] = useState(false);
@@ -125,6 +131,8 @@ export default function Login() {
   };
 
   const isPending = authLoading || registrationMutation.isPending;
+
+  if (authLoading) return null;
 
   return (
     <div className="min-h-screen flex items-center justify-center p-4 bg-[#020617] relative overflow-hidden">

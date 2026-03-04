@@ -34,7 +34,7 @@ import {
 import { motion, AnimatePresence } from "framer-motion";
 import { useQuery, useMutation } from "@tanstack/react-query";
 import { queryClient, apiRequest } from "@/lib/queryClient";
-import { Player, Reward } from "@shared/schema";
+import { Player, Reward, calculateRank } from "@shared/schema";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import ActivityFeed from "@/components/activity-feed";
@@ -638,85 +638,87 @@ export default function Rankings() {
           <h2 className="text-5xl font-serif font-black uppercase tracking-tighter text-glow">Titãs da Arena</h2>
         </div>
 
-        <div className="flex flex-col md:flex-row items-end justify-center gap-4 md:gap-0 max-w-4xl mx-auto relative z-10">
-          {/* Order for Podium: [2, 1, 3] */}
-          {(sortedPlayers.slice(0, 3).length >= 3 || sortedPlayers.slice(0, 3).length > 0) && (
-            <>
-              {/* 2nd Place */}
-              {sortedPlayers[1] && (
+        <div className="flex flex-col md:flex-row items-end justify-center gap-8 md:gap-4 max-w-5xl mx-auto relative z-10 py-12">
+          {(() => {
+            const getRankTheme = (points: number) => {
+              const rank = calculateRank(points);
+              switch (rank) {
+                case "Grande Mestre": return { border: "border-yellow-400/50", glow: "shadow-[0_0_30px_rgba(234,179,8,0.3)]", text: "text-yellow-400", badge: "bg-yellow-400 text-black", base: "bg-gradient-to-t from-yellow-500/20 to-transparent", icon: "⚡" };
+                case "Mestre": return { border: "border-primary/50", glow: "shadow-[0_0_25px_rgba(245,158,11,0.2)]", text: "text-primary", badge: "bg-primary text-white", base: "bg-gradient-to-t from-primary/20 to-transparent", icon: "👑" };
+                case "Elite": return { border: "border-orange-500/50", glow: "shadow-[0_0_20px_rgba(249,115,22,0.2)]", text: "text-orange-500", badge: "bg-orange-500 text-white", base: "bg-gradient-to-t from-orange-500/20 to-transparent", icon: "🔥" };
+                case "Guerreiro": return { border: "border-emerald-500/50", glow: "shadow-[0_0_15px_rgba(16,185,129,0.2)]", text: "text-emerald-500", badge: "bg-emerald-500 text-white", base: "bg-gradient-to-t from-emerald-500/20 to-transparent", icon: "🛡️" };
+                case "Soldado": return { border: "border-blue-500/50", glow: "shadow-[0_0_15px_rgba(59,130,246,0.2)]", text: "text-blue-500", badge: "bg-blue-500 text-white", base: "bg-gradient-to-t from-blue-500/20 to-transparent", icon: "⚔️" };
+                default: return { border: "border-slate-500/50", glow: "shadow-[0_0_10px_rgba(100,116,139,0.1)]", text: "text-slate-400", badge: "bg-slate-500 text-white", base: "bg-gradient-to-t from-slate-500/10 to-transparent", icon: "🪖" };
+              }
+            };
+
+            const renderPodiumSpot = (player: Player, pos: 1 | 2 | 3, delay: number) => {
+              if (!player) return null;
+              const theme = getRankTheme(player.points);
+              const isFirst = pos === 1;
+
+              return (
                 <motion.div
-                  initial={{ opacity: 0, y: 50 }}
+                  initial={{ opacity: 0, y: 60 }}
                   animate={{ opacity: 1, y: 0 }}
-                  transition={{ delay: 0.3, duration: 0.8 }}
-                  className="w-full md:w-1/3 order-2 md:order-1"
+                  transition={{ delay, duration: 1, ease: "easeOut" }}
+                  className={`relative flex flex-col items-center group w-full ${isFirst ? 'md:w-1/3 z-20 md:-mt-12 order-1 md:order-2' : pos === 2 ? 'md:w-[30%] order-2 md:order-1' : 'md:w-[30%] order-3'}`}
                 >
-                  <Link href={`/player/${sortedPlayers[1].accountId}/${sortedPlayers[1].zoneId}`} className="block">
-                    <div className="relative mb-6">
-                      <PlayerAvatar player={sortedPlayers[1]} size="lg" />
-                      <div className="absolute -bottom-4 left-1/2 -translate-x-1/2 bg-slate-400 text-slate-950 font-black px-4 py-1 rounded-full text-sm z-20">2º</div>
+                  {/* Ambient Glow behind avatar */}
+                  <div className={`absolute top-0 left-1/2 -translate-x-1/2 w-32 h-32 blur-[40px] opacity-30 pointer-events-none rounded-full ${theme.glow} ${theme.base}`} />
+
+                  <Link href={`/player/${player.accountId}/${player.zoneId}`} className="relative w-full flex flex-col items-center">
+                    {/* Position Crown/Badge */}
+                    <motion.div
+                      animate={isFirst ? { y: [0, -8, 0] } : {}}
+                      transition={{ repeat: Infinity, duration: 3, ease: "easeInOut" }}
+                      className="relative mb-6"
+                    >
+                      {isFirst ? (
+                        <div className="relative">
+                          <Crown className="w-10 h-10 text-yellow-400 fill-yellow-400 filter drop-shadow-[0_0_10px_rgba(234,179,8,0.8)] mx-auto mb-2" />
+                        </div>
+                      ) : (
+                        <div className={`text-xl mb-4 opacity-50`}>{theme.icon}</div>
+                      )}
+                      <div className="relative">
+                        <PlayerAvatar player={player} size={isFirst ? "lg" : "md"} showCrown={isFirst} />
+                        <div className={`absolute -bottom-3 left-1/2 -translate-x-1/2 px-4 py-1 rounded-full font-black text-sm z-30 shadow-2xl border ${isFirst ? 'bg-primary text-black' : pos === 2 ? 'bg-slate-300 text-slate-900' : 'bg-amber-700 text-white'} border-white/20`}>
+                          {pos}º
+                        </div>
+                      </div>
+                    </motion.div>
+
+                    {/* Name and Rank Details */}
+                    <div className="text-center space-y-2 w-full px-4 mb-4">
+                      <h3 className={`font-serif font-black uppercase tracking-widest truncate w-full group-hover:scale-105 transition-transform ${isFirst ? 'text-2xl' : 'text-lg'} ${getMagicClass(player)}`}>
+                        {player.gameName}
+                      </h3>
+                      <p className={`font-sans font-black ${isFirst ? 'text-2xl' : 'text-lg'} ${theme.text} drop-shadow-[0_0_8px_currentColor]`}>
+                        {player.points.toLocaleString('pt-BR')} <span className="text-[10px] opacity-50">PTS</span>
+                      </p>
+                      <Badge className={`uppercase text-[10px] font-black tracking-widest px-3 py-1 border-none ${theme.badge} shadow-lg shadow-black/40`}>
+                        {calculateRank(player.points)}
+                      </Badge>
                     </div>
-                    <h3 className={`text-xl text-center group-hover:scale-110 transition-transform ${getMagicClass(sortedPlayers[1])}`}>
-                      {sortedPlayers[1].gameName}
-                    </h3>
-                    <p className="text-slate-400 text-center font-bold">{sortedPlayers[1].points} pts</p>
-                    <Badge className="mt-2 mx-auto block w-fit bg-slate-400 text-slate-950">PRATA</Badge>
+
+                    {/* Physical Podium Base */}
+                    <div className={`w-full max-w-[200px] h-1.5 rounded-full ${theme.base} border-t border-white/10 opacity-60 mt-2`} />
+                    <div className={`w-full h-24 md:h-32 mt-auto absolute -bottom-32 md:-bottom-40 transition-all duration-500 group-hover:opacity-100 opacity-40 rounded-t-[4rem] border-x border-t border-white/5 ${theme.base}`} />
                   </Link>
                 </motion.div>
-              )}
+              );
+            };
 
-              {/* 1st Place */}
-              {
-                sortedPlayers[0] && (
-                  <motion.div
-                    initial={{ opacity: 0, y: 50 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    transition={{ delay: 0.1, duration: 0.8 }}
-                    className="w-full md:w-[40%] order-1 md:order-2 z-20"
-                  >
-                    <Link href={`/player/${sortedPlayers[0].accountId}/${sortedPlayers[0].zoneId}`} className="block">
-                      <div className="relative mb-8">
-                        <motion.div animate={{ rotate: [0, 5, -5, 0] }} transition={{ repeat: Infinity, duration: 4 }} className="absolute -top-12 left-1/2 -translate-x-1/2 text-primary drop-shadow-[0_0_15px_rgba(234,179,8,0.8)]">
-                          <Crown className="w-16 h-16 fill-primary" />
-                        </motion.div>
-                        <PlayerAvatar player={sortedPlayers[0]} size="lg" showCrown />
-                        <div className="absolute -bottom-4 left-1/2 -translate-x-1/2 bg-primary text-primary-foreground font-black px-6 py-2 rounded-full text-xl z-20 shadow-xl">1º</div>
-                      </div>
-                      <h3 className={`text-3xl text-center group-hover:scale-110 transition-transform ${getMagicClass(sortedPlayers[0])}`}>
-                        {sortedPlayers[0].gameName}
-                      </h3>
-                      <p className="text-primary text-center font-black text-2xl">{sortedPlayers[0].points} pts</p>
-                      <Badge className="mt-2 mx-auto block w-fit bg-primary text-primary-foreground animate-pulse">GRANDE MESTRE</Badge>
-                    </Link>
-                  </motion.div>
-                )
-              }
-
-              {/* 3rd Place */}
-              {
-                sortedPlayers[2] && (
-                  <motion.div
-                    initial={{ opacity: 0, y: 50 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    transition={{ delay: 0.5, duration: 0.8 }}
-                    className="w-full md:w-1/3 order-3"
-                  >
-                    <Link href={`/player/${sortedPlayers[2].accountId}/${sortedPlayers[2].zoneId}`} className="block">
-                      <div className="relative mb-6">
-                        <PlayerAvatar player={sortedPlayers[2]} size="lg" />
-                        <div className="absolute -bottom-4 left-1/2 -translate-x-1/2 bg-amber-800 text-white font-black px-4 py-1 rounded-full text-sm z-20">3º</div>
-                      </div>
-                      <h3 className={`text-xl text-center group-hover:scale-110 transition-transform ${getMagicClass(sortedPlayers[2])}`}>
-                        {sortedPlayers[2].gameName}
-                      </h3>
-                      <p className="text-amber-700 text-center font-bold">{sortedPlayers[2].points} pts</p>
-                      <Badge className="mt-2 mx-auto block w-fit bg-amber-800 text-white">BRONZE</Badge>
-                    </Link>
-                  </motion.div>
-                )
-              }
-            </>
-          )}
-        </div >
+            return (
+              <>
+                {renderPodiumSpot(sortedPlayers[1], 2, 0.4)}
+                {renderPodiumSpot(sortedPlayers[0], 1, 0.2)}
+                {renderPodiumSpot(sortedPlayers[2], 3, 0.6)}
+              </>
+            );
+          })()}
+        </div>
       </section >
       {/* Hero Stats Section */}
       < section className="grid grid-cols-1 md:grid-cols-4 gap-6" >
@@ -1177,7 +1179,7 @@ export default function Rankings() {
                         <span className={`text-base sm:text-xl font-bold tracking-tight truncate pr-2 flex items-center gap-2 ${getMagicClass(player)}`}>
                           {player.gameName}
                           <div className="flex -space-x-1">
-                            {player.rewards?.map((r, i) => (
+                            {player.rewards?.filter(r => r.type === 'relic' || !r.type).map((r, i) => (
                               <TooltipProvider key={i}>
                                 <Tooltip>
                                   <TooltipTrigger asChild>

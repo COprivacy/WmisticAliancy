@@ -210,6 +210,7 @@ export default function Admin() {
       await apiRequest("POST", `/api/players/${playerId}/rewards`, { rewardId, expiresAt });
     },
     onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/players"] });
       toast({ title: "Relíquia Concedida!", description: "O item agora brilha na vitrine." });
       setSelectedRewardId(null);
       setRewardDuration("");
@@ -221,6 +222,7 @@ export default function Admin() {
       await apiRequest("POST", "/api/admin/distribute-rank-rewards", { rankTarget, rewardId, days });
     },
     onSuccess: (_, variables) => {
+      queryClient.invalidateQueries({ queryKey: ["/api/players"] });
       toast({ title: "Prêmios do Ranking Concedidos!", description: `A relíquia foi entregue aos combatentes do ${variables.rankTarget}.` });
       setSelectedRewardId(null);
       setRewardDuration("");

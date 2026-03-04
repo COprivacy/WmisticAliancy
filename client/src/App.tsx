@@ -16,6 +16,7 @@ import Fame from "@/pages/fame";
 import Arena from "@/pages/arena";
 import Rules from "@/pages/rules";
 import Chat from "@/pages/chat";
+import Guide from "@/pages/guide";
 import Layout from "@/components/layout";
 
 function Router() {
@@ -74,6 +75,12 @@ function Router() {
       <Route path="/chat">
         <Layout>
           <Chat />
+        </Layout>
+      </Route>
+
+      <Route path="/guide">
+        <Layout>
+          <Guide />
         </Layout>
       </Route>
 

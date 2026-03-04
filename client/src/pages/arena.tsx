@@ -5,6 +5,7 @@ import { Swords, Calendar, Clock, MessageSquare, Loader2 } from "lucide-react";
 import { motion } from "framer-motion";
 import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
+import { PlayerAvatar } from "@/components/player-avatar";
 
 type Challenge = {
     id: number;
@@ -88,9 +89,17 @@ export default function ArenaPage() {
                                             <div className="flex-1 p-10 text-center space-y-6">
                                                 <div className="relative inline-block">
                                                     <div className="absolute inset-0 bg-primary/20 blur-2xl rounded-full opacity-0 group-hover:opacity-100 transition-opacity" />
-                                                    <img
-                                                        src={challenge.challengerAvatar || `https://api.dicebear.com/7.x/avataaars/svg?seed=${challenge.challengerId}&backgroundColor=b6e3f4`}
-                                                        className="w-28 h-28 sm:w-36 sm:h-36 rounded-full border-4 border-primary/30 mx-auto relative z-10 grayscale-[0.5] group-hover:grayscale-0 transition-all shadow-xl"
+                                                    <PlayerAvatar
+                                                        player={{
+                                                            accountId: challenge.challengerId,
+                                                            zoneId: challenge.challengerId, // Zone ID might be missing in challenge type, defaulting
+                                                            gameName: challenge.challengerName,
+                                                            avatar: challenge.challengerAvatar,
+                                                            activeFrame: (challenge as any).challengerFrame || null, // Assuming we might add this or it's enough
+                                                            isBanned: false,
+                                                            streak: 0
+                                                        } as any}
+                                                        size="xl"
                                                     />
                                                     <Badge className="absolute -bottom-3 left-1/2 -translate-x-1/2 bg-primary text-white uppercase text-[10px] font-black px-4 py-1.5 shadow-lg border-none z-20">DESAFIANTE</Badge>
                                                 </div>
@@ -112,9 +121,17 @@ export default function ArenaPage() {
                                             <div className="flex-1 p-10 text-center space-y-6">
                                                 <div className="relative inline-block">
                                                     <div className="absolute inset-0 bg-primary/20 blur-2xl rounded-full opacity-0 group-hover:opacity-100 transition-opacity" />
-                                                    <img
-                                                        src={challenge.challengedAvatar || `https://api.dicebear.com/7.x/avataaars/svg?seed=${challenge.challengedId}&backgroundColor=ffdfbf`}
-                                                        className="w-28 h-28 sm:w-36 sm:h-36 rounded-full border-4 border-primary/30 mx-auto relative z-10 grayscale-[0.5] group-hover:grayscale-0 transition-all shadow-xl"
+                                                    <PlayerAvatar
+                                                        player={{
+                                                            accountId: challenge.challengedId,
+                                                            zoneId: challenge.challengedId,
+                                                            gameName: challenge.challengedName,
+                                                            avatar: challenge.challengedAvatar,
+                                                            activeFrame: (challenge as any).challengedFrame || null,
+                                                            isBanned: false,
+                                                            streak: 0
+                                                        } as any}
+                                                        size="xl"
                                                     />
                                                     <Badge className="absolute -bottom-3 left-1/2 -translate-x-1/2 bg-orange-600 text-white uppercase text-[10px] font-black px-4 py-1.5 shadow-lg border-none z-20">DEFENSOR</Badge>
                                                 </div>

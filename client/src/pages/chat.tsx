@@ -6,11 +6,11 @@ import { Send, MessageSquare, AlertCircle, Flame } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { ScrollArea } from "@/components/ui/scroll-area";
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { useToast } from "@/hooks/use-toast";
 import { format } from "date-fns";
 import { useLocation } from "wouter";
 import { motion, AnimatePresence } from "framer-motion";
+import { PlayerAvatar } from "@/components/player-avatar";
 import {
     DropdownMenu,
     DropdownMenuContent,
@@ -23,6 +23,7 @@ type GlobalMessage = {
     authorId: string;
     authorName: string;
     authorAvatar: string | null;
+    authorFrame: string | null;
     authorRank: string;
     content: string;
     createdAt: string;
@@ -154,10 +155,18 @@ export default function Chat() {
                     ) : (
                         <div className="flex flex-col gap-4 py-2">
                             <AnimatePresence initial={false}>
-                                {messages.map((msg, index) => {
+                                {messages.map((msg) => {
                                     const isMe = msg.authorId === user?.id || (user?.isAdmin && msg.authorId === "admin");
                                     const isAdmin = msg.authorRank === "Moderador" || msg.authorId === "admin";
-                                    const avatarSrc = msg.authorAvatar || (isAdmin ? "https://cdn-icons-png.flaticon.com/512/9334/9334399.png" : `https://api.dicebear.com/7.x/avataaars/svg?seed=${msg.authorId}&backgroundColor=b6e3f4`);
+                                    const authorPlayer = {
+                                        accountId: msg.authorId,
+                                        zoneId: msg.authorZoneId || "0000",
+                                        gameName: msg.authorName,
+                                        avatar: msg.authorAvatar,
+                                        activeFrame: msg.authorFrame,
+                                        isBanned: false,
+                                        streak: 0
+                                    } as any;
 
                                     return (
                                         <motion.div
@@ -168,21 +177,12 @@ export default function Chat() {
                                             className={`flex max-w-[80%] gap-3 flex-col sm:flex-row ${isMe ? 'self-end bg-primary/10 rounded-tl-2xl rounded-tr-xl rounded-bl-2xl p-4' : 'self-start bg-card rounded-tl-xl rounded-tr-2xl rounded-br-2xl p-4 border border-border/30'} ${isAdmin ? 'border-primary/50 shadow-[0_0_15px_rgba(234,179,8,0.2)]' : ''}`}
                                         >
                                             <div className={`flex gap-3 ${isMe ? 'flex-row-reverse text-right' : ''}`}>
-                                                {!isAdmin ? (
-                                                    <Avatar
-                                                        className={`w-10 h-10 border-2 cursor-pointer transition-transform hover:scale-105 active:scale-95 border-primary/40 shadow shadow-primary/20`}
-                                                        onClick={() => setLocation(`/player/${msg.authorId}/${msg.authorZoneId || "0000"}`)}
-                                                        title="Ver Perfil"
-                                                    >
-                                                        <AvatarImage src={avatarSrc} />
-                                                        <AvatarFallback>{msg.authorName[0]}</AvatarFallback>
-                                                    </Avatar>
-                                                ) : (
-                                                    <Avatar className="w-10 h-10 border-2 border-yellow-400 shadow-[0_0_10px_rgba(234,179,8,0.5)]">
-                                                        <AvatarImage src={avatarSrc} />
-                                                        <AvatarFallback>{msg.authorName[0]}</AvatarFallback>
-                                                    </Avatar>
-                                                )}
+                                                <div
+                                                    className="cursor-pointer transition-transform hover:scale-110 active:scale-95 z-20"
+                                                    onClick={() => setLocation(`/player/${msg.authorId}/${msg.authorZoneId || "0000"}`)}
+                                                >
+                                                    <PlayerAvatar player={authorPlayer} size="sm" />
+                                                </div>
 
                                                 <div className="flex flex-col gap-1 w-full max-w-[100%] break-words">
                                                     <div className={`flex items-baseline gap-2 ${isMe ? 'justify-end' : ''}`}>

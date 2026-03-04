@@ -1,12 +1,23 @@
 import { ReactNode } from "react";
 import { useAuth } from "@/lib/auth";
 import { useLocation, Link } from "wouter";
-import { LogOut, Trophy, ShieldAlert, User as UserIcon } from "lucide-react";
+import { LogOut, Trophy, ShieldAlert, User as UserIcon, BookOpen } from "lucide-react";
 import { Button } from "@/components/ui/button";
 
 export default function Layout({ children }: { children: ReactNode }) {
-  const { user, logout } = useAuth();
+  const { user, logout, isLoading } = useAuth();
   const [location, setLocation] = useLocation();
+
+  if (isLoading) {
+    return (
+      <div className="flex items-center justify-center min-h-screen bg-background">
+        <div className="flex flex-col items-center gap-4">
+          <Trophy className="w-12 h-12 text-primary animate-pulse" />
+          <p className="text-xs font-black uppercase tracking-[0.3em] text-primary/60">Sincronizando com a Arena...</p>
+        </div>
+      </div>
+    );
+  }
 
   if (!user) {
     setLocation("/");
@@ -61,6 +72,13 @@ export default function Layout({ children }: { children: ReactNode }) {
             <Link href="/chat">
               <Button variant="ghost" size="sm" className={`font-black uppercase tracking-widest text-[11px] h-8 ${location === '/chat' ? 'text-primary' : 'text-muted-foreground'}`}>
                 Chat Global
+              </Button>
+            </Link>
+
+            <Link href="/guide">
+              <Button variant="ghost" size="sm" className={`font-black uppercase tracking-widest text-[11px] h-8 ${location === '/guide' ? 'text-primary' : 'text-emerald-400 hover:text-emerald-300'}`}>
+                <BookOpen className="w-3 h-3 mr-1" />
+                Guia
               </Button>
             </Link>
 

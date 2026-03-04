@@ -875,6 +875,35 @@ export async function registerRoutes(
       }
 
       await storage.updateMatchStatus(id, "approved");
+
+      // --- RANDOM RELIC DROP ON WIN ---
+      try {
+        const dropChance = 0.25; // 25% chance of drop
+        if (Math.random() < dropChance && winner) {
+          const allRewards = await storage.getRewards();
+          // Filter for relics that are NOT rank prizes and are available in store (meaning they are common/standard ones)
+          const droppableRelics = allRewards.filter(r => r.type === 'relic' && !r.isRankPrize);
+
+          if (droppableRelics.length > 0) {
+            const randomRelic = droppableRelics[Math.floor(Math.random() * droppableRelics.length)];
+            const playerRewards = await storage.getPlayerRewards(winner.id);
+            const alreadyHas = playerRewards.some(pr => pr.id === randomRelic.id);
+
+            if (!alreadyHas) {
+              await storage.assignReward(winner.id, randomRelic.id);
+              await storage.createActivity("reward_earned", winner.id, winner.gameName, {
+                rewardName: randomRelic.name,
+                rewardIcon: randomRelic.icon,
+                isDrop: true
+              });
+              console.log(`MATCH DROP: Player ${winner.gameName} earned ${randomRelic.name}`);
+            }
+          }
+        }
+      } catch (err) {
+        console.error("Failed to process random drop:", err);
+      }
+
       res.json({ message: "Combate aprovado e pontos atualizados." });
     } else {
       await storage.updateMatchStatus(id, "rejected");
@@ -923,6 +952,7 @@ export async function registerRoutes(
       authorId,
       authorName,
       authorAvatar,
+      authorFrame: player.activeFrame || null,
       authorRank,
       content: content.trim().substring(0, 500)
     });
