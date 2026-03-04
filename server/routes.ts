@@ -655,6 +655,43 @@ export async function registerRoutes(
     res.json({ success: true, message: "Customização aplicada!" });
   }));
 
+  app.delete("/api/players/rewards/:rewardId", requireAuth, asyncHandler(async (req, res) => {
+    try {
+      const rewardId = parseInt(req.params.rewardId as string);
+      const player = await storage.getPlayerByAccountId(req.session.user!.id, req.session.user!.zoneId);
+
+      if (!player) {
+        res.status(404).json({ message: "Jogador não encontrado." });
+        return;
+      }
+
+      const ownedRewards = await storage.getPlayerRewards(player.id);
+      const reward = ownedRewards.find(r => r.id === rewardId);
+
+      if (!reward) {
+        res.status(403).json({ message: "Você não possui este item." });
+        return;
+      }
+
+      // Unequip if currently active
+      const update: any = {};
+      let shouldUpdate = false;
+      if (player.activeFrame === reward.effect) { update.activeFrame = null; shouldUpdate = true; }
+      if (player.activeBackground === reward.effect) { update.activeBackground = null; shouldUpdate = true; }
+      if (player.activeMusic === reward.effect) { update.activeMusic = null; shouldUpdate = true; }
+
+      if (shouldUpdate) {
+        await storage.updatePlayer(player.id, update);
+      }
+
+      await storage.revokeReward(player.id, rewardId);
+      res.json({ success: true, message: "Item descartado com sucesso." });
+    } catch (err: any) {
+      console.error("Discard Error:", err);
+      res.status(500).json({ message: err.message || "Erro ao descartar item." });
+    }
+  }));
+
   app.post("/api/rewards", requireAdmin, asyncHandler(async (req, res) => {
     const reward = await storage.createReward(req.body);
     res.json(reward);

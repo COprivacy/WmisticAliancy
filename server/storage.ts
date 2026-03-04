@@ -35,6 +35,7 @@ export interface IStorage {
   updateReward(id: number, update: Partial<Reward>): Promise<Reward>;
   deleteReward(id: number): Promise<void>;
   assignReward(playerId: number, rewardId: number, expiresAt?: Date): Promise<void>;
+  revokeReward(playerId: number, rewardId: number): Promise<void>;
   getPlayerRewards(playerId: number): Promise<Reward[]>;
   purchaseReward(playerId: number, rewardId: number): Promise<void>;
   awardGloryPoints(playerId: number, points: number): Promise<void>;
@@ -261,6 +262,18 @@ export class DatabaseStorage implements IStorage {
       assignedAt: new Date(),
       expiresAt: expiresAt || null
     });
+  }
+
+  async revokeReward(playerId: number, revRewardId: number): Promise<void> {
+    console.log(`[STORAGE] Revoking reward ${revRewardId} for player ${playerId}`);
+    try {
+      await db.delete(playerRewards)
+        .where(and(eq(playerRewards.playerId, playerId), eq(playerRewards.rewardId, revRewardId)));
+      console.log(`[STORAGE] Successfully revoked reward ${revRewardId}`);
+    } catch (err) {
+      console.error(`[STORAGE] Error revoking reward:`, err);
+      throw err;
+    }
   }
 
   async getPlayerRewards(playerId: number): Promise<Reward[]> {
