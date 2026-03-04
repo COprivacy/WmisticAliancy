@@ -6,7 +6,8 @@
         "stars": 7,
         "price": 5000,
         "isAvailableInStore": true,
-        "icon": "/images/rewards/coroa-imortalidade.png"
+        "icon": "/images/rewards/coroa-imortalidade.png",
+        "type": "relic"
     },
     {
         "name": "Espada Suprema da Aliança",
@@ -15,7 +16,8 @@
         "stars": 7,
         "price": 3000,
         "isAvailableInStore": true,
-        "icon": "/images/rewards/mythic-sword.png"
+        "icon": "/images/rewards/mythic-sword.png",
+        "type": "relic"
     },
     {
         "name": "Cajado do Arcanista",
@@ -24,7 +26,8 @@
         "stars": 6,
         "price": 1500,
         "isAvailableInStore": true,
-        "icon": "/images/rewards/legendary-staff.png"
+        "icon": "/images/rewards/legendary-staff.png",
+        "type": "relic"
     },
     {
         "name": "Asas da Vitória",
@@ -33,7 +36,8 @@
         "stars": 5,
         "price": 1000,
         "isAvailableInStore": true,
-        "icon": "/images/rewards/epic-wings.svg"
+        "icon": "/images/rewards/epic-wings.svg",
+        "type": "relic"
     },
     {
         "name": "Medalha de Honra",
@@ -42,7 +46,8 @@
         "stars": 3,
         "price": 500,
         "isAvailableInStore": true,
-        "icon": "/images/rewards/rare-medal.svg"
+        "icon": "/images/rewards/rare-medal.svg",
+        "type": "relic"
     },
     {
         "name": "Selo de Sangue da Aliança",
@@ -51,6 +56,172 @@
         "stars": 2,
         "price": 0,
         "isAvailableInStore": false,
-        "icon": "/images/recruit-badge.png"
+        "icon": "/images/recruit-badge.png",
+        "type": "relic"
+    },
+    {
+        "name": "Espinhos de Sangue",
+        "description": "Moldura gótica adornada com rosas vermelhas e espinhos sombrios.",
+        "rarity": "epic",
+        "stars": 5,
+        "price": 1200,
+        "isAvailableInStore": true,
+        "icon": "/uploads/custom/moldura1.png",
+        "effect": "/uploads/custom/moldura1.png",
+        "type": "frame"
+    },
+    {
+        "name": "Dragões Elementais",
+        "description": "O equilíbrio eterno entre o sopro de fogo e a fúria das marés.",
+        "rarity": "legendary",
+        "stars": 6,
+        "price": 2500,
+        "isAvailableInStore": true,
+        "icon": "/uploads/custom/moldura2.png",
+        "effect": "/uploads/custom/moldura2.png",
+        "type": "frame"
+    },
+    {
+        "name": "Protocolo Cyber-Arena",
+        "description": "Tecnologia de ponta da guilda para combatentes digitais.",
+        "rarity": "rare",
+        "stars": 3,
+        "price": 400,
+        "isAvailableInStore": true,
+        "icon": "/uploads/custom/moldura3.png",
+        "effect": "/uploads/custom/moldura3.png",
+        "type": "frame"
+    },
+    {
+        "name": "Chamas Eternas",
+        "description": "Laços de fogo que nunca se apagam, forjados no calor da batalha.",
+        "rarity": "rare",
+        "stars": 4,
+        "price": 600,
+        "isAvailableInStore": true,
+        "icon": "/uploads/custom/moldura4.png",
+        "effect": "/uploads/custom/moldura4.png",
+        "type": "frame"
+    },
+    {
+        "name": "Engrenagens do Destino",
+        "description": "Estilo steampunk para quem move as peças da vitória com precisão.",
+        "rarity": "epic",
+        "stars": 5,
+        "price": 1100,
+        "isAvailableInStore": true,
+        "icon": "/uploads/custom/moldura5.png",
+        "effect": "/uploads/custom/moldura5.png",
+        "type": "frame"
+    },
+    {
+        "name": "Realeza Alada",
+        "description": "Asas de ouro puro e uma coroa flamejante para o soberano da arena.",
+        "rarity": "mythic",
+        "stars": 7,
+        "price": 4500,
+        "isAvailableInStore": true,
+        "icon": "/uploads/custom/moldura6.png",
+        "effect": "/uploads/custom/moldura6.png",
+        "type": "frame"
+    },
+    {
+        "name": "Aurora de Ametista",
+        "description": "Rosas púrpuras e teias místicas que prendem a atenção de todos.",
+        "rarity": "epic",
+        "stars": 5,
+        "price": 1300,
+        "isAvailableInStore": true,
+        "icon": "/uploads/custom/moldura7.png",
+        "effect": "/uploads/custom/moldura7.png",
+        "type": "frame"
+    },
+    {
+        "name": "Borboletas Glaciais",
+        "description": "A leveza do gelo e o bater de asas de borboletas espirituais.",
+        "rarity": "epic",
+        "stars": 5,
+        "price": 1400,
+        "isAvailableInStore": true,
+        "icon": "/uploads/custom/moldura8.png",
+        "effect": "/uploads/custom/moldura8.png",
+        "type": "frame"
+    },
+    {
+        "name": "Fortuna do Dragão de Ouro",
+        "description": "La opulência dos dragões orientais protegendo o seu tesouro.",
+        "rarity": "legendary",
+        "stars": 6,
+        "price": 2800,
+        "isAvailableInStore": true,
+        "icon": "/uploads/custom/moldura9.png",
+        "effect": "/uploads/custom/moldura9.png",
+        "type": "frame"
+    },
+    {
+        "name": "Guardiões de Esmeralda",
+        "description": "Dragões ancestrais esculpidos em jade e ouro radiante.",
+        "rarity": "legendary",
+        "stars": 6,
+        "price": 3200,
+        "isAvailableInStore": true,
+        "icon": "/uploads/custom/moldura10.png",
+        "effect": "/uploads/custom/moldura10.png",
+        "type": "frame"
+    },
+    {
+        "name": "Aries de Ouro Puro",
+        "description": "A força do carneiro zodiacal adornada com gemas verdes.",
+        "rarity": "legendary",
+        "stars": 6,
+        "price": 3000,
+        "isAvailableInStore": true,
+        "icon": "/uploads/custom/moldura11.png",
+        "effect": "/uploads/custom/moldura11.png",
+        "type": "frame"
+    },
+    {
+        "name": "Asas do Vácuo Estelar",
+        "description": "Penas tingidas com as cores de uma nebulosa distante.",
+        "rarity": "epic",
+        "stars": 5,
+        "price": 1600,
+        "isAvailableInStore": true,
+        "icon": "/uploads/custom/moldura12.png",
+        "effect": "/uploads/custom/moldura12.png",
+        "type": "frame"
+    },
+    {
+        "name": "Soberania de Cristal",
+        "description": "Uma coroa de joias roxas flanqueada por asas de pura energia.",
+        "rarity": "mythic",
+        "stars": 7,
+        "price": 4200,
+        "isAvailableInStore": true,
+        "icon": "/uploads/custom/moldura13.png",
+        "effect": "/uploads/custom/moldura13.png",
+        "type": "frame"
+    },
+    {
+        "name": "Majestade Celestial",
+        "description": "O brilho dos diamantes e a pureza do céu em uma moldura divina.",
+        "rarity": "mythic",
+        "stars": 7,
+        "price": 4800,
+        "isAvailableInStore": true,
+        "icon": "/uploads/custom/moldura14.png",
+        "effect": "/uploads/custom/moldura14.png",
+        "type": "frame"
+    },
+    {
+        "name": "Coroa das Sombras",
+        "description": "Folhagens negras e rubis de sangue para o mestre das trevas.",
+        "rarity": "mythic",
+        "stars": 7,
+        "price": 5000,
+        "isAvailableInStore": true,
+        "icon": "/uploads/custom/moldura15.png",
+        "effect": "/uploads/custom/moldura15.png",
+        "type": "frame"
     }
 ]
