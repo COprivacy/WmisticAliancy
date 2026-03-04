@@ -223,5 +223,71 @@
         "icon": "/uploads/custom/moldura15.png",
         "effect": "/uploads/custom/moldura15.png",
         "type": "frame"
+    },
+    {
+        "name": "Legião das Heroínas",
+        "description": "Um tributo épico às guerreiras que definem o destino da Arena.",
+        "rarity": "mythic",
+        "stars": 7,
+        "price": 7500,
+        "isAvailableInStore": true,
+        "icon": "/uploads/custom/fundo1.jpeg",
+        "effect": "/uploads/custom/fundo1.jpeg",
+        "type": "background"
+    },
+    {
+        "name": "Concerto All-Star",
+        "description": "Sinta a energia vibrante dos maiores espetáculos musicais da guilda.",
+        "rarity": "mythic",
+        "stars": 7,
+        "price": 7000,
+        "isAvailableInStore": true,
+        "icon": "/uploads/custom/fundo2.jpeg",
+        "effect": "/uploads/custom/fundo2.jpeg",
+        "type": "background"
+    },
+    {
+        "name": "Nébula de Sangue (Animado)",
+        "description": "O cosmos se agita em tons escarlates para quem comanda a destruição.",
+        "rarity": "mythic",
+        "stars": 7,
+        "price": 9500,
+        "isAvailableInStore": true,
+        "icon": "/uploads/custom/fundo3.mp4",
+        "effect": "/uploads/custom/fundo3.mp4",
+        "type": "background"
+    },
+    {
+        "name": "Caminho do Samurai (Animado)",
+        "description": "Pétalas de cerejeira e o aço frio em eterno movimento.",
+        "rarity": "mythic",
+        "stars": 7,
+        "price": 8500,
+        "isAvailableInStore": true,
+        "icon": "/uploads/custom/fundo4.mp4",
+        "effect": "/uploads/custom/fundo4.mp4",
+        "type": "background"
+    },
+    {
+        "name": "Abismo Cibernético (Animado)",
+        "description": "Matrix de dados fluindo nas profundezas da rede da Aliança.",
+        "rarity": "mythic",
+        "stars": 7,
+        "price": 9000,
+        "isAvailableInStore": true,
+        "icon": "/uploads/custom/fundo5.mp4",
+        "effect": "/uploads/custom/fundo5.mp4",
+        "type": "background"
+    },
+    {
+        "name": "Alvorada Dourada (Animado)",
+        "description": "Luz divina e partículas de ouro que emanam poder absoluto.",
+        "rarity": "mythic",
+        "stars": 7,
+        "price": 9800,
+        "isAvailableInStore": true,
+        "icon": "/uploads/custom/fundo6.mp4",
+        "effect": "/uploads/custom/fundo6.mp4",
+        "type": "background"
     }
 ]
