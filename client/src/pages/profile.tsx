@@ -27,7 +27,8 @@ import {
     Info,
     Star,
     Shield,
-    Zap
+    Zap,
+    Trash2
 } from "lucide-react";
 import { useAuth } from "@/lib/auth";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogFooter, DialogDescription } from "@/components/ui/dialog";
@@ -132,6 +133,24 @@ export default function Profile() {
         }
     });
 
+    const discardRewardMutation = useMutation({
+        mutationFn: async (rewardId: number) => {
+            const res = await apiRequest("DELETE", `/api/players/rewards/${rewardId}`);
+            return res.json();
+        },
+        onSuccess: (data) => {
+            queryClient.invalidateQueries({ queryKey: [`/api/players/${accountId}/${zoneId}`] });
+            toast({ title: "🗑️ Item Removido", description: data.message });
+        },
+        onError: (err: any) => {
+            toast({
+                title: "Falha ao descartar",
+                description: err?.response?.data?.message || "Erro desconhecido",
+                variant: "destructive"
+            });
+        }
+    });
+
     const { data: challenges } = useQuery<any[]>({
         queryKey: [`/api/challenges/${accountId}/${zoneId}`],
         enabled: !!accountId
@@ -230,12 +249,25 @@ export default function Profile() {
                     initial={{ opacity: 0, y: 30 }}
                     animate={{ opacity: 1, y: 0 }}
                     className="relative p-8 rounded-[2.5rem] border border-white/10 bg-white/5 backdrop-blur-xl mb-8 overflow-hidden group/profile-card"
-                    style={player.activeBackground ? {
+                    style={player.activeBackground && !player.activeBackground.match(/\.(mp4|webm)(\?.*)?$/i) ? {
                         backgroundImage: `linear-gradient(rgba(2, 6, 23, 0.7), rgba(2, 6, 23, 0.8)), url(${player.activeBackground})`,
                         backgroundSize: 'cover',
                         backgroundPosition: 'center',
                     } : {}}
                 >
+                    {player.activeBackground && player.activeBackground.match(/\.(mp4|webm)(\?.*)?$/i) && (
+                        <>
+                            <div className="absolute inset-0 bg-black/50 z-0 pointer-events-none" />
+                            <video
+                                src={player.activeBackground}
+                                autoPlay
+                                loop
+                                muted
+                                playsInline
+                                className="absolute inset-0 w-full h-full object-cover z-[-1] pointer-events-none opacity-80"
+                            />
+                        </>
+                    )}
                     {player.activeMusic && (
                         <div className="absolute top-4 right-8 z-50">
                             <audio ref={audioRef} src={player.activeMusic} loop />
@@ -399,21 +431,51 @@ export default function Profile() {
                                                                             owned.map(item => (
                                                                                 <div key={item.id} className={`flex items-center justify-between p-3 rounded-xl border ${active === item.effect ? 'bg-primary/10 border-primary/40' : 'bg-white/5 border-white/10'}`}>
                                                                                     <div className="flex items-center gap-3">
-                                                                                        <img src={item.icon} className="w-8 h-8 rounded-lg object-cover" alt="" />
+                                                                                        <div className="w-8 h-8 rounded-lg overflow-hidden flex-shrink-0 bg-black/40">
+                                                                                            {item.effect && item.effect.match(/\.(mp4|webm)(\?.*)?$/i) ? (
+                                                                                                <video
+                                                                                                    src={item.effect}
+                                                                                                    className="w-full h-full object-cover"
+                                                                                                    autoPlay
+                                                                                                    muted
+                                                                                                    loop
+                                                                                                    playsInline
+                                                                                                />
+                                                                                            ) : (
+                                                                                                <img src={item.icon} className="w-8 h-8 rounded-lg object-cover" alt="" />
+                                                                                            )}
+                                                                                        </div>
                                                                                         <div>
                                                                                             <p className="text-xs font-bold uppercase tracking-widest">{item.name}</p>
                                                                                             <p className="text-[8px] uppercase opacity-60 italic">{item.rarity}</p>
                                                                                         </div>
                                                                                     </div>
-                                                                                    <Button
-                                                                                        size="sm"
-                                                                                        variant={active === item.effect ? "default" : "outline"}
-                                                                                        className="h-7 text-[8px] font-black uppercase tracking-widest px-3"
-                                                                                        disabled={customizeMutation.isPending}
-                                                                                        onClick={() => customizeMutation.mutate({ type, rewardId: active === item.effect ? null : item.id })}
-                                                                                    >
-                                                                                        {customizeMutation.isPending ? <Loader2 className="w-3 h-3 animate-spin" /> : (active === item.effect ? "REMOVER" : "EQUIPAR")}
-                                                                                    </Button>
+                                                                                    <div className="flex gap-2">
+                                                                                        <Button
+                                                                                            size="sm"
+                                                                                            variant={active === item.effect ? "default" : "outline"}
+                                                                                            className="h-7 text-[8px] font-black uppercase tracking-widest px-3"
+                                                                                            disabled={customizeMutation.isPending}
+                                                                                            onClick={() => customizeMutation.mutate({ type, rewardId: active === item.effect ? null : item.id })}
+                                                                                        >
+                                                                                            {customizeMutation.isPending ? <Loader2 className="w-3 h-3 animate-spin" /> : (active === item.effect ? "REMOVER" : "EQUIPAR")}
+                                                                                        </Button>
+                                                                                        {active !== item.effect && (
+                                                                                            <Button
+                                                                                                size="sm"
+                                                                                                variant="ghost"
+                                                                                                className="h-7 w-7 p-0 text-red-500 hover:text-red-400 hover:bg-red-500/10"
+                                                                                                onClick={() => {
+                                                                                                    if (confirm(`Deseja realmente descartar permanently a relíquia "${item.name}"? Esta ação não pode ser desfeita.`)) {
+                                                                                                        discardRewardMutation.mutate(item.id);
+                                                                                                    }
+                                                                                                }}
+                                                                                                disabled={discardRewardMutation.isPending}
+                                                                                            >
+                                                                                                <Trash2 className="w-3 h-3" />
+                                                                                            </Button>
+                                                                                        )}
+                                                                                    </div>
                                                                                 </div>
                                                                             ))
                                                                         )}

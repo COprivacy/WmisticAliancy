@@ -988,7 +988,7 @@ export default function Admin() {
                     const formData = new FormData(e.currentTarget);
                     const fileInput = e.currentTarget.querySelector('input[type="file"]') as HTMLInputElement;
 
-                    let iconUrl = editingRelic?.icon || "/images/rewards/default.png";
+                    let iconUrl = editingRelic?.icon || "/images/rewards/recruit-badge.png";
                     if (fileInput.files?.[0]) {
                       const uploadFormData = new FormData();
                       uploadFormData.append("file", fileInput.files[0]);
@@ -997,11 +997,24 @@ export default function Admin() {
                       iconUrl = uploadData.url;
                     }
 
+                    // Format path correctly if it was pasted from windows explorer
+                    let formattedEffect = relicEffect === "none" ? "" : relicEffect.replace(/\\/g, "/");
+                    if (formattedEffect && !formattedEffect.startsWith("/") && formattedEffect.includes("uploads/")) {
+                      formattedEffect = "/" + formattedEffect;
+                    }
+
+                    // Auto-assign the effect image to icon if not explicitly set and not editing
+                    if (!editingRelic && !fileInput.files?.[0] && ['frame', 'background'].includes(relicType)) {
+                      if (formattedEffect) {
+                        iconUrl = formattedEffect;
+                      }
+                    }
+
                     const data = {
                       name: formData.get("name"),
                       description: formData.get("description"),
                       rarity: relicRarity,
-                      effect: relicEffect === "none" ? "" : relicEffect,
+                      effect: formattedEffect,
                       stars: parseInt(formData.get("stars") as string || "1"),
                       price: relicPrice,
                       icon: iconUrl,

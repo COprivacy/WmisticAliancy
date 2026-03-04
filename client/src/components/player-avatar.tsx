@@ -36,16 +36,29 @@ export function PlayerAvatar({ player, size = "md", showCrown = false, showStrea
             <div className={`relative ${sizeClasses[size]} z-10`}>
                 {/* Avatar Frame with "The Trick" (Blend Mode) applied automatically */}
                 {player.activeFrame && (
-                    <div
-                        className={`absolute ${frameInset[size]} z-20 pointer-events-none`}
-                        style={{
-                            backgroundImage: `url(${player.activeFrame})`,
-                            backgroundSize: '115%',
-                            backgroundRepeat: 'no-repeat',
-                            backgroundPosition: 'center',
-                            mixBlendMode: 'screen'
-                        }}
-                    />
+                    player.activeFrame.match(/\.(mp4|webm)(\?.*)?$/i) ? (
+                        <div className={`absolute ${frameInset[size]} z-20 pointer-events-none flex items-center justify-center`} style={{ mixBlendMode: 'screen' }}>
+                            <video
+                                src={player.activeFrame}
+                                autoPlay
+                                loop
+                                muted
+                                playsInline
+                                className="w-full h-full object-cover scale-[1.15] rounded-full"
+                            />
+                        </div>
+                    ) : (
+                        <div
+                            className={`absolute ${frameInset[size]} z-20 pointer-events-none`}
+                            style={{
+                                backgroundImage: `url(${player.activeFrame})`,
+                                backgroundSize: '115%',
+                                backgroundRepeat: 'no-repeat',
+                                backgroundPosition: 'center',
+                                mixBlendMode: 'screen'
+                            }}
+                        />
+                    )
                 )}
 
                 {/* Main Avatar Image */}

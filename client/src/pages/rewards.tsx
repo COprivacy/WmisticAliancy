@@ -90,14 +90,25 @@ export default function Rewards() {
                         >
                             <Card className={`h-full bg-white/5 border-white/10 backdrop-blur-xl overflow-hidden transition-all duration-500 transform group-hover:-translate-y-2 ${getRarityGlow(reward.rarity)}`}>
                                 <div className="relative aspect-square overflow-hidden bg-black/40">
-                                    <img
-                                        src={reward.icon}
-                                        alt={reward.name}
-                                        className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-110"
-                                        onError={(e) => {
-                                            (e.target as HTMLImageElement).src = "https://images.unsplash.com/photo-1550684848-fac1c5b4e853?w=500&q=80"; // Fallback abstract image
-                                        }}
-                                    />
+                                    {reward.effect && reward.effect.match(/\.(mp4|webm)(\?.*)?$/i) ? (
+                                        <video
+                                            src={reward.effect}
+                                            className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-110"
+                                            autoPlay
+                                            muted
+                                            loop
+                                            playsInline
+                                        />
+                                    ) : (
+                                        <img
+                                            src={reward.icon}
+                                            alt={reward.name}
+                                            className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-110"
+                                            onError={(e) => {
+                                                (e.target as HTMLImageElement).src = "https://images.unsplash.com/photo-1550684848-fac1c5b4e853?w=500&q=80"; // Fallback abstract image
+                                            }}
+                                        />
+                                    )}
                                     <div className={`absolute inset-0 bg-gradient-to-t from-[#020617] via-transparent to-transparent opacity-80`} />
 
                                     <div className="absolute top-4 right-4">
@@ -148,11 +159,22 @@ export default function Rewards() {
                                     className="flex flex-col md:flex-row h-full"
                                 >
                                     <div className="w-full md:w-1/2 relative bg-black">
-                                        <img
-                                            src={selectedReward.icon}
-                                            className="w-full h-full object-cover"
-                                            alt={selectedReward.name}
-                                        />
+                                        {selectedReward.effect && selectedReward.effect.match(/\.(mp4|webm)(\?.*)?$/i) ? (
+                                            <video
+                                                src={selectedReward.effect}
+                                                className="w-full h-full object-cover"
+                                                autoPlay
+                                                muted
+                                                loop
+                                                playsInline
+                                            />
+                                        ) : (
+                                            <img
+                                                src={selectedReward.icon}
+                                                className="w-full h-full object-cover"
+                                                alt={selectedReward.name}
+                                            />
+                                        )}
                                         <div className="absolute inset-0 bg-gradient-to-t from-black via-transparent to-transparent" />
                                     </div>
 

@@ -691,7 +691,7 @@ export default function Rankings() {
 
                     {/* Name and Rank Details */}
                     <div className="text-center space-y-2 w-full px-4 mb-4">
-                      <h3 className={`font-serif font-black uppercase tracking-widest truncate w-full group-hover:scale-105 transition-transform ${isFirst ? 'text-2xl' : 'text-lg'} ${getMagicClass(player)}`}>
+                      <h3 className={`font-serif font-black uppercase tracking-widest truncate w-full group-hover:scale-105 transition-transform ${isFirst ? 'text-2xl' : 'text-lg'} ${getMagicClass(player as any)}`}>
                         {player.gameName}
                       </h3>
                       <p className={`font-sans font-black ${isFirst ? 'text-2xl' : 'text-lg'} ${theme.text} drop-shadow-[0_0_8px_currentColor]`}>
@@ -983,7 +983,18 @@ export default function Rankings() {
                             <div key={reward.id} className={`relative group p-4 rounded-2xl border transition-all ${alreadyHas ? 'bg-white/5 border-white/5 opacity-80' : 'bg-primary/5 border-primary/10 hover:border-primary/30'}`}>
                               <div className="flex gap-4">
                                 <div className={`w-20 h-20 rounded-xl overflow-hidden border-2 bg-black/40 flex-shrink-0 ${reward.rarity === 'mythic' ? 'border-purple-500/40' : 'border-primary/20'}`}>
-                                  <img src={reward.icon} className="w-full h-full object-cover group-hover:scale-110 transition-transform" alt={reward.name} />
+                                  {reward.effect && reward.effect.match(/\.(mp4|webm)(\?.*)?$/i) ? (
+                                    <video
+                                      src={reward.effect}
+                                      className="w-full h-full object-cover group-hover:scale-110 transition-transform"
+                                      autoPlay
+                                      muted
+                                      loop
+                                      playsInline
+                                    />
+                                  ) : (
+                                    <img src={reward.icon} className="w-full h-full object-cover group-hover:scale-110 transition-transform" alt={reward.name} />
+                                  )}
                                 </div>
                                 <div className="flex-1 space-y-1">
                                   <span className={`text-[10px] font-black uppercase tracking-widest ${reward.rarity === 'mythic' ? 'text-purple-400' : 'text-primary'}`}>{reward.rarity}</span>
