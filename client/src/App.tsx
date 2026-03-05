@@ -18,6 +18,7 @@ import Rules from "@/pages/rules";
 import Chat from "@/pages/chat";
 import Guide from "@/pages/guide";
 import Layout from "@/components/layout";
+import { PwaInstallPrompt } from "@/components/pwa-install-prompt";
 
 function Router() {
   return (
@@ -95,6 +96,7 @@ function App() {
       <AuthProvider>
         <TooltipProvider>
           <Toaster />
+          <PwaInstallPrompt />
           <Router />
         </TooltipProvider>
       </AuthProvider>
