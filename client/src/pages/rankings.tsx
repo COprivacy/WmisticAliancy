@@ -900,12 +900,16 @@ export default function Rankings() {
                     <Label className="text-xs uppercase tracking-[0.2em] font-bold text-primary/70">Prova da Vitória (Screenshot)</Label>
                     <div className="relative">
                       {!proofFile ? (
-                        <label className="flex flex-col items-center justify-center border-2 border-dashed border-primary/20 bg-white/5 rounded-2xl p-6 transition-all hover:bg-white/10 group cursor-pointer">
+                        <div
+                          className="flex flex-col items-center justify-center border-2 border-dashed border-primary/20 bg-white/5 rounded-2xl p-6 transition-all hover:bg-white/10 group cursor-pointer"
+                          onClick={() => document.getElementById('prova-upload')?.click()}
+                        >
                           <Input
+                            id="prova-upload"
                             type="file"
                             accept="image/*"
                             onChange={(e) => handleFileChange(e.target.files?.[0] || null)}
-                            className="absolute inset-0 w-full h-full opacity-0 cursor-pointer z-50"
+                            className="hidden"
                             disabled={isAnalyzing}
                           />
                           {isAnalyzing ? (
@@ -913,10 +917,10 @@ export default function Rankings() {
                           ) : (
                             <ImageIcon className="w-8 h-8 text-primary/40 group-hover:scale-110 transition-transform mb-2" />
                           )}
-                          <p className="text-xs uppercase tracking-widest text-muted-foreground">
-                            {isAnalyzing ? "Analisando Print..." : "Clique para anexar o print"}
+                          <p className="text-xs uppercase tracking-widest text-muted-foreground mt-2 text-center">
+                            {isAnalyzing ? "Analisando Print..." : "CLIQUE AQUI PARA ANEXAR (OU TOQUE NO CELULAR)"}
                           </p>
-                        </label>
+                        </div>
                       ) : (
                         <div className="relative rounded-2xl border border-primary/20 overflow-hidden group">
                           <img

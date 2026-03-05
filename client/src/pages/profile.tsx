@@ -424,10 +424,10 @@ export default function Profile() {
                             )}
                         </div>
 
-                        <div className="flex-1 text-center md:text-left space-y-3 min-w-0">
-                            <div className="flex flex-col md:flex-row md:items-center flex-wrap gap-3">
+                        <div className="flex-1 text-center md:text-left space-y-3 min-w-0 w-full">
+                            <div className="flex flex-col md:flex-row md:items-center flex-wrap gap-3 min-w-0 w-full">
                                 <h1
-                                    className={`text-4xl font-black uppercase tracking-tighter text-glow truncate max-w-full ${player.activeNameEffect || ''}`}
+                                    className={`text-4xl font-black uppercase tracking-tighter text-glow break-all whitespace-normal ${player.activeNameEffect || ''}`}
                                     style={{
                                         color: player.activeNameColor || undefined,
                                         fontFamily: player.activeNameFont || undefined

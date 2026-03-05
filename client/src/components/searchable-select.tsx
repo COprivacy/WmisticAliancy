@@ -51,7 +51,7 @@ export function SearchableSelect({
                 </Button>
             </PopoverTrigger>
             <PopoverContent
-                className="w-[--radix-popover-trigger-width] p-0 bg-[#020617] border-white/10 z-[100] pointer-events-auto touch-none"
+                className="w-[--radix-popover-trigger-width] p-0 bg-[#020617] border-white/10 z-[100] pointer-events-auto"
                 align="start"
                 side="bottom"
                 sideOffset={4}
