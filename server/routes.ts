@@ -661,6 +661,9 @@ export async function registerRoutes(
       if (type === 'frame') update.activeFrame = null;
       if (type === 'background') update.activeBackground = null;
       if (type === 'music') update.activeMusic = null;
+      if (type === 'name_color') update.activeNameColor = null;
+      if (type === 'name_effect') update.activeNameEffect = null;
+      if (type === 'name_font') update.activeNameFont = null;
 
       await storage.updatePlayer(player.id, update);
       res.json({ success: true, message: "Item removido." });
@@ -686,6 +689,9 @@ export async function registerRoutes(
     if (type === 'frame') update.activeFrame = reward.effect; // Effect field will store the URL or CSS class
     if (type === 'background') update.activeBackground = reward.effect;
     if (type === 'music') update.activeMusic = reward.effect;
+    if (type === 'name_color') update.activeNameColor = reward.effect;
+    if (type === 'name_effect') update.activeNameEffect = reward.effect;
+    if (type === 'name_font') update.activeNameFont = reward.effect;
 
     await storage.updatePlayer(player.id, update);
     res.json({ success: true, message: "Customização aplicada!" });
@@ -1102,6 +1108,9 @@ export async function registerRoutes(
       authorAvatar,
       authorFrame: player.activeFrame || null,
       authorRank,
+      authorNameColor: player.activeNameColor || null,
+      authorNameEffect: player.activeNameEffect || null,
+      authorNameFont: player.activeNameFont || null,
       content: content.trim().substring(0, 500)
     });
 

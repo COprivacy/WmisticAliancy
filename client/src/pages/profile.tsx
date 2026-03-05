@@ -426,7 +426,15 @@ export default function Profile() {
 
                         <div className="flex-1 text-center md:text-left space-y-3">
                             <div className="flex flex-col md:flex-row md:items-center gap-3">
-                                <h1 className="text-4xl font-black uppercase tracking-tighter text-glow">{player.gameName}</h1>
+                                <h1
+                                    className={`text-4xl font-black uppercase tracking-tighter text-glow ${player.activeNameEffect || ''}`}
+                                    style={{
+                                        color: player.activeNameColor || undefined,
+                                        fontFamily: player.activeNameFont || undefined
+                                    }}
+                                >
+                                    {player.gameName}
+                                </h1>
                                 <Badge className="bg-primary/20 text-primary border-primary/30 py-1 px-4 uppercase text-xs tracking-widest font-bold mx-auto md:mx-0">
                                     {player.currentRank || "RANK DESCONHECIDO"}
                                 </Badge>
@@ -503,14 +511,22 @@ export default function Profile() {
 
                                                 <TabsContent value="style" className="space-y-6 pt-2">
                                                     <div className="space-y-4 max-h-[400px] overflow-y-auto pr-2 custom-scrollbar">
-                                                        {['frame', 'background', 'music'].map(type => {
+                                                        {['frame', 'background', 'music', 'name_color', 'name_effect', 'name_font'].map(type => {
                                                             const owned = data.rewards?.filter(r => r.type === type) || [];
-                                                            const active = type === 'frame' ? player.activeFrame : (type === 'background' ? player.activeBackground : player.activeMusic);
+                                                            const active = type === 'frame' ? player.activeFrame :
+                                                                (type === 'background' ? player.activeBackground :
+                                                                    (type === 'music' ? player.activeMusic :
+                                                                        (type === 'name_color' ? player.activeNameColor :
+                                                                            (type === 'name_effect' ? player.activeNameEffect : player.activeNameFont))));
 
                                                             return (
                                                                 <div key={type} className="space-y-2">
                                                                     <Label className="text-[10px] uppercase font-bold text-primary/60 tracking-[0.2em]">
-                                                                        {type === 'frame' ? 'Molduras de Avatar' : type === 'background' ? 'Fundo de Perfil' : 'Trilha Sonora'}
+                                                                        {type === 'frame' ? 'Molduras de Avatar' :
+                                                                            type === 'background' ? 'Fundo de Perfil' :
+                                                                                type === 'music' ? 'Trilha Sonora' :
+                                                                                    type === 'name_color' ? 'Cor do Nome' :
+                                                                                        type === 'name_effect' ? 'Animação do Nome' : 'Fonte do Nome'}
                                                                     </Label>
                                                                     <div className="grid grid-cols-1 gap-2">
                                                                         {owned.length === 0 ? (
@@ -519,7 +535,7 @@ export default function Profile() {
                                                                             owned.map(item => (
                                                                                 <div key={item.id} className={`flex items-center justify-between p-3 rounded-xl border ${active === item.effect ? 'bg-primary/10 border-primary/40' : 'bg-white/5 border-white/10'}`}>
                                                                                     <div className="flex items-center gap-3">
-                                                                                        <div className="w-8 h-8 rounded-lg overflow-hidden flex-shrink-0 bg-black/40">
+                                                                                        <div className="w-12 h-10 rounded-lg overflow-hidden flex-shrink-0 bg-black/40 flex items-center justify-center relative">
                                                                                             {item.effect && item.effect.match(/\.(mp4|webm)(\?.*)?$/i) ? (
                                                                                                 <video
                                                                                                     src={item.effect}
@@ -529,8 +545,18 @@ export default function Profile() {
                                                                                                     loop
                                                                                                     playsInline
                                                                                                 />
+                                                                                            ) : ['name_color', 'name_effect', 'name_font'].includes(item.type || '') ? (
+                                                                                                <span
+                                                                                                    className={`text-[8px] font-black uppercase text-center leading-tight ${item.type === 'name_effect' ? item.effect : ''}`}
+                                                                                                    style={{
+                                                                                                        color: item.type === 'name_color' ? item.effect : undefined,
+                                                                                                        fontFamily: item.type === 'name_font' ? item.effect : undefined
+                                                                                                    }}
+                                                                                                >
+                                                                                                    ABC
+                                                                                                </span>
                                                                                             ) : (
-                                                                                                <img src={item.icon} className="w-8 h-8 rounded-lg object-cover" alt="" />
+                                                                                                <img src={item.icon} className="w-full h-full object-cover rounded-lg" alt="" />
                                                                                             )}
                                                                                         </div>
                                                                                         <div>

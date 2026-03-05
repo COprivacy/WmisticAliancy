@@ -289,5 +289,203 @@
         "icon": "/uploads/custom/fundo6.mp4",
         "effect": "/uploads/custom/fundo6.mp4",
         "type": "background"
+    },
+    {
+        "name": "Nome Escarlate",
+        "description": "Deixe seu nome com a cor das chamas da vitória.",
+        "rarity": "rare",
+        "stars": 3,
+        "price": 300,
+        "isAvailableInStore": true,
+        "icon": "https://api.dicebear.com/7.x/shapes/svg?seed=red",
+        "effect": "#ef4444",
+        "type": "name_color"
+    },
+    {
+        "name": "Nome Esmeralda",
+        "description": "A cor da esperança e da cura em seu nome.",
+        "rarity": "rare",
+        "stars": 3,
+        "price": 300,
+        "isAvailableInStore": true,
+        "icon": "https://api.dicebear.com/7.x/shapes/svg?seed=green",
+        "effect": "#10b981",
+        "type": "name_color"
+    },
+    {
+        "name": "Nome Dourado",
+        "description": "O brilho do ouro radiante em cada letra.",
+        "rarity": "epic",
+        "stars": 5,
+        "price": 800,
+        "isAvailableInStore": true,
+        "icon": "https://api.dicebear.com/7.x/shapes/svg?seed=gold",
+        "effect": "#fbbf24",
+        "type": "name_color"
+    },
+    {
+        "name": "Nome Violeta",
+        "description": "A aura misteriosa do vácuo em seu nome.",
+        "rarity": "rare",
+        "stars": 3,
+        "price": 300,
+        "isAvailableInStore": true,
+        "icon": "https://api.dicebear.com/7.x/shapes/svg?seed=purple",
+        "effect": "#8b5cf6",
+        "type": "name_color"
+    },
+    {
+        "name": "Nome Ciano",
+        "description": "A frieza do gelo eterno em sua identidade.",
+        "rarity": "rare",
+        "stars": 3,
+        "price": 300,
+        "isAvailableInStore": true,
+        "icon": "https://api.dicebear.com/7.x/shapes/svg?seed=cyan",
+        "effect": "#06b6d4",
+        "type": "name_color"
+    },
+    {
+        "name": "Efeito Pulsante",
+        "description": "Seu nome pulsa com a energia do vácuo.",
+        "rarity": "rare",
+        "stars": 3,
+        "price": 500,
+        "isAvailableInStore": true,
+        "icon": "https://api.dicebear.com/7.x/shapes/svg?seed=pulse",
+        "effect": "animate-pulse",
+        "type": "name_effect"
+    },
+    {
+        "name": "Chamas de Glória",
+        "description": "Um brilho intenso que emana do seu próprio nome.",
+        "rarity": "epic",
+        "stars": 5,
+        "price": 1200,
+        "isAvailableInStore": true,
+        "icon": "https://api.dicebear.com/7.x/shapes/svg?seed=glow",
+        "effect": "drop-shadow-[0_0_8px_rgba(234,179,8,0.8)] text-glow",
+        "type": "name_effect"
+    },
+    {
+        "name": "Aura Mítica",
+        "description": "Efeito fluido com cores místicas e brilho etéreo.",
+        "rarity": "mythic",
+        "stars": 6,
+        "price": 5000,
+        "isAvailableInStore": true,
+        "icon": "https://api.dicebear.com/7.x/shapes/svg?seed=mythic",
+        "effect": "magic-text-mythic",
+        "type": "name_effect"
+    },
+    {
+        "name": "Brilho Lendário",
+        "description": "O brilho supremo dos campeões da aliança.",
+        "rarity": "legendary",
+        "stars": 6,
+        "price": 3500,
+        "isAvailableInStore": true,
+        "icon": "https://api.dicebear.com/7.x/shapes/svg?seed=legendary",
+        "effect": "magic-text-legendary",
+        "type": "name_effect"
+    },
+    {
+        "name": "Sangue e Honra",
+        "description": "Seu nome escorre com a determinação dos guerreiros.",
+        "rarity": "epic",
+        "stars": 5,
+        "price": 1500,
+        "isAvailableInStore": true,
+        "icon": "https://api.dicebear.com/7.x/shapes/svg?seed=blood",
+        "effect": "magic-text-blood",
+        "type": "name_effect"
+    },
+    {
+        "name": "Arco-Íris Mágico",
+        "description": "Todas as cores da aliança em um fluxo constante.",
+        "rarity": "mythic",
+        "stars": 6,
+        "price": 4500,
+        "isAvailableInStore": true,
+        "icon": "https://api.dicebear.com/7.x/shapes/svg?seed=rainbow",
+        "effect": "magic-text-rainbow",
+        "type": "name_effect"
+    },
+    {
+        "name": "Estilo Cibernético",
+        "description": "Interface avançada aplicada ao seu nome.",
+        "rarity": "epic",
+        "stars": 5,
+        "price": 1800,
+        "isAvailableInStore": true,
+        "icon": "https://api.dicebear.com/7.x/shapes/svg?seed=cyber",
+        "effect": "magic-text-cyber",
+        "type": "name_effect"
+    },
+    {
+        "name": "Gelo Eterno",
+        "description": "Fontes e efeitos congelados pela magia antiga.",
+        "rarity": "epic",
+        "stars": 5,
+        "price": 1600,
+        "isAvailableInStore": true,
+        "icon": "https://api.dicebear.com/7.x/shapes/svg?seed=frost",
+        "effect": "magic-text-frost",
+        "type": "name_effect"
+    },
+    {
+        "name": "Fonte Imperial",
+        "description": "Tipografia clássica e imponente para líderes.",
+        "rarity": "rare",
+        "stars": 4,
+        "price": 600,
+        "isAvailableInStore": true,
+        "icon": "https://api.dicebear.com/7.x/shapes/svg?seed=font1",
+        "effect": "Cinzel",
+        "type": "name_font"
+    },
+    {
+        "name": "Fonte Futurista",
+        "description": "Design moderno para guerreiros da nova era.",
+        "rarity": "rare",
+        "stars": 4,
+        "price": 600,
+        "isAvailableInStore": true,
+        "icon": "https://api.dicebear.com/7.x/shapes/svg?seed=font2",
+        "effect": "Orbitron",
+        "type": "name_font"
+    },
+    {
+        "name": "Fonte Medieval",
+        "description": "Letras forjadas no aço da era das lendas.",
+        "rarity": "rare",
+        "stars": 4,
+        "price": 600,
+        "isAvailableInStore": true,
+        "icon": "https://api.dicebear.com/7.x/shapes/svg?seed=font3",
+        "effect": "MedievalSharp",
+        "type": "name_font"
+    },
+    {
+        "name": "Fonte Impactante",
+        "description": "Estilo agressivo que chama a atenção de todos.",
+        "rarity": "rare",
+        "stars": 4,
+        "price": 600,
+        "isAvailableInStore": true,
+        "icon": "https://api.dicebear.com/7.x/shapes/svg?seed=font4",
+        "effect": "Bangers",
+        "type": "name_font"
+    },
+    {
+        "name": "Fonte Mística",
+        "description": "Runas ancestrais adaptadas para o seu nome.",
+        "rarity": "epic",
+        "stars": 5,
+        "price": 1200,
+        "isAvailableInStore": true,
+        "icon": "https://api.dicebear.com/7.x/shapes/svg?seed=font5",
+        "effect": "Metamorphous",
+        "type": "name_font"
     }
 ]

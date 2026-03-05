@@ -116,17 +116,19 @@ export class DatabaseStorage implements IStorage {
       const initialRewards = JSON.parse(fs.readFileSync(relicsPath, "utf-8"));
       const existing = await this.getRewards();
 
+      // Get list of manually deleted rewards to avoid recreating them
+      const deletedRewards = await this.getConfig("deleted_rewards") || [];
+
       for (const reward of initialRewards) {
+        // Skip if this reward was explicitly deleted via Admin
+        if (deletedRewards.includes(reward.name)) {
+          continue;
+        }
+
         const alreadyExists = existing.find(r => r.name === reward.name);
         if (!alreadyExists) {
           console.log(`SEED: Creating reward ${reward.name}`);
           await this.createReward(reward);
-        } else if (alreadyExists.price !== reward.price || alreadyExists.isAvailableInStore !== reward.isAvailableInStore) {
-          console.log(`SEED: Updating reward ${reward.name} (Price: ${alreadyExists.price} -> ${reward.price})`);
-          await this.updateReward(alreadyExists.id, {
-            price: reward.price,
-            isAvailableInStore: reward.isAvailableInStore
-          });
         }
       }
     } catch (e) {
@@ -264,6 +266,15 @@ export class DatabaseStorage implements IStorage {
   }
 
   async deleteReward(id: number): Promise<void> {
+    const [reward] = await db.select().from(rewards).where(eq(rewards.id, id));
+    if (reward) {
+      // Add to deleted_rewards list so Seeder doesn't bring it back
+      const deletedRewards = await this.getConfig("deleted_rewards") || [];
+      if (!deletedRewards.includes(reward.name)) {
+        deletedRewards.push(reward.name);
+        await this.setConfig("deleted_rewards", deletedRewards);
+      }
+    }
     await db.delete(rewards).where(eq(rewards.id, id));
   }
 
@@ -524,7 +535,10 @@ export class DatabaseStorage implements IStorage {
           authorName: m.authorRank === "Moderador" ? `${player.gameName} (ADM)` : player.gameName,
           authorAvatar: player.avatar || m.authorAvatar,
           authorRank: m.authorRank === "Moderador" ? "Moderador" : player.rank,
-          authorZoneId: player.zoneId
+          authorZoneId: player.zoneId,
+          authorNameColor: player.activeNameColor || m.authorNameColor,
+          authorNameEffect: player.activeNameEffect || m.authorNameEffect,
+          authorNameFont: player.activeNameFont || m.authorNameFont
         } as any;
       }
       return { ...m, authorZoneId: "0" } as any;

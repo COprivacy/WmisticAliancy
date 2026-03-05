@@ -33,6 +33,9 @@ export const players = pgTable("players", {
   activeFrame: text("active_frame"),
   activeBackground: text("active_background"),
   activeMusic: text("active_music"),
+  activeNameColor: text("active_name_color"), // Hex or CSS class
+  activeNameEffect: text("active_name_effect"), // CSS animation class
+  activeNameFont: text("active_name_font"), // Font family or class
 });
 
 export const matches = pgTable("matches", {
@@ -128,6 +131,9 @@ export const globalMessages = pgTable("global_messages", {
   authorAvatar: text("author_avatar"),
   authorFrame: text("author_frame"),
   authorRank: text("author_rank"),
+  authorNameColor: text("author_name_color"),
+  authorNameEffect: text("author_name_effect"),
+  authorNameFont: text("author_name_font"),
   content: text("content").notNull(),
   createdAt: timestamp("created_at").notNull().defaultNow(),
 });

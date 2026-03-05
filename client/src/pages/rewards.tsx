@@ -21,6 +21,7 @@ import { Coins, ShoppingCart } from "lucide-react";
 export default function Rewards() {
     const [selectedReward, setSelectedReward] = useState<Reward | null>(null);
     const [previewingId, setPreviewingId] = useState<number | null>(null);
+    const [storeCategory, setStoreCategory] = useState<string>("all");
     const audioRef = useRef<HTMLAudioElement | null>(null);
 
     const { data: rewards, isLoading } = useQuery<Reward[]>({
@@ -132,6 +133,7 @@ export default function Rewards() {
                                                 <li>Molduras Épicas para o seu Avatar</li>
                                                 <li>Fundos Animados para o seu Perfil</li>
                                                 <li>Trilhas Sonoras Personalizadas (MP3)</li>
+                                                <li>Estilização de Nome (Cores e Efeitos)</li>
                                             </ul>
                                         </div>
                                         <p className="text-[8px] italic opacity-50 text-center">Itens comprados são permanentes e intransferíveis.</p>
@@ -142,9 +144,32 @@ export default function Rewards() {
                         </div>
                     </div>
                 </div>
+                <div className="flex gap-2 overflow-x-auto pb-8 custom-scrollbar mb-8">
+                    {[
+                        { id: 'all', label: 'Tudo', icon: Sparkles },
+                        { id: 'relic', label: 'Relíquias', icon: Trophy },
+                        { id: 'frame', label: 'Molduras', icon: Shield },
+                        { id: 'background', label: 'Fundos', icon: ImageIcon },
+                        { id: 'music', label: 'Músicas', icon: Zap },
+                        { id: 'name_color', label: 'Cores', icon: Sparkles },
+                        { id: 'name_effect', label: 'Efeitos', icon: Flame },
+                        { id: 'name_font', label: 'Fontes', icon: Award }
+                    ].map(cat => (
+                        <Button
+                            key={cat.id}
+                            variant={storeCategory === cat.id ? "default" : "outline"}
+                            size="sm"
+                            className="h-10 rounded-full uppercase text-[10px] font-black px-6 flex-shrink-0 border-white/10"
+                            onClick={() => setStoreCategory(cat.id)}
+                        >
+                            <cat.icon className="w-3 h-3 mr-2" />
+                            {cat.label}
+                        </Button>
+                    ))}
+                </div>
 
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8">
-                    {rewards?.map((reward, index) => (
+                    {rewards?.filter(r => storeCategory === 'all' || (r.type || 'relic') === storeCategory).map((reward, index) => (
                         <motion.div
                             key={reward.id}
                             initial={{ opacity: 0, y: 20 }}
@@ -182,8 +207,23 @@ export default function Rewards() {
                                         </Badge>
                                     </div>
 
-                                    {/* Quick Info Overlay */}
-                                    <div className="absolute inset-0 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity duration-300 gap-4">
+                                    {/* Quick Info Overlay & Name Previews */}
+                                    <div className="absolute inset-0 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-all duration-300 gap-4 bg-black/40 backdrop-blur-[2px]">
+                                        {['name_color', 'name_effect', 'name_font'].includes(reward.type || '') && (
+                                            <div className="flex flex-col items-center justify-center scale-90 group-hover:scale-100 transition-transform">
+                                                <Badge variant="outline" className="mb-4 border-primary/40 text-primary text-[8px] tracking-[0.2em] font-black uppercase">Visualização do Estilo</Badge>
+                                                <span
+                                                    className={`text-2xl font-black uppercase text-center drop-shadow-lg ${reward.type === 'name_effect' ? reward.effect : ''}`}
+                                                    style={{
+                                                        color: reward.type === 'name_color' ? reward.effect : undefined,
+                                                        fontFamily: reward.type === 'name_font' ? reward.effect : undefined
+                                                    }}
+                                                >
+                                                    Preview<br />de Nome
+                                                </span>
+                                            </div>
+                                        )}
+
                                         {reward.type === 'music' && (
                                             <Button
                                                 variant="outline"

@@ -366,27 +366,16 @@ export default function Rankings() {
   };
 
   const getMagicClass = (player: PlayerWithRewards) => {
+    // If player has a specific name effect, prioritize it
+    if (player.activeNameEffect) return player.activeNameEffect;
+
     if (!player.rewards) return "";
 
     // IMPORTANT: Exclusivity logic. 
     // We only apply effects from rewards that were purchased (available in store).
-    // This makes the "magic text" a premium feature.
-    const purchasedRewardWithEffect = player.rewards.find(r => r.isAvailableInStore && r.effect);
+    const purchasedRewardWithEffect = player.rewards.find(r => r.isAvailableInStore && r.effect && !r.effect.startsWith('#'));
     if (purchasedRewardWithEffect) return purchasedRewardWithEffect.effect!;
 
-    // Fallback: If no purchased effect, check for ANY reward with an effect (e.g. rank prizes assigned by admin)
-    // but the user's specific request was to prioritize/limit this to store purchases.
-    // If we want it strictly for store:
-    // return ""; 
-
-    // However, the current code has fallback for tiers. Let's keep it but prioritize store effects.
-    const anyEffect = player.rewards.find(r => r.effect)?.effect;
-    if (anyEffect) return anyEffect;
-
-    // Fallback to tier-based effects (optional, based on user preference)
-    if (player.rewards.some(r => r.rarity === 'mythic')) return "magic-text-mythic";
-    if (player.rewards.some(r => r.rarity === 'legendary')) return "magic-text-legendary";
-    if (player.rewards.some(r => r.rarity === 'epic')) return "magic-text-epic";
     return "";
   };
 
@@ -755,7 +744,10 @@ export default function Rankings() {
 
                     {/* Name and Rank Details */}
                     <div className="text-center space-y-2 w-full px-4 mb-4">
-                      <h3 className={`font-serif font-black uppercase tracking-widest truncate w-full group-hover:scale-105 transition-transform ${isFirst ? 'text-2xl' : 'text-lg'} ${getMagicClass(player as any)}`}>
+                      <h3
+                        className={`font-serif font-black uppercase tracking-widest truncate w-full group-hover:scale-105 transition-transform ${isFirst ? 'text-2xl' : 'text-lg'} ${player.activeNameEffect || getMagicClass(player as any)}`}
+                        style={{ color: player.activeNameColor || undefined, fontFamily: player.activeNameFont || undefined }}
+                      >
                         {player.gameName}
                       </h3>
                       <p className={`font-sans font-black ${isFirst ? 'text-2xl' : 'text-lg'} ${theme.text} drop-shadow-[0_0_8px_currentColor]`}>
@@ -785,7 +777,7 @@ export default function Rankings() {
         </div>
       </section >
       {/* Hero Stats Section */}
-      < section className="grid grid-cols-1 md:grid-cols-4 gap-6" >
+      <section className="grid grid-cols-1 md:grid-cols-4 gap-6">
         <motion.div initial={{ opacity: 0, x: -20 }} animate={{ opacity: 1, x: 0 }}>
           <Card className="bg-gradient-to-br from-primary/20 to-transparent border-primary/20 relative overflow-hidden group">
             <div className="absolute top-0 right-0 p-4 opacity-10 group-hover:scale-125 transition-transform">
@@ -1023,7 +1015,10 @@ export default function Rankings() {
                           { id: 'relic', label: 'Relíquias', icon: Trophy },
                           { id: 'frame', label: 'Molduras', icon: Shield },
                           { id: 'background', label: 'Fundos', icon: ImageIcon },
-                          { id: 'music', label: 'Músicas', icon: Zap }
+                          { id: 'music', label: 'Músicas', icon: Zap },
+                          { id: 'name_color', label: 'Cores', icon: Sparkles },
+                          { id: 'name_effect', label: 'Efeitos', icon: Flame },
+                          { id: 'name_font', label: 'Fontes', icon: Award }
                         ].map(cat => (
                           <Button
                             key={cat.id}
@@ -1046,7 +1041,8 @@ export default function Rankings() {
                           return (
                             <div key={reward.id} className={`relative group p-4 rounded-2xl border transition-all ${alreadyHas ? 'bg-white/5 border-white/5 opacity-80' : 'bg-primary/5 border-primary/10 hover:border-primary/30'}`}>
                               <div className="flex gap-4">
-                                <div className={`w-20 h-20 rounded-xl overflow-hidden border-2 bg-black/40 flex-shrink-0 ${reward.rarity === 'mythic' ? 'border-purple-500/40' : 'border-primary/20'}`}>
+                                <div className={`w-20 h-20 rounded-xl overflow-hidden border-2 bg-black/40 flex-shrink-0 relative ${reward.rarity === 'mythic' ? 'border-purple-500/40' : 'border-primary/20'}`}>
+                                  {/* Item Visual (Icon or Video) */}
                                   {reward.effect && reward.effect.match(/\.(mp4|webm)(\?.*)?$/i) ? (
                                     <video
                                       src={reward.effect}
@@ -1059,6 +1055,22 @@ export default function Rankings() {
                                   ) : (
                                     <img src={reward.icon} className="w-full h-full object-cover group-hover:scale-110 transition-transform" alt={reward.name} />
                                   )}
+
+                                  {/* Dynamic Preview for Name Styles */}
+                                  {['name_color', 'name_effect', 'name_font'].includes(reward.type || '') && (
+                                    <div className="absolute inset-0 flex items-center justify-center bg-black/60 backdrop-blur-[2px]">
+                                      <span
+                                        className={`text-[10px] font-black uppercase text-center leading-tight ${reward.type === 'name_effect' ? reward.effect : ''}`}
+                                        style={{
+                                          color: reward.type === 'name_color' ? reward.effect : undefined,
+                                          fontFamily: reward.type === 'name_font' ? reward.effect : undefined
+                                        }}
+                                      >
+                                        Nome<br />Preview
+                                      </span>
+                                    </div>
+                                  )}
+
                                   {reward.type === 'music' && (
                                     <div className="absolute inset-0 flex items-center justify-center bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity">
                                       <Button
@@ -1192,7 +1204,7 @@ export default function Rankings() {
       </section >
 
       {/* Leaderboard & Activity Feed */}
-      < section className="grid grid-cols-1 lg:grid-cols-4 gap-8" >
+      <section className="grid grid-cols-1 lg:grid-cols-4 gap-8">
         <div className="lg:col-span-3 space-y-6">
           <div className="flex flex-col md:flex-row items-center justify-between border-b border-white/5 pb-4 gap-4">
             <h3 className="text-xl font-serif tracking-[0.3em] uppercase flex items-center gap-3">
@@ -1263,7 +1275,10 @@ export default function Rankings() {
                       <PlayerAvatar player={player} size="md" showCrown={index === 0} />
 
                       <div className="flex flex-col min-w-0">
-                        <span className={`text-base sm:text-xl font-bold tracking-tight truncate pr-2 flex items-center gap-2 ${getMagicClass(player)}`}>
+                        <span
+                          className={`text-base sm:text-xl font-bold tracking-tight truncate pr-2 flex items-center gap-2 ${player.activeNameEffect || getMagicClass(player)}`}
+                          style={{ color: player.activeNameColor || undefined, fontFamily: player.activeNameFont || undefined }}
+                        >
                           {player.gameName}
                           <div className="flex -space-x-1">
                             {player.rewards?.filter(r => r.type === 'relic' || !r.type).map((r, i) => (
@@ -1337,8 +1352,8 @@ export default function Rankings() {
         <div className="lg:col-span-1 border-t lg:border-t-0 lg:border-l border-white/5 lg:pl-8 pt-8 lg:pt-0">
           <ActivityFeed />
         </div>
-      </section >
-    </div >
+      </section>
+    </div>
   );
 }
 

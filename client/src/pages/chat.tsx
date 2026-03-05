@@ -39,6 +39,9 @@ type GlobalMessage = {
     content: string;
     createdAt: string;
     authorZoneId?: string;
+    authorNameColor?: string;
+    authorNameEffect?: string;
+    authorNameFont?: string;
 };
 
 export default function Chat() {
@@ -258,7 +261,13 @@ export default function Chat() {
                                                 <div className="flex flex-col gap-1 w-full max-w-[100%] break-words">
                                                     <div className={`flex items-baseline gap-2 ${isMe ? 'justify-end' : ''}`}>
                                                         <DropdownMenu>
-                                                            <DropdownMenuTrigger className={`font-bold hover:underline cursor-pointer text-sm ${isAdmin ? 'text-yellow-400 drop-shadow-[0_0_2px_rgba(234,179,8,0.5)]' : 'text-primary'}`}>
+                                                            <DropdownMenuTrigger
+                                                                className={`font-bold hover:underline cursor-pointer text-sm ${isAdmin ? 'text-yellow-400 drop-shadow-[0_0_2px_rgba(234,179,8,0.5)]' : 'text-primary'} ${msg.authorNameEffect || ''}`}
+                                                                style={{
+                                                                    color: msg.authorNameColor || undefined,
+                                                                    fontFamily: msg.authorNameFont || undefined
+                                                                }}
+                                                            >
                                                                 {msg.authorName}
                                                             </DropdownMenuTrigger>
                                                             <DropdownMenuContent align={isMe ? "end" : "start"} className="bg-card/95 backdrop-blur-md border-primary/20">

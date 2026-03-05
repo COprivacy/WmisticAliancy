@@ -63,16 +63,18 @@ const MAGIC_EFFECTS = [
   { value: "magic-text-rainbow", label: "Arco-Íris (Chroma)" },
   { value: "magic-text-steampunk", label: "Steampunk (Bronze/Engrenagem)" },
   { value: "magic-text-divine", label: "Divino (Brilho Celestial)" },
+  { value: "animate-pulse", label: "Pulsante (Animação)" },
+  { value: "text-glow drop-shadow-[0_0_8px_rgba(234,179,8,0.8)]", label: "Brilho de Glória" },
 ];
 
 const SEASON_FONTS = [
-  { value: "font-serif", label: "Cinzel (Clássico)" },
-  { value: "font-sans", label: "Rajdhani (Moderno)" },
-  { value: "font-bangers", label: "Bangers (HQ/Impacto)" },
-  { value: "font-marker", label: "Marker (Street)" },
-  { value: "font-orbitron", label: "Orbitron (Futurista)" },
-  { value: "font-medieval", label: "Medieval (Épico)" },
-  { value: "font-mistic", label: "Místico (Magia)" },
+  { value: "Cinzel", label: "Cinzel (Clássico)" },
+  { value: "Rajdhani", label: "Rajdhani (Moderno)" },
+  { value: "Bangers", label: "Bangers (HQ/Impacto)" },
+  { value: "Permanent Marker", label: "Marker (Street)" },
+  { value: "Orbitron", label: "Orbitron (Futurista)" },
+  { value: "MedievalSharp", label: "Medieval (Épico)" },
+  { value: "Metamorphous", label: "Místico (Magia)" },
 ];
 
 export default function Admin() {
@@ -1088,6 +1090,9 @@ export default function Admin() {
                           <SelectItem value="frame">Moldura de Avatar</SelectItem>
                           <SelectItem value="background">Fundo de Perfil</SelectItem>
                           <SelectItem value="music">Música de Perfil</SelectItem>
+                          <SelectItem value="name_color">Cor de Nome (HEX)</SelectItem>
+                          <SelectItem value="name_effect">Efeito de Nome (Classe CSS)</SelectItem>
+                          <SelectItem value="name_font">Fonte de Nome (Família)</SelectItem>
                         </SelectContent>
                       </Select>
                     </div>
@@ -1128,12 +1133,14 @@ export default function Admin() {
                         className="bg-black/20 border-white/10 h-12"
                       />
                     </div>
-                    {relicType === 'relic' ? (
+                    {relicType === 'relic' || relicType === 'name_effect' ? (
                       <div className="space-y-2">
-                        <Label className="text-[10px] uppercase font-black">Efeito de Texto Místico</Label>
+                        <Label className="text-[10px] uppercase font-black">
+                          {relicType === 'name_effect' ? 'Efeito de Nome' : 'Efeito de Texto Místico'}
+                        </Label>
                         <Select value={relicEffect} onValueChange={setRelicEffect}>
                           <SelectTrigger className="h-12 bg-black/20 border-white/10 font-bold">
-                            <SelectValue placeholder="Sem Efeito" />
+                            <SelectValue placeholder="Selecione o Efeito" />
                           </SelectTrigger>
                           <SelectContent className="bg-slate-900 border-white/10 text-white max-h-[300px] overflow-y-auto">
                             {MAGIC_EFFECTS.map(eff => (
@@ -1144,13 +1151,34 @@ export default function Admin() {
                           </SelectContent>
                         </Select>
                       </div>
+                    ) : relicType === 'name_font' ? (
+                      <div className="space-y-2">
+                        <Label className="text-[10px] uppercase font-black">Família da Fonte</Label>
+                        <Select value={relicEffect} onValueChange={setRelicEffect}>
+                          <SelectTrigger className="h-12 bg-black/20 border-white/10 font-bold">
+                            <SelectValue placeholder="Selecione a Fonte" />
+                          </SelectTrigger>
+                          <SelectContent className="bg-slate-900 border-white/10 text-white">
+                            {SEASON_FONTS.map(font => (
+                              <SelectItem key={font.value} value={font.value} style={{ fontFamily: font.value }}>
+                                {font.label}
+                              </SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
+                      </div>
                     ) : (
                       <div className="space-y-2">
-                        <Label className="text-[10px] uppercase font-black">URL do Recurso (MP3/Imagem/CSS)</Label>
+                        <Label className="text-[10px] uppercase font-black">
+                          {relicType === 'name_color' ? 'Cor Hexadecimal (#FFFFFF)' : 'URL do Recurso (MP3/Imagem/CSS)'}
+                        </Label>
                         <Input
                           value={relicEffect}
                           onChange={(e) => setRelicEffect(e.target.value)}
-                          placeholder={relicType === 'music' ? "Link do MP3..." : "URL da Imagem ou Classe CSS..."}
+                          placeholder={
+                            relicType === 'name_color' ? "Ex: #ef4444" :
+                              relicType === 'music' ? "Link do MP3..." : "URL da Imagem ou Classe CSS..."
+                          }
                           className="bg-black/20 border-white/10 h-12"
                         />
                       </div>
