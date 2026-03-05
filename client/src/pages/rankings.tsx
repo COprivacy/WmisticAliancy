@@ -32,7 +32,13 @@ import {
   Timer as ClockIcon,
   Play,
   Pause,
-  Music
+  Music,
+  Coins,
+  QrCode,
+  Wallet,
+  ShoppingCart,
+  Info,
+  HelpCircle
 } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import { useQuery, useMutation } from "@tanstack/react-query";
@@ -43,10 +49,8 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import ActivityFeed from "@/components/activity-feed";
 import { SearchableSelect } from "@/components/searchable-select";
 import { MLBB_HEROES } from "@/lib/constants";
-import { Coins, QrCode, Wallet, ShoppingCart } from "lucide-react";
 import { PlayerAvatar } from "@/components/player-avatar";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
-import { Info, HelpCircle } from "lucide-react";
 
 type PlayerWithRewards = Player & { rewards: Reward[] };
 type SeasonInfo = {
@@ -168,7 +172,7 @@ export default function Rankings() {
       const res = await apiRequest("POST", "/api/daily-claim");
       return res.json();
     },
-    onSuccess: (data) => {
+    onSuccess: (data: any) => {
       queryClient.invalidateQueries({ queryKey: ["/api/players"] });
       toast({
         title: "✨ Honra Resgatada",
@@ -189,7 +193,7 @@ export default function Rankings() {
       const res = await apiRequest("POST", "/api/rewards/purchase", { rewardId });
       return res.json();
     },
-    onSuccess: (data) => {
+    onSuccess: (data: any) => {
       queryClient.invalidateQueries({ queryKey: ["/api/players"] });
       toast({
         title: "🛡️ Relíquia Adquirida!",
@@ -210,7 +214,7 @@ export default function Rankings() {
       const res = await apiRequest("POST", "/api/glory/topup", { bundleId });
       return res.json();
     },
-    onSuccess: (data) => {
+    onSuccess: (data: any) => {
       toast({
         title: "⚡ Solicitação Criada",
         description: data.message,
@@ -259,7 +263,7 @@ export default function Rankings() {
       // Auto-pre-fill logic
       if (result.detectedNames.length > 0) {
         // Try to find the opponent (the one who is not the current user)
-        const opponent = players?.find(p =>
+        const opponent = players?.find((p: any) =>
           result.detectedNames.includes(p.gameName) && p.accountId !== user?.id
         );
         if (opponent) {
@@ -900,14 +904,14 @@ export default function Rankings() {
                     <Label className="text-xs uppercase tracking-[0.2em] font-bold text-primary/70">Prova da Vitória (Screenshot)</Label>
                     <div className="relative">
                       {!proofFile ? (
-                        <div
+                        <label
+                          htmlFor="prova-upload"
                           className="flex flex-col items-center justify-center border-2 border-dashed border-primary/20 bg-white/5 rounded-2xl p-6 transition-all hover:bg-white/10 group cursor-pointer"
-                          onClick={() => document.getElementById('prova-upload')?.click()}
                         >
                           <Input
                             id="prova-upload"
                             type="file"
-                            accept="image/*"
+                            accept="image/png, image/jpeg, image/jpg, image/webp"
                             onChange={(e) => handleFileChange(e.target.files?.[0] || null)}
                             className="hidden"
                             disabled={isAnalyzing}
@@ -918,9 +922,9 @@ export default function Rankings() {
                             <ImageIcon className="w-8 h-8 text-primary/40 group-hover:scale-110 transition-transform mb-2" />
                           )}
                           <p className="text-xs uppercase tracking-widest text-muted-foreground mt-2 text-center">
-                            {isAnalyzing ? "Analisando Print..." : "CLIQUE AQUI PARA ANEXAR (OU TOQUE NO CELULAR)"}
+                            {isAnalyzing ? "Analisando Print..." : "CLIQUE AQUI PARA ANEXAR O PRINT"}
                           </p>
-                        </div>
+                        </label>
                       ) : (
                         <div className="relative rounded-2xl border border-primary/20 overflow-hidden group">
                           <img
