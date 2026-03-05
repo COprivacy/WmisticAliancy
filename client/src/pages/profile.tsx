@@ -379,15 +379,46 @@ export default function Profile() {
                         </div>
                     )}
                     <div className="flex flex-col md:flex-row items-center gap-8 relative z-10">
-                        <div className="relative group cursor-pointer" onClick={() => fileInputRef.current?.click()}>
+                        <div className="relative group cursor-pointer" onClick={() => isOwnProfile && fileInputRef.current?.click()}>
                             <PlayerAvatar player={player} size="xl" />
-                            <div className="absolute inset-0 flex items-center justify-center bg-black/50 rounded-full opacity-0 group-hover:opacity-100 transition-opacity z-20">
-                                {uploadingAvatar ? (
-                                    <Loader2 className="w-8 h-8 text-white animate-spin" />
-                                ) : (
-                                    <Camera className="w-8 h-8 text-white" />
-                                )}
-                            </div>
+                            {isOwnProfile && (
+                                <>
+                                    <div className="absolute inset-0 flex items-center justify-center bg-black/50 rounded-full opacity-0 group-hover:opacity-100 transition-opacity z-20">
+                                        {uploadingAvatar ? (
+                                            <Loader2 className="w-8 h-8 text-white animate-spin" />
+                                        ) : (
+                                            <Camera className="w-8 h-8 text-white" />
+                                        )}
+                                    </div>
+                                    {player.avatar && (
+                                        <Button
+                                            variant="destructive"
+                                            size="icon"
+                                            className="absolute bottom-0 right-0 rounded-full w-8 h-8 z-30 opacity-0 group-hover:opacity-100 transition-opacity md:translate-x-1 md:translate-y-1"
+                                            onClick={async (e) => {
+                                                e.stopPropagation();
+                                                if (!confirm("Tem certeza que deseja remover sua foto de perfil?")) return;
+                                                try {
+                                                    setUploadingAvatar(true);
+                                                    const res = await fetch(`/api/players/${player.id}/avatar`, { method: 'DELETE' });
+                                                    if (res.ok) {
+                                                        toast({ title: "Foto Removida", description: "Seu avatar voltou ao padrão." });
+                                                        queryClient.invalidateQueries({ queryKey: [`/api/players/${accountId}/${zoneId}`] });
+                                                    } else {
+                                                        toast({ title: "Erro ao remover", variant: "destructive" });
+                                                    }
+                                                } catch {
+                                                    toast({ title: "Erro de conexão", variant: "destructive" });
+                                                } finally {
+                                                    setUploadingAvatar(false);
+                                                }
+                                            }}
+                                        >
+                                            <Trash2 className="w-4 h-4" />
+                                        </Button>
+                                    )}
+                                </>
+                            )}
                             <input
                                 ref={fileInputRef}
                                 type="file"
@@ -549,8 +580,8 @@ export default function Profile() {
                                                                                                 <span
                                                                                                     className={`text-[8px] font-black uppercase text-center leading-tight ${item.type === 'name_effect' ? item.effect : ''}`}
                                                                                                     style={{
-                                                                                                        color: item.type === 'name_color' ? item.effect : undefined,
-                                                                                                        fontFamily: item.type === 'name_font' ? item.effect : undefined
+                                                                                                        color: item.type === 'name_color' ? (item.effect || undefined) : undefined,
+                                                                                                        fontFamily: item.type === 'name_font' ? (item.effect || undefined) : undefined
                                                                                                     }}
                                                                                                 >
                                                                                                     ABC

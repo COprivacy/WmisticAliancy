@@ -557,6 +557,24 @@ export async function registerRoutes(
     res.status(503).json({ message: "Serviço de armazenamento não configurado." });
   }));
 
+  app.delete("/api/players/:id/avatar", requireAuth, asyncHandler(async (req, res) => {
+    const playerId = parseInt(req.params.id as string);
+    const playerToEdit = await storage.getPlayer(playerId);
+
+    if (!playerToEdit) {
+      res.status(404).json({ message: "Jogador não encontrado." });
+      return;
+    }
+
+    if (req.session.user?.id !== playerToEdit.accountId && !req.session.user?.isAdmin) {
+      res.status(403).json({ message: "Não autorizado a remover o avatar deste perfil." });
+      return;
+    }
+
+    const player = await storage.updatePlayer(playerId, { avatar: null });
+    res.json({ avatar: player.avatar, message: "Avatar removido com sucesso." });
+  }));
+
   // Update Player Profile (Bio, Socials)
   app.put("/api/players/:id", requireAuth, asyncHandler(async (req, res) => {
     const playerId = parseInt(req.params.id as string);
