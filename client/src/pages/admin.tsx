@@ -1179,11 +1179,37 @@ export default function Admin() {
 
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
               {rewardsList?.map(reward => (
-                <div key={reward.id} className="p-4 rounded-2xl bg-white/5 border border-white/5 flex items-center gap-4">
-                  <img src={reward.icon} className="w-12 h-12 rounded-lg object-cover bg-black/40" />
-                  <div className="flex-1">
-                    <span className="block font-black uppercase text-xs">{reward.name}</span>
-                    <Badge className="text-[8px] h-4 uppercase">{reward.rarity}</Badge>
+                <div key={reward.id} className="p-4 rounded-2xl bg-white/5 border border-white/5 flex items-center gap-4 transition-all hover:border-primary/20">
+                  <div className="w-12 h-12 rounded-lg overflow-hidden bg-black/40 shrink-0 border border-white/5">
+                    {reward.effect && reward.effect.match(/\.(mp4|webm)(\?.*)?$/i) ? (
+                      <video
+                        src={reward.effect}
+                        className="w-full h-full object-cover"
+                        autoPlay
+                        muted
+                        loop
+                        playsInline
+                      />
+                    ) : (
+                      <img
+                        src={reward.icon}
+                        className="w-full h-full object-cover"
+                        alt={reward.name}
+                        onError={(e) => {
+                          (e.target as HTMLImageElement).src = "https://images.unsplash.com/photo-1550684848-fac1c5b4e853?w=100&q=80";
+                        }}
+                      />
+                    )}
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <span className="block font-black uppercase text-xs truncate">{reward.name}</span>
+                    <Badge className={`text-[8px] h-4 uppercase ${reward.rarity === 'mythic' ? 'bg-purple-600' :
+                      reward.rarity === 'legendary' ? 'bg-yellow-600' :
+                        reward.rarity === 'epic' ? 'bg-green-600' :
+                          reward.rarity === 'rare' ? 'bg-blue-600' : 'bg-slate-600'
+                      }`}>
+                      {reward.rarity}
+                    </Badge>
                   </div>
                   <div className="flex gap-1">
                     <Button

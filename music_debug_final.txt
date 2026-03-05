@@ -1,0 +1,4 @@
+FOUND 3 MUSIC REWARDS
+ID: 69 | NAME: HIT | EFFECT: /uploads/custom/audio3.mp3
+ID: 67 | NAME: HIT | EFFECT: /uploads/custom/audio1.mp3
+ID: 68 | NAME: HIT | EFFECT: /uploads/custom/audio2.mp3

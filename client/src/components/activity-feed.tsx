@@ -17,7 +17,7 @@ type Reaction = {
 
 type Activity = {
     id: number;
-    type: 'match_approved' | 'rank_up' | 'reward_earned' | 'new_player' | 'daily_claim';
+    type: 'match_approved' | 'rank_up' | 'reward_earned' | 'new_player' | 'daily_claim' | 'match_drop';
     playerGameName: string;
     data: any;
     createdAt: string;
@@ -90,6 +90,7 @@ export default function ActivityFeed() {
             case 'reward_earned': return <Star className="w-4 h-4 text-purple-400" />;
             case 'new_player': return <UserPlus className="w-4 h-4 text-blue-400" />;
             case 'daily_claim': return <Star className="w-4 h-4 text-orange-400 animate-bounce" />;
+            case 'match_drop': return <Zap className="w-4 h-4 text-primary animate-pulse" />;
             default: return <Zap className="w-4 h-4 text-primary" />;
         }
     };
@@ -144,6 +145,12 @@ export default function ActivityFeed() {
                 return (
                     <p className="text-xs text-muted-foreground uppercase tracking-wider">
                         {name} resgatou sua honra diária (+{activity.data?.points} pts)! ✨
+                    </p>
+                );
+            case 'match_drop':
+                return (
+                    <p className="text-xs text-muted-foreground uppercase tracking-wider">
+                        {name} recebeu um drop de sorte: <span className={activity.data?.type === 'rank' ? 'text-emerald-400 font-bold' : 'text-orange-400 font-bold'}>{activity.data?.message}</span> 🍀
                     </p>
                 );
             default:

@@ -2,7 +2,7 @@ import { useState, useRef, useEffect } from "react";
 import { useQuery, useMutation } from "@tanstack/react-query";
 import { useAuth } from "@/lib/auth";
 import { queryClient, apiRequest } from "@/lib/queryClient";
-import { Send, MessageSquare, AlertCircle, Flame } from "lucide-react";
+import { Send, MessageSquare, AlertCircle, Flame, Trash2, Loader2 } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { ScrollArea } from "@/components/ui/scroll-area";
@@ -17,6 +17,17 @@ import {
     DropdownMenuItem,
     DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
+import {
+    AlertDialog,
+    AlertDialogAction,
+    AlertDialogCancel,
+    AlertDialogContent,
+    AlertDialogDescription,
+    AlertDialogFooter,
+    AlertDialogHeader,
+    AlertDialogTitle,
+    AlertDialogTrigger,
+} from "@/components/ui/alert-dialog";
 
 type GlobalMessage = {
     id: number;
@@ -62,6 +73,37 @@ export default function Chat() {
             toast({
                 title: "Erro ao enviar",
                 description: err.message || "Tente novamente mais tarde.",
+                variant: "destructive"
+            });
+        }
+    });
+
+    const clearMessagesMutation = useMutation({
+        mutationFn: async () => {
+            const res = await apiRequest("DELETE", "/api/chat/messages");
+            const contentType = res.headers.get("content-type");
+            if (contentType && contentType.includes("application/json")) {
+                return await res.json();
+            }
+            return { success: true }; // Fallback if server returned text but status was 2xx
+        },
+        onSuccess: async () => {
+            // Primeiro invalidamos e limpamos localmente
+            await queryClient.cancelQueries({ queryKey: ["/api/chat/messages"] });
+            queryClient.setQueryData(["/api/chat/messages"], []);
+            await queryClient.invalidateQueries({ queryKey: ["/api/chat/messages"] });
+
+            toast({
+                title: "Arena Limpa",
+                description: "Todas as mensagens foram removidas por ordem superior.",
+            });
+            // Opcional: recarregar do servidor imediatamente para garantir que está sincronizado
+            queryClient.refetchQueries({ queryKey: ["/api/chat/messages"] });
+        },
+        onError: (err: Error) => {
+            toast({
+                title: "Erro ao limpar",
+                description: err.message || "Não foi possível limpar o chat.",
                 variant: "destructive"
             });
         }
@@ -114,18 +156,47 @@ export default function Chat() {
                 }}
             />
 
-            <div className="flex items-center gap-3 mb-6 relative z-10">
-                <div className="p-3 bg-primary/10 rounded-xl border border-primary/20 shadow-[0_0_15px_rgba(234,179,8,0.2)]">
-                    <MessageSquare className="w-8 h-8 text-primary drop-shadow-[0_0_8px_rgba(234,179,8,0.5)]" />
+            <div className="flex items-center justify-between mb-6 relative z-10 w-full px-2">
+                <div className="flex items-center gap-3">
+                    <div className="p-3 bg-primary/10 rounded-xl border border-primary/20 shadow-[0_0_15px_rgba(234,179,8,0.2)]">
+                        <MessageSquare className="w-8 h-8 text-primary drop-shadow-[0_0_8px_rgba(234,179,8,0.5)]" />
+                    </div>
+                    <div>
+                        <h1 className="text-3xl font-black uppercase tracking-wider text-primary drop-shadow-[0_0_10px_rgba(234,179,8,0.3)]">
+                            Chat Global
+                        </h1>
+                        <p className="text-muted-foreground text-sm uppercase tracking-widest font-bold">
+                            Desafie outros guerreiros e compartilhe suas glórias.
+                        </p>
+                    </div>
                 </div>
-                <div>
-                    <h1 className="text-3xl font-black uppercase tracking-wider text-primary drop-shadow-[0_0_10px_rgba(234,179,8,0.3)]">
-                        Chat Global
-                    </h1>
-                    <p className="text-muted-foreground text-sm uppercase tracking-widest font-bold">
-                        Desafie outros guerreiros e compartilhe suas glórias.
-                    </p>
-                </div>
+
+                {user?.isAdmin && (
+                    <AlertDialog>
+                        <AlertDialogTrigger asChild>
+                            <Button variant="ghost" className="h-12 w-12 rounded-xl border border-rose-500/20 text-rose-500 hover:bg-rose-500 hover:text-white transition-all shadow-lg hover:shadow-rose-500/20">
+                                {clearMessagesMutation.isPending ? <Loader2 className="w-5 h-5 animate-spin" /> : <Trash2 className="w-5 h-5" />}
+                            </Button>
+                        </AlertDialogTrigger>
+                        <AlertDialogContent className="bg-[#020617] border-rose-500/30 backdrop-blur-xl">
+                            <AlertDialogHeader>
+                                <AlertDialogTitle className="uppercase tracking-widest text-rose-500 font-black text-xl">Limpar Arena</AlertDialogTitle>
+                                <AlertDialogDescription className="uppercase text-xs font-bold opacity-70 leading-relaxed">
+                                    Deseja apagar todas as mensagens do chat global permanentemente? Esta ação expulsará os ecos do passado e não pode ser desfeita.
+                                </AlertDialogDescription>
+                            </AlertDialogHeader>
+                            <AlertDialogFooter className="mt-4">
+                                <AlertDialogCancel className="bg-white/5 border-white/10 uppercase font-black text-[10px] tracking-widest hover:bg-white/10 h-12">Me perdi</AlertDialogCancel>
+                                <AlertDialogAction
+                                    onClick={() => clearMessagesMutation.mutate()}
+                                    className="bg-rose-600 hover:bg-rose-700 uppercase font-black text-[10px] tracking-widest h-12 shadow-lg shadow-rose-600/20"
+                                >
+                                    LIMPAR TUDO 🧹
+                                </AlertDialogAction>
+                            </AlertDialogFooter>
+                        </AlertDialogContent>
+                    </AlertDialog>
+                )}
             </div>
 
             <div className="flex-1 bg-card/40 backdrop-blur-sm border border-border/50 rounded-2xl flex flex-col overflow-hidden shadow-2xl relative">

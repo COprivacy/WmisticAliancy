@@ -3,10 +3,10 @@ import { Reward } from "@shared/schema";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { motion, AnimatePresence } from "framer-motion";
-import { Trophy, Star, Sparkles, Shield, Loader2, ChevronLeft, Info, X } from "lucide-react";
+import { Trophy, Star, Sparkles, Shield, Loader2, ChevronLeft, Info, X, Play, Pause, Music } from "lucide-react";
 import { Link } from "wouter";
 import { Button } from "@/components/ui/button";
-import { useState } from "react";
+import { useState, useRef, useEffect } from "react";
 import {
     Dialog,
     DialogContent,
@@ -18,9 +18,38 @@ import {
 
 export default function Rewards() {
     const [selectedReward, setSelectedReward] = useState<Reward | null>(null);
+    const [previewingId, setPreviewingId] = useState<number | null>(null);
+    const audioRef = useRef<HTMLAudioElement | null>(null);
+
     const { data: rewards, isLoading } = useQuery<Reward[]>({
         queryKey: ["/api/rewards"],
     });
+
+    useEffect(() => {
+        audioRef.current = new Audio();
+        audioRef.current.onended = () => setPreviewingId(null);
+
+        return () => {
+            if (audioRef.current) {
+                audioRef.current.pause();
+                audioRef.current = null;
+            }
+        };
+    }, []);
+
+    const togglePreview = (e: React.MouseEvent | React.FocusEvent, reward: Reward) => {
+        e.stopPropagation();
+        if (!audioRef.current) return;
+
+        if (previewingId === reward.id) {
+            audioRef.current.pause();
+            setPreviewingId(null);
+        } else {
+            audioRef.current.src = reward.effect || "";
+            audioRef.current.play().catch(console.error);
+            setPreviewingId(reward.id);
+        }
+    };
 
     const getRarityColor = (rarity: string) => {
         switch (rarity) {
@@ -74,7 +103,7 @@ export default function Rewards() {
                     </Link>
                     <div className="text-right">
                         <Badge className="bg-primary text-primary-foreground uppercase tracking-widest px-4 mb-2">Relíquias da Temporada</Badge>
-                        <h1 className="text-4xl md:text-6xl font-serif font-black uppercase tracking-tighter text-glow">Santuário de Recompensas</h1>
+                        <h1 className="text-4xl md:text-6xl font-serif font-black uppercase tracking-tighter text-glow">Loja WMythic</h1>
                     </div>
                 </div>
 
@@ -118,8 +147,18 @@ export default function Rewards() {
                                     </div>
 
                                     {/* Quick Info Overlay */}
-                                    <div className="absolute inset-0 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity duration-300">
-                                        <div className="p-3 rounded-full bg-primary/20 backdrop-blur-md border border-primary/30 text-primary">
+                                    <div className="absolute inset-0 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity duration-300 gap-4">
+                                        {reward.type === 'music' && (
+                                            <Button
+                                                variant="outline"
+                                                size="icon"
+                                                className="w-12 h-12 rounded-full bg-primary/20 backdrop-blur-md border border-primary/30 text-primary hover:bg-primary hover:text-white transition-all scale-90 group-hover:scale-100"
+                                                onClick={(e) => togglePreview(e, reward)}
+                                            >
+                                                {previewingId === reward.id ? <Pause className="w-6 h-6" /> : <Play className="w-6 h-6 ml-1" />}
+                                            </Button>
+                                        )}
+                                        <div className="p-3 rounded-full bg-white/10 backdrop-blur-md border border-white/20 text-white scale-90 group-hover:scale-100">
                                             <Info className="w-6 h-6" />
                                         </div>
                                     </div>
@@ -199,6 +238,27 @@ export default function Rewards() {
                                             <DialogDescription className="text-sm text-muted-foreground leading-loose italic">
                                                 "{selectedReward.description}"
                                             </DialogDescription>
+
+                                            {selectedReward.type === 'music' && (
+                                                <div className="flex flex-col gap-4 p-6 rounded-3xl bg-primary/10 border border-primary/20 animate-in fade-in slide-in-from-bottom-2">
+                                                    <div className="flex items-center gap-4">
+                                                        <div className={`p-3 rounded-2xl bg-primary/20 text-primary ${previewingId === selectedReward.id ? 'animate-pulse' : ''}`}>
+                                                            <Music className="w-6 h-6" />
+                                                        </div>
+                                                        <div className="flex-1">
+                                                            <p className="text-[10px] font-black uppercase tracking-[0.2em] text-primary/70 mb-1">Prévia da Faixa</p>
+                                                            <p className="text-sm font-bold text-white uppercase tracking-wider">{selectedReward.name}</p>
+                                                        </div>
+                                                        <Button
+                                                            size="lg"
+                                                            className="rounded-2xl bg-primary text-white hover:bg-primary/80 h-14 w-14 p-0"
+                                                            onClick={(e) => togglePreview(e, selectedReward)}
+                                                        >
+                                                            {previewingId === selectedReward.id ? <Pause className="w-6 h-6" /> : <Play className="w-6 h-6 ml-1" />}
+                                                        </Button>
+                                                    </div>
+                                                </div>
+                                            )}
                                         </div>
 
                                         <div className="pt-8 space-y-4">

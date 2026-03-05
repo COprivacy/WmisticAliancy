@@ -28,7 +28,10 @@ import {
     Star,
     Shield,
     Zap,
-    Trash2
+    Trash2,
+    Play,
+    Pause,
+    Music
 } from "lucide-react";
 import { useAuth } from "@/lib/auth";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogFooter, DialogDescription } from "@/components/ui/dialog";
@@ -66,7 +69,32 @@ export default function Profile() {
     const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
     const [selectedReward, setSelectedReward] = useState<Reward | null>(null);
     const audioRef = useRef<HTMLAudioElement>(null);
+    const previewAudioRef = useRef<HTMLAudioElement | null>(null);
     const [isPlaying, setIsPlaying] = useState(false);
+    const [previewingId, setPreviewingId] = useState<number | null>(null);
+
+    useEffect(() => {
+        previewAudioRef.current = new Audio();
+        previewAudioRef.current.onended = () => setPreviewingId(null);
+        return () => {
+            previewAudioRef.current?.pause();
+            previewAudioRef.current = null;
+        };
+    }, []);
+
+    const togglePreview = (e: React.MouseEvent, reward: Reward) => {
+        e.stopPropagation();
+        if (!previewAudioRef.current) return;
+
+        if (previewingId === reward.id) {
+            previewAudioRef.current.pause();
+            setPreviewingId(null);
+        } else {
+            previewAudioRef.current.src = reward.effect || "";
+            previewAudioRef.current.play().catch(console.error);
+            setPreviewingId(reward.id);
+        }
+    };
 
     // Form state for profile editing
     const [editBio, setEditBio] = useState("");
@@ -164,6 +192,26 @@ export default function Profile() {
             setEditYoutube(data.player.youtube || "");
         }
     }, [data]);
+
+    useEffect(() => {
+        const attemptPlay = async () => {
+            if (audioRef.current && data?.player.activeMusic) {
+                try {
+                    // Pequena pausa para garantir que o elemento áudio está pronto e o browser permite
+                    await audioRef.current.play();
+                    setIsPlaying(true);
+                } catch (err) {
+                    // Browser bloqueou o autoplay (comum se não houver interação prévia)
+                    console.log("Autoplay aguardando interação ou bloqueado.");
+                    setIsPlaying(false);
+                }
+            }
+        };
+
+        // Resetar estado se a música mudar
+        setIsPlaying(false);
+        attemptPlay();
+    }, [data?.player.activeMusic]);
 
     // Calculate topHeroes and winRate here
     const sortedHistory = data?.history.sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()) || [];
@@ -270,23 +318,39 @@ export default function Profile() {
                     )}
                     {player.activeMusic && (
                         <div className="absolute top-4 right-8 z-50">
-                            <audio ref={audioRef} src={player.activeMusic} loop />
+                            <audio
+                                key={player.activeMusic}
+                                ref={audioRef}
+                                src={player.activeMusic}
+                                loop
+                                preload="auto"
+                                autoPlay
+                            />
                             <Button
                                 variant="outline"
                                 size="icon"
                                 className="rounded-full bg-white/10 border-white/20 h-10 w-10 hover:bg-white/20 transition-all animate-pulse"
-                                onClick={() => {
+                                onClick={async () => {
                                     if (audioRef.current) {
-                                        if (isPlaying) {
-                                            audioRef.current.pause();
-                                        } else {
-                                            audioRef.current.play();
+                                        try {
+                                            if (isPlaying) {
+                                                audioRef.current.pause();
+                                            } else {
+                                                await audioRef.current.play();
+                                            }
+                                            setIsPlaying(!isPlaying);
+                                        } catch (err) {
+                                            console.error("Erro ao tocar música:", err);
+                                            toast({
+                                                title: "Erro no áudio",
+                                                description: "Não foi possível carregar a trilha sonora.",
+                                                variant: "destructive"
+                                            });
                                         }
-                                        setIsPlaying(!isPlaying);
                                     }
                                 }}
                             >
-                                <Zap className={`w-4 h-4 ${isPlaying ? 'text-primary fill-primary' : 'text-white'}`} />
+                                <Zap className={`w-4 h-4 ${isPlaying ? 'text-primary fill-primary animate-pulse' : 'text-white'}`} />
                             </Button>
                         </div>
                     )}
@@ -460,6 +524,16 @@ export default function Profile() {
                                                                                         >
                                                                                             {customizeMutation.isPending ? <Loader2 className="w-3 h-3 animate-spin" /> : (active === item.effect ? "REMOVER" : "EQUIPAR")}
                                                                                         </Button>
+                                                                                        {type === 'music' && (
+                                                                                            <Button
+                                                                                                size="sm"
+                                                                                                variant="ghost"
+                                                                                                className="h-7 w-7 p-0 rounded-lg bg-primary/10 text-primary hover:bg-primary hover:text-white"
+                                                                                                onClick={(e) => togglePreview(e, item)}
+                                                                                            >
+                                                                                                {previewingId === item.id ? <Pause className="w-4 h-4" /> : <Play className="w-4 h-4 ml-0.5" />}
+                                                                                            </Button>
+                                                                                        )}
                                                                                         {active !== item.effect && (
                                                                                             <Button
                                                                                                 size="sm"
@@ -791,65 +865,107 @@ export default function Profile() {
                         <div className="h-0.5 flex-1 bg-gradient-to-r from-yellow-500/30 to-transparent" />
                     </div>
 
-                    {rewards && rewards.length > 0 ? (
-                        <div className="grid grid-cols-2 md:grid-cols-4 gap-6">
-                            {rewards.map((reward, i) => (
-                                <motion.div
-                                    key={i}
-                                    whileHover={{ scale: 1.05 }}
-                                    className="group relative cursor-pointer"
-                                    onClick={() => setSelectedReward(reward)}
-                                >
-                                    <div className={`absolute inset-0 rounded-3xl blur-2xl opacity-20 group-hover:opacity-40 transition-opacity ${reward.rarity === 'mythic' ? 'bg-purple-500' :
-                                        reward.rarity === 'legendary' ? 'bg-yellow-500' :
-                                            reward.rarity === 'epic' ? 'bg-green-500' :
-                                                reward.rarity === 'rare' ? 'bg-blue-500' : 'bg-slate-500'
-                                        }`} />
-                                    <Card className="bg-[#020617]/40 border-white/5 backdrop-blur-3xl overflow-hidden h-full rounded-3xl group-hover:border-primary/30 transition-all shadow-2xl">
-                                        <div className="aspect-square relative overflow-hidden flex items-center justify-center p-4">
-                                            <img
-                                                src={reward.icon}
-                                                className="w-full h-full object-contain filter drop-shadow-[0_0_15px_rgba(255,255,255,0.2)]"
-                                                alt={reward.name}
-                                                onError={(e) => {
-                                                    (e.target as HTMLImageElement).src = "https://images.unsplash.com/photo-1550684848-fac1c5b4e853?w=500&q=80";
-                                                }}
-                                            />
-                                            <Badge className={`absolute bottom-2 left-1/2 -translate-x-1/2 uppercase text-[10px] font-black ${reward.rarity === 'mythic' ? 'bg-purple-600' :
-                                                reward.rarity === 'legendary' ? 'bg-yellow-600' :
-                                                    reward.rarity === 'epic' ? 'bg-green-600' :
-                                                        reward.rarity === 'rare' ? 'bg-blue-600' : 'bg-slate-600'
-                                                }`}>
-                                                {reward.rarity}
-                                            </Badge>
+                    {(() => {
+                        if (!rewards || rewards.length === 0) return (
+                            <Card className="bg-white/5 border-dashed border-white/10 p-12 text-center rounded-3xl">
+                                <p className="text-muted-foreground italic text-sm tracking-widest uppercase mb-4">A vitrine está vazia... por enquanto.</p>
+                                <Link href="/rankings">
+                                    <Button variant="outline" className="text-xs font-black uppercase tracking-widest border-primary/20 hover:bg-primary/5">Buscar Glória</Button>
+                                </Link>
+                            </Card>
+                        );
 
-                                            {/* Quick Info Overlay */}
-                                            <div className="absolute inset-0 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity duration-300">
-                                                <div className="p-2 rounded-full bg-primary/20 backdrop-blur-md border border-primary/30 text-primary">
-                                                    <Info className="w-4 h-4" />
+                        // Group by ID to show multipliers instead of duplicates, but keep all items accessible
+                        const rewardCounts = new Map<number, number>();
+                        const uniqueRewardsList: Reward[] = [];
+
+                        rewards.forEach(r => {
+                            const count = rewardCounts.get(r.id) || 0;
+                            rewardCounts.set(r.id, count + 1);
+                            if (count === 0) uniqueRewardsList.push(r);
+                        });
+
+                        return (
+                            <div className="grid grid-cols-2 md:grid-cols-4 gap-6">
+                                {uniqueRewardsList.map((reward) => {
+                                    const qty = rewardCounts.get(reward.id) || 1;
+                                    return (
+                                        <motion.div
+                                            key={reward.id}
+                                            whileHover={{ scale: 1.05 }}
+                                            className="group relative cursor-pointer"
+                                            onClick={() => setSelectedReward(reward)}
+                                        >
+                                            <div className={`absolute inset-0 rounded-3xl blur-2xl opacity-20 group-hover:opacity-40 transition-opacity ${reward.rarity === 'mythic' ? 'bg-purple-500' :
+                                                reward.rarity === 'legendary' ? 'bg-yellow-500' :
+                                                    reward.rarity === 'epic' ? 'bg-green-500' :
+                                                        reward.rarity === 'rare' ? 'bg-blue-500' : 'bg-slate-500'
+                                                }`} />
+                                            <Card className="bg-[#020617]/40 border-white/5 backdrop-blur-3xl overflow-hidden h-full rounded-3xl group-hover:border-primary/30 transition-all shadow-2xl">
+                                                <div className="aspect-square relative overflow-hidden flex items-center justify-center">
+                                                    {reward.effect && reward.effect.match(/\.(mp4|webm)(\?.*)?$/i) ? (
+                                                        <video
+                                                            src={reward.effect}
+                                                            className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-110"
+                                                            autoPlay
+                                                            muted
+                                                            loop
+                                                            playsInline
+                                                        />
+                                                    ) : (
+                                                        <img
+                                                            src={reward.icon}
+                                                            className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-110 filter drop-shadow-[0_0_15px_rgba(255,255,255,0.2)]"
+                                                            alt={reward.name}
+                                                            onError={(e) => {
+                                                                (e.target as HTMLImageElement).src = "https://images.unsplash.com/photo-1550684848-fac1c5b4e853?w=500&q=80";
+                                                            }}
+                                                        />
+                                                    )}
+
+                                                    {qty > 1 && (
+                                                        <div className="absolute top-2 left-2 px-2 py-0.5 rounded-full bg-primary text-primary-foreground text-[10px] font-black shadow-lg z-30">
+                                                            {qty}X
+                                                        </div>
+                                                    )}
+
+                                                    {reward.type === 'music' && (
+                                                        <div className="absolute top-2 right-2 p-1.5 rounded-full bg-primary/20 backdrop-blur-md border border-primary/30 text-primary">
+                                                            <Music className="w-3 h-3" />
+                                                        </div>
+                                                    )}
+
+                                                    <div className="absolute inset-0 bg-gradient-to-t from-[#020617] via-transparent to-transparent opacity-60" />
+
+                                                    <Badge className={`absolute bottom-4 left-1/2 -translate-x-1/2 uppercase text-[10px] font-black ${reward.rarity === 'mythic' ? 'bg-purple-600 shadow-[0_0_10px_rgba(168,85,247,0.5)]' :
+                                                        reward.rarity === 'legendary' ? 'bg-yellow-600 shadow-[0_0_10px_rgba(234,179,8,0.5)]' :
+                                                            reward.rarity === 'epic' ? 'bg-green-600' :
+                                                                reward.rarity === 'rare' ? 'bg-blue-600' : 'bg-slate-600'
+                                                        }`}>
+                                                        {reward.rarity}
+                                                    </Badge>
+
+                                                    <div className="absolute inset-0 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity duration-300">
+                                                        <div className="p-2 rounded-full bg-primary/20 backdrop-blur-md border border-primary/30 text-primary">
+                                                            <Info className="w-4 h-4" />
+                                                        </div>
+                                                    </div>
                                                 </div>
-                                            </div>
-                                        </div>
-                                        <div className="p-4 text-center border-t border-white/5">
-                                            <span className={`text-xs font-black uppercase tracking-tighter truncate block mb-2 ${reward.effect || ''}`}>{reward.name}</span>
-                                            <div className="flex justify-center gap-0.5">
-                                                {Array.from({ length: reward.stars || 1 }).map((_, s) => (
-                                                    <Star key={s} className="w-2.5 h-2.5 fill-primary text-primary" />
-                                                ))}
-                                            </div>
-                                        </div>
-                                    </Card>
-                                </motion.div>
-                            ))}
-                        </div>
-                    ) : (
-                        <Card className="bg-white/5 border-dashed border-white/10 p-12 text-center rounded-3xl">
-                            <p className="text-muted-foreground italic text-sm tracking-widest uppercase mb-4">A vitrine está vazia... por enquanto.</p>
-                            <Link href="/rankings">
-                                <Button variant="outline" className="text-xs font-black uppercase tracking-widest border-primary/20 hover:bg-primary/5">Buscar Glória</Button>
-                            </Link>
-                        </Card>
-                    )}
+                                                <div className="p-4 text-center border-t border-white/5">
+                                                    <span className={`text-xs font-black uppercase tracking-tighter truncate block mb-2 ${reward.type === 'relic' ? (reward.effect || '') : ''}`}>{reward.name}</span>
+                                                    <div className="flex justify-center gap-0.5">
+                                                        {Array.from({ length: reward.stars || 1 }).map((_, s) => (
+                                                            <Star key={s} className="w-2.5 h-2.5 fill-primary text-primary" />
+                                                        ))}
+                                                    </div>
+                                                </div>
+                                            </Card>
+                                        </motion.div>
+                                    );
+                                })}
+                            </div>
+                        );
+                    })()}
 
                     {/* Reward Detail Dialog */}
                     <Dialog open={!!selectedReward} onOpenChange={(open) => !open && setSelectedReward(null)}>
@@ -862,11 +978,22 @@ export default function Profile() {
                                         className="flex flex-col md:flex-row h-full"
                                     >
                                         <div className="w-full md:w-1/2 relative bg-black">
-                                            <img
-                                                src={selectedReward.icon}
-                                                className="w-full h-full object-cover"
-                                                alt={selectedReward.name}
-                                            />
+                                            {selectedReward.effect && selectedReward.effect.match(/\.(mp4|webm)(\?.*)?$/i) ? (
+                                                <video
+                                                    src={selectedReward.effect}
+                                                    className="w-full h-full object-cover"
+                                                    autoPlay
+                                                    muted
+                                                    loop
+                                                    playsInline
+                                                />
+                                            ) : (
+                                                <img
+                                                    src={selectedReward.icon}
+                                                    className="w-full h-full object-cover"
+                                                    alt={selectedReward.name}
+                                                />
+                                            )}
                                             <div className="absolute inset-0 bg-gradient-to-t from-black via-transparent to-transparent" />
                                         </div>
 
@@ -874,12 +1001,29 @@ export default function Profile() {
                                             <div className="space-y-6">
                                                 <div className="space-y-2">
                                                     <Badge className="uppercase font-black tracking-[0.2em] bg-primary/20 text-primary border-primary/20">
-                                                        {selectedReward.rarity}
+                                                        {selectedReward.rarity} • {
+                                                            selectedReward.type === 'relic' ? 'Relíquia' :
+                                                                selectedReward.type === 'frame' ? 'Moldura' :
+                                                                    selectedReward.type === 'background' ? 'Fundo' :
+                                                                        selectedReward.type === 'music' ? 'Trilha' : selectedReward.type
+                                                        }
                                                     </Badge>
-                                                    <DialogTitle className={`text-4xl font-serif font-black uppercase leading-tight ${selectedReward.effect || 'text-white'}`}>
+                                                    <DialogTitle className={`text-4xl font-serif font-black uppercase leading-tight ${selectedReward.type === 'relic' ? (selectedReward.effect || 'text-white') : 'text-white'}`}>
                                                         {selectedReward.name}
                                                     </DialogTitle>
                                                 </div>
+
+                                                {selectedReward.type === 'music' && (
+                                                    <div className="py-2">
+                                                        <Button
+                                                            onClick={(e) => togglePreview(e, selectedReward)}
+                                                            className="bg-primary/20 hover:bg-primary/30 text-primary border border-primary/30 gap-2"
+                                                        >
+                                                            {previewingId === selectedReward.id ? <Pause className="w-4 h-4" /> : <Play className="w-4 h-4" />}
+                                                            {previewingId === selectedReward.id ? "PAUSAR PRÉVIA" : "OUVIR TRILHA"}
+                                                        </Button>
+                                                    </div>
+                                                )}
 
                                                 <div className="flex gap-1 py-4 border-y border-white/5">
                                                     {Array.from({ length: selectedReward.stars || 1 }).map((_, s) => (

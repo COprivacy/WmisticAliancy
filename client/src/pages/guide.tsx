@@ -72,7 +72,7 @@ export default function Guide() {
                         },
                         {
                             icon: CalendarCheck, color: "text-primary", bg: "bg-primary/10 border-primary/20",
-                            title: "Presença Diária", value: "+15 PTS",
+                            title: "Presença Diária", value: "+5 PTS",
                             desc: "Clique em 'Resgatar Honra' uma vez por dia nos Rankings. Simples assim — aparecer todos os dias já é um ato de glória."
                         },
                         {
@@ -155,8 +155,8 @@ export default function Guide() {
 
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                     {[
-                        { icon: CalendarCheck, title: "Presença Diária", amount: "+15 Glória", desc: "Cada resgate diário dá também 15 Pontos de Glória além dos pontos de rank." },
-                        { icon: Swords, title: "Vitória em Duelo", amount: "+15 Glória", desc: "Quando uma partida é aprovada, o vencedor recebe 15 pontos de Glória como bônus extra." },
+                        { icon: CalendarCheck, title: "Presença Diária", amount: "+5 Glória", desc: "Cada resgate diário dá também 5 Pontos de Glória além dos pontos de rank." },
+                        { icon: Swords, title: "Vitória em Duelo", amount: "+5 Glória", desc: "Quando uma partida é aprovada, o vencedor recebe 5 pontos de Glória como bônus extra." },
                         { icon: Trophy, title: "Fim de Temporada", amount: "Até +2.000 Glória", desc: "Ao resetar a temporada, os melhores jogadores recebem um bônus massivo em Glória. 🏆 1º lugar ganha 2.000, 🥈 2º lugar 1.000, 🥉 3º lugar 500." },
                         { icon: Coins, title: "Recarga PIX", amount: "Vários valores", desc: "Você pode comprar Pontos de Glória diretamente na seção de Glória dos Rankings. Peça ao administrador o pacote disponível." },
                     ].map((item, i) => (
@@ -206,7 +206,10 @@ export default function Guide() {
                                 <Badge className="bg-purple-500/30 text-purple-300 border-purple-400/30 font-black uppercase text-[9px]">Novo!</Badge>
                             </div>
                             <p className="text-sm text-muted-foreground leading-relaxed max-w-lg">
-                                A cada vitória aprovada em combate, o guerreiro vencedor tem <strong className="text-purple-300">25% de chance</strong> de receber automaticamente uma relíquia aleatória sem gastar Glória. Quanto mais batalhar, mais chances tem de colecionar itens raros!
+                                A cada vitória aprovada em combate, o guerreiro vencedor tem <strong className="text-purple-300">25% de chance</strong> de receber um drop aleatório. O destino pode te dar:
+                                <span className="block mt-2 text-white/80">• Uma <strong className="text-purple-300">Relíquia Comum</strong> aleatória</span>
+                                <span className="block text-white/80">• Um bônus de <strong className="text-emerald-400">+15 Pontos</strong> de Rank</span>
+                                <span className="block text-white/80">• Um bônus de <strong className="text-orange-400">+5 Moedas</strong> de Glória</span>
                             </p>
                         </div>
                     </div>
@@ -217,7 +220,7 @@ export default function Guide() {
 
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                     {[
-                        { icon: Gift, title: "Drop por Vitória", color: "text-purple-400", border: "border-purple-500/20", desc: "25% de chance de ganhar uma relíquia ao vencer um duelo aprovado. O drop é automático e aparece no seu perfil!" },
+                        { icon: Gift, title: "Drop por Vitória", color: "text-purple-400", border: "border-purple-500/20", desc: "25% de chance de ganhar uma relíquia, pontos de rank ou glória ao vencer um duelo. O prêmio cai direto na sua conta!" },
                         { icon: Trophy, title: "Prêmios de Ranking", color: "text-primary", border: "border-primary/20", desc: "Ao final da temporada, o admin distribui relíquias exclusivas e únicas para os melhores colocados. Itens impossíveis de comprar." },
                         { icon: Star, title: "Compra na Loja", color: "text-orange-400", border: "border-orange-500/20", desc: "Use seus Pontos de Glória para comprar relíquias disponíveis na loja. Vá em Rankings → Glória e veja os itens disponíveis." },
                         { icon: Shield, title: "Presente do Admin", color: "text-emerald-400", border: "border-emerald-500/20", desc: "Administradores podem presentear relíquias especiais para jogadores como reconhecimento por feitos heroicos dentro da guilda." },

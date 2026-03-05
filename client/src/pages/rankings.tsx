@@ -1,4 +1,4 @@
-﻿import { useState } from "react";
+﻿import { useState, useRef, useEffect } from "react";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Link } from "wouter";
 import { Button } from "@/components/ui/button";
@@ -29,7 +29,10 @@ import {
   Sparkles,
   Award,
   Shield,
-  Timer as ClockIcon
+  Timer as ClockIcon,
+  Play,
+  Pause,
+  Music
 } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import { useQuery, useMutation } from "@tanstack/react-query";
@@ -65,6 +68,31 @@ export default function Rankings() {
   const [isAnalyzing, setIsAnalyzing] = useState(false);
   const [ocrResult, setOcrResult] = useState<{ isVictory: boolean, detectedNames: string[] } | null>(null);
   const [storeCategory, setStoreCategory] = useState<string>("relic");
+  const [previewingId, setPreviewingId] = useState<number | null>(null);
+  const audioRef = useRef<HTMLAudioElement | null>(null);
+
+  useEffect(() => {
+    audioRef.current = new Audio();
+    audioRef.current.onended = () => setPreviewingId(null);
+    return () => {
+      audioRef.current?.pause();
+      audioRef.current = null;
+    };
+  }, []);
+
+  const togglePreview = (e: React.MouseEvent, reward: Reward) => {
+    e.stopPropagation();
+    if (!audioRef.current) return;
+
+    if (previewingId === reward.id) {
+      audioRef.current.pause();
+      setPreviewingId(null);
+    } else {
+      audioRef.current.src = reward.effect || "";
+      audioRef.current.play().catch(console.error);
+      setPreviewingId(reward.id);
+    }
+  };
 
   const heroOptions = MLBB_HEROES.map(h => ({ label: h, value: h }));
 
@@ -777,7 +805,7 @@ export default function Rankings() {
                 disabled={isDailyClaimed() || dailyClaimMutation.isPending}
                 className={`w-full h-10 uppercase text-xs font-black tracking-widest rounded-xl transition-all ${isDailyClaimed() ? 'bg-white/5 text-muted-foreground' : 'bg-primary text-primary-foreground hover:bg-white hover:text-primary shadow-xl shadow-primary/20'}`}
               >
-                {dailyClaimMutation.isPending ? <Loader2 className="w-4 h-4 animate-spin" /> : (isDailyClaimed() ? "RESGATADO" : "+15 PONTOS")}
+                {dailyClaimMutation.isPending ? <Loader2 className="w-4 h-4 animate-spin" /> : (isDailyClaimed() ? "RESGATADO" : "+5 PONTOS")}
               </Button>
 
               <p className="text-[10px] uppercase tracking-widest text-muted-foreground font-bold">
@@ -915,7 +943,7 @@ export default function Rankings() {
               <DialogTrigger asChild>
                 <Button variant="outline" className="w-full h-14 border-primary/20 bg-primary/5 hover:bg-primary/10 text-primary font-bold uppercase tracking-widest group">
                   <Gift className="w-5 h-5 mr-3 group-hover:bounce" />
-                  Sacrário de Relíquias
+                  Loja WMythic
                 </Button>
               </DialogTrigger>
               <DialogContent className="max-w-4xl bg-[#020617]/95 border-primary/20 backdrop-blur-3xl p-8 overflow-y-auto max-h-[90vh]">
@@ -924,7 +952,7 @@ export default function Rankings() {
                     <div>
                       <DialogTitle className="text-3xl font-serif font-black uppercase tracking-widest flex items-center gap-3 italic">
                         <Sparkles className="w-6 h-6 text-primary animate-pulse" />
-                        Sacrário de Relíquias
+                        Loja WMythic
                       </DialogTitle>
                       <DialogDescription className="text-primary/60 font-bold uppercase tracking-widest text-xs mt-1">
                         Consuma seus Pontos de Glória por poder ancestral
@@ -994,6 +1022,18 @@ export default function Rankings() {
                                     />
                                   ) : (
                                     <img src={reward.icon} className="w-full h-full object-cover group-hover:scale-110 transition-transform" alt={reward.name} />
+                                  )}
+                                  {reward.type === 'music' && (
+                                    <div className="absolute inset-0 flex items-center justify-center bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity">
+                                      <Button
+                                        variant="ghost"
+                                        size="icon"
+                                        className="w-10 h-10 rounded-full bg-primary/20 backdrop-blur-md border border-primary/30 text-primary hover:bg-primary hover:text-white"
+                                        onClick={(e) => togglePreview(e, reward)}
+                                      >
+                                        {previewingId === reward.id ? <Pause className="w-5 h-5" /> : <Play className="w-5 h-5 ml-0.5" />}
+                                      </Button>
+                                    </div>
                                   )}
                                 </div>
                                 <div className="flex-1 space-y-1">

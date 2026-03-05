@@ -69,6 +69,7 @@ export interface IStorage {
   // Chat methods
   getGlobalMessages(limit?: number): Promise<GlobalMessage[]>;
   createGlobalMessage(message: Omit<GlobalMessage, "id" | "createdAt">): Promise<GlobalMessage>;
+  clearGlobalMessages(): Promise<void>;
 }
 
 export class DatabaseStorage implements IStorage {
@@ -212,8 +213,8 @@ export class DatabaseStorage implements IStorage {
     if (status === "approved") {
       const winner = await this.getPlayerByAccountId(match.winnerId, match.winnerZone);
       if (winner) {
-        // Award 15 Glory Points for a win
-        await this.awardGloryPoints(winner.id, 15);
+        // Award 5 Glory Points for a win
+        await this.awardGloryPoints(winner.id, 5);
       }
     }
     return match;
@@ -542,6 +543,16 @@ export class DatabaseStorage implements IStorage {
     }
 
     return message;
+  }
+
+  async clearGlobalMessages(): Promise<void> {
+    try {
+      await db.execute(sql`DELETE FROM ${globalMessages}`);
+      console.log("Chat system: All messages cleared from database.");
+    } catch (err) {
+      console.error("Chat system error while clearing messages:", err);
+      throw err;
+    }
   }
 }
 

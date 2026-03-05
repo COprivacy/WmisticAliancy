@@ -165,12 +165,12 @@ export async function registerRoutes(
       return;
     }
 
-    const rewardPoints = 15;
+    const rewardPoints = 5;
     const newPoints = player.points + rewardPoints;
     const newRank = calculateRank(newPoints);
     const rankUp = newRank !== player.rank;
 
-    const gloryPointsAwarded = 15;
+    const gloryPointsAwarded = 5;
     const updated = await storage.updatePlayer(player.id, {
       points: newPoints,
       rank: newRank,
@@ -913,28 +913,64 @@ export async function registerRoutes(
 
       await storage.updateMatchStatus(id, "approved");
 
-      // --- RANDOM RELIC DROP ON WIN ---
+      // --- RANDOM DROP ON WIN (25% Chance) ---
       try {
-        const dropChance = 0.25; // 25% chance of drop
+        const dropChance = 0.25;
         if (Math.random() < dropChance && winner) {
-          const allRewards = await storage.getRewards();
-          // Filter for relics that are NOT rank prizes and are available in store (meaning they are common/standard ones)
-          const droppableRelics = allRewards.filter(r => r.type === 'relic' && !r.isRankPrize);
+          const dropType = Math.floor(Math.random() * 3); // 0: Relic, 1: Rank Points, 2: Glory Points
 
-          if (droppableRelics.length > 0) {
-            const randomRelic = droppableRelics[Math.floor(Math.random() * droppableRelics.length)];
-            const playerRewards = await storage.getPlayerRewards(winner.id);
-            const alreadyHas = playerRewards.some(pr => pr.id === randomRelic.id);
+          if (dropType === 0) {
+            const allRewards = await storage.getRewards();
+            const droppableRelics = allRewards.filter(r => r.type === 'relic' && !r.isRankPrize);
 
-            if (!alreadyHas) {
-              await storage.assignReward(winner.id, randomRelic.id);
-              await storage.createActivity("reward_earned", winner.id, winner.gameName, {
-                rewardName: randomRelic.name,
-                rewardIcon: randomRelic.icon,
-                isDrop: true
-              });
-              console.log(`MATCH DROP: Player ${winner.gameName} earned ${randomRelic.name}`);
+            if (droppableRelics.length > 0) {
+              const randomRelic = droppableRelics[Math.floor(Math.random() * droppableRelics.length)];
+              const playerRewards = await storage.getPlayerRewards(winner.id);
+              const alreadyHas = playerRewards.some(pr => pr.id === randomRelic.id);
+
+              if (!alreadyHas) {
+                await storage.assignReward(winner.id, randomRelic.id);
+                await storage.createActivity("reward_earned", winner.id, winner.gameName, {
+                  rewardName: randomRelic.name,
+                  rewardIcon: randomRelic.icon,
+                  isDrop: true
+                });
+                console.log(`MATCH DROP: Player ${winner.gameName} earned relic ${randomRelic.name}`);
+              } else {
+                // Fallback to Glory Points if player already has the relic
+                await storage.awardGloryPoints(winner.id, 5);
+                await storage.createActivity("match_drop", winner.id, winner.gameName, {
+                  type: "glory",
+                  amount: 5,
+                  message: "Recebeu +5 Glória como prêmio de consolação (Relíquia repetida)"
+                });
+              }
             }
+          } else if (dropType === 1) {
+            // Choice 1: +15 Rank Points
+            const bonusPoints = 15;
+            const newPoints = winner.points + bonusPoints;
+            const newRank = calculateRank(newPoints);
+            await storage.updatePlayer(winner.id, {
+              points: newPoints,
+              rank: newRank
+            });
+            await storage.createActivity("match_drop", winner.id, winner.gameName, {
+              type: "rank",
+              amount: bonusPoints,
+              message: `Ganhou um bônus de +${bonusPoints} pontos de Rank!`
+            });
+            console.log(`MATCH DROP: Player ${winner.gameName} earned ${bonusPoints} rank points`);
+          } else {
+            // Choice 2: +5 Glory Points
+            const bonusGlory = 5;
+            await storage.awardGloryPoints(winner.id, bonusGlory);
+            await storage.createActivity("match_drop", winner.id, winner.gameName, {
+              type: "glory",
+              amount: bonusGlory,
+              message: `Ganhou um bônus de +${bonusGlory} moedas de Glória!`
+            });
+            console.log(`MATCH DROP: Player ${winner.gameName} earned ${bonusGlory} glory points`);
           }
         }
       } catch (err) {
@@ -959,6 +995,13 @@ export async function registerRoutes(
   });
 
   // Global Chat Routes
+  app.delete("/api/chat/messages", requireAdmin, asyncHandler(async (_req, res) => {
+    console.log("CHAMADA: Limpando chat global pelo endpoint DELETE...");
+    await storage.clearGlobalMessages();
+    console.log("SUCESSO: Chat global limpo via DELETE.");
+    res.json({ success: true, message: "A Arena foi limpa por ordem da moderação!" });
+  }));
+
   app.get("/api/chat/messages", asyncHandler(async (_req, res) => {
     const messages = await storage.getGlobalMessages(50);
     res.json(messages.reverse());
