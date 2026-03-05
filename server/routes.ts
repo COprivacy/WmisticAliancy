@@ -528,6 +528,18 @@ export async function registerRoutes(
   // Avatar Upload Route
   app.post("/api/players/:id/avatar", requireAuth, upload.single('avatar'), asyncHandler(async (req, res) => {
     const playerId = parseInt(req.params.id as string);
+    const playerToEdit = await storage.getPlayer(playerId);
+
+    if (!playerToEdit) {
+      res.status(404).json({ message: "Jogador não encontrado." });
+      return;
+    }
+
+    if (req.session.user?.id !== playerToEdit.accountId && !req.session.user?.isAdmin) {
+      res.status(403).json({ message: "Não autorizado a alterar o avatar deste perfil." });
+      return;
+    }
+
     if (!req.file) {
       res.status(400).json({ message: "Nenhum arquivo enviado." });
       return;
@@ -546,11 +558,18 @@ export async function registerRoutes(
   }));
 
   // Update Player Profile (Bio, Socials)
-  app.put("/api/players/:id", asyncHandler(async (req, res) => {
+  app.put("/api/players/:id", requireAuth, asyncHandler(async (req, res) => {
     const playerId = parseInt(req.params.id as string);
-    // Basic session validation: can only edit own profile or must be admin
-    if (req.session.user?.id !== req.body.accountId && !req.session.user?.isAdmin) {
-      res.status(403).json({ message: "Não autorizado a editar este perfil" });
+    const playerToEdit = await storage.getPlayer(playerId);
+
+    if (!playerToEdit) {
+      res.status(404).json({ message: "Jogador não encontrado." });
+      return;
+    }
+
+    // Validation: can only edit own profile or must be admin
+    if (req.session.user?.id !== playerToEdit.accountId && !req.session.user?.isAdmin) {
+      res.status(403).json({ message: "Não autorizado a editar este perfil." });
       return;
     }
 
