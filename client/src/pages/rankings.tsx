@@ -45,6 +45,8 @@ import { SearchableSelect } from "@/components/searchable-select";
 import { MLBB_HEROES } from "@/lib/constants";
 import { Coins, QrCode, Wallet, ShoppingCart } from "lucide-react";
 import { PlayerAvatar } from "@/components/player-avatar";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import { Info, HelpCircle } from "lucide-react";
 
 type PlayerWithRewards = Player & { rewards: Reward[] };
 type SeasonInfo = {
@@ -479,6 +481,40 @@ export default function Rankings() {
                       <div className="w-1.5 h-1.5 rounded-full bg-primary animate-pulse" />
                       <span className="text-[10px] font-black uppercase tracking-[0.3em] text-primary font-sans">Arena Ativa</span>
                     </div>
+                    <Popover>
+                      <PopoverTrigger asChild>
+                        <Button variant="ghost" size="sm" className="h-6 w-6 p-0 rounded-full hover:bg-primary/20 text-primary transition-colors">
+                          <Info className="w-4 h-4" />
+                        </Button>
+                      </PopoverTrigger>
+                      <PopoverContent className="w-80 bg-slate-900/95 backdrop-blur-xl border-primary/20 text-[10px] text-muted-foreground uppercase tracking-[0.15em] leading-loose p-6 shadow-2xl z-50">
+                        <div className="space-y-4">
+                          <div className="flex items-center gap-2 border-b border-primary/10 pb-2">
+                            <Trophy className="w-4 h-4 text-primary" />
+                            <h4 className="font-black text-primary">Sistema de Honra</h4>
+                          </div>
+                          <div className="space-y-2">
+                            <p>A Arena 1v1 é regida por pontos de Rank:</p>
+                            <ul className="space-y-1 bg-white/5 p-3 rounded-lg border border-white/10">
+                              <li className="flex justify-between"><span>Recruta:</span> <span className="text-white">0-99</span></li>
+                              <li className="flex justify-between"><span>Soldado:</span> <span className="text-white">100-299</span></li>
+                              <li className="flex justify-between"><span>Guerreiro:</span> <span className="text-white">300-599</span></li>
+                              <li className="flex justify-between font-bold text-primary"><span>Elite:</span> <span>600-999</span></li>
+                              <li className="flex justify-between font-black text-glow"><span>Mestre+:</span> <span>1000+</span></li>
+                            </ul>
+                          </div>
+                          <div className="bg-primary/5 p-3 rounded-xl border border-primary/10">
+                            <p className="text-white font-bold mb-1">Como ganho pontos?</p>
+                            <ol className="list-decimal list-inside space-y-1">
+                              <li>Vença duelos (+ Rank e Glória)</li>
+                              <li>Resgate a Honra Diária</li>
+                              <li>Participe de Eventos</li>
+                            </ol>
+                          </div>
+                          <p className="text-[8px] italic opacity-50">Ao final da temporada, os heróis no topo do mural ganham relíquias exclusivas.</p>
+                        </div>
+                      </PopoverContent>
+                    </Popover>
                     <div className="flex items-center gap-1.5 text-muted-foreground/50">
                       <ClockIcon className="w-3 h-3" />
                       <span className="text-[10px] font-black uppercase tracking-widest font-sans">{getTimeLeft(season.endsAt)}</span>

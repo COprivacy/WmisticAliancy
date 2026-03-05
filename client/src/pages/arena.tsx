@@ -1,11 +1,13 @@
 import { useQuery } from "@tanstack/react-query";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { Swords, Calendar, Clock, MessageSquare, Loader2 } from "lucide-react";
+import { Swords, Calendar, Clock, MessageSquare, Loader2, Info } from "lucide-react";
 import { motion } from "framer-motion";
 import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
 import { PlayerAvatar } from "@/components/player-avatar";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import { Button } from "@/components/ui/button";
 
 type Challenge = {
     id: number;
@@ -49,7 +51,35 @@ export default function ArenaPage() {
                     </Badge>
                 </motion.div>
                 <div className="space-y-2">
-                    <h1 className="text-4xl sm:text-6xl font-serif font-black uppercase tracking-widest text-glow leading-none">Sala de Guerra</h1>
+                    <div className="flex items-center justify-center gap-4">
+                        <h1 className="text-4xl sm:text-6xl font-serif font-black uppercase tracking-widest text-glow leading-none">Sala de Guerra</h1>
+                        <Popover>
+                            <PopoverTrigger asChild>
+                                <Button variant="ghost" size="sm" className="h-8 w-8 p-0 rounded-full hover:bg-primary/20 text-primary transition-colors">
+                                    <Info className="w-5 h-5" />
+                                </Button>
+                            </PopoverTrigger>
+                            <PopoverContent className="w-80 bg-slate-900/95 backdrop-blur-xl border-primary/20 text-[10px] text-muted-foreground uppercase tracking-[0.15em] leading-loose p-6 shadow-2xl z-50">
+                                <div className="space-y-4">
+                                    <div className="flex items-center gap-2 border-b border-primary/10 pb-2">
+                                        <Swords className="w-4 h-4 text-primary" />
+                                        <h4 className="font-black text-primary">Como participar?</h4>
+                                    </div>
+                                    <p>Esta sala exibe os duelos oficialmente marcados e aceitos na aliança.</p>
+                                    <div className="bg-primary/5 p-3 rounded-xl border border-primary/10">
+                                        <p className="text-white font-bold mb-1">Passo a Passo:</p>
+                                        <ol className="list-decimal list-inside space-y-1">
+                                            <li>Vá ao Ranking</li>
+                                            <li>Acesse o perfil de um rival</li>
+                                            <li>Clique em <span className="text-orange-500 font-black">Lançar Desafio</span></li>
+                                            <li>Aguarde ele aceitar!</li>
+                                        </ol>
+                                    </div>
+                                    <p className="text-[8px] italic opacity-50">Duelos aceitos aparecem aqui automaticamente.</p>
+                                </div>
+                            </PopoverContent>
+                        </Popover>
+                    </div>
                     <div className="h-1 w-24 bg-primary mx-auto rounded-full" />
                 </div>
                 <p className="text-muted-foreground uppercase tracking-widest text-xs font-bold opacity-60">Prepare seu coração: os duelos mais esperados do clã acontecem aqui.</p>

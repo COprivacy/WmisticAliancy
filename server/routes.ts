@@ -28,10 +28,19 @@ declare module "express-session" {
 
 const ADMIN_ID = "1792001576";
 
-const requireAuth = (req: any, res: any, next: any) => {
+const requireAuth = asyncHandler(async (req: any, res: any, next: any) => {
   if (!req.session.user) return res.status(401).json({ message: "Não autorizado" });
+
+  // Verify if player is banned on every authenticated request for security
+  const player = await storage.getPlayerByAccountId(req.session.user.id, req.session.user.zoneId);
+  if (player && player.isBanned) {
+    req.session.destroy(() => {
+      res.status(403).json({ message: "Sua conta foi suspensa por violar as regras da arena." });
+    });
+    return;
+  }
   next();
-};
+});
 
 const requireAdmin = (req: any, res: any, next: any) => {
   if (!req.session.user?.isAdmin) return res.status(403).json({ message: "Acesso negado: Apenas admins" });
@@ -419,7 +428,7 @@ export async function registerRoutes(
   }));
 
   // Report a combat
-  app.post("/api/matches", asyncHandler(async (req, res) => {
+  app.post("/api/matches", requireAuth, asyncHandler(async (req, res) => {
     const result = insertMatchSchema.safeParse(req.body);
     if (!result.success) {
       res.status(400).json({ error: result.error });
@@ -978,6 +987,28 @@ export async function registerRoutes(
       }
 
       res.json({ message: "Combate aprovado e pontos atualizados." });
+    } else if (action === "punish") {
+      await storage.updateMatchStatus(id, "rejected");
+
+      const reporter = await storage.getPlayerByAccountId(match.winnerId, match.winnerZone);
+      if (reporter) {
+        const penaltyPoints = 100;
+        const penaltyGlory = 50;
+
+        const newPoints = Math.max(0, reporter.points - penaltyPoints);
+        await storage.updatePlayer(reporter.id, {
+          points: newPoints,
+          gloryPoints: Math.max(0, reporter.gloryPoints - penaltyGlory),
+          rank: calculateRank(newPoints)
+        });
+
+        await storage.createActivity("match_drop", reporter.id, reporter.gameName, {
+          type: "penalty",
+          message: `🚫 FRAUDE DETECTADA: Punido com -${penaltyPoints} pontos e -${penaltyGlory} Glória.`
+        });
+      }
+
+      res.json({ message: "Combate rejeitado e fraudador punido." });
     } else {
       await storage.updateMatchStatus(id, "rejected");
       res.json({ message: "Combate rejeitado." });

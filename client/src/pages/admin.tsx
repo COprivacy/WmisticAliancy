@@ -117,6 +117,9 @@ export default function Admin() {
   const [relicIsAvailable, setRelicIsAvailable] = useState<boolean>(true);
   const [relicPrice, setRelicPrice] = useState<number>(0);
   const [relicType, setRelicType] = useState<string>("relic");
+  const [relicName, setRelicName] = useState<string>("");
+  const [relicDescription, setRelicDescription] = useState<string>("");
+  const [relicStars, setRelicStars] = useState<number>(1);
   const [seasonFontFamily, setSeasonFontFamily] = useState<string>("font-serif");
   const [seasonTitleEffect, setSeasonTitleEffect] = useState<string>("none");
   const [seasonName, setSeasonName] = useState<string>("");
@@ -148,26 +151,43 @@ export default function Admin() {
       setRelicIsAvailable(editingRelic.isAvailableInStore ?? true);
       setRelicPrice(editingRelic.price || 0);
       setRelicType(editingRelic.type || "relic");
+      setRelicName(editingRelic.name);
+      setRelicDescription(editingRelic.description);
+      setRelicStars(editingRelic.stars || 1);
     } else {
       setRelicRarity("rare");
-      setRelicEffect("none");
+      const defaultPath = relicType === 'relic' ? "none" : "/uploads/custom/";
+      setRelicEffect(defaultPath);
       setRelicIsRankPrize(false);
       setRelicIsAvailable(true);
       setRelicPrice(0);
-      setRelicType("relic");
+      setRelicName("");
+      setRelicDescription("");
+      setRelicStars(1);
     }
   }, [editingRelic]);
 
+  // Pre-fill path when changing type for new items
+  useEffect(() => {
+    if (!editingRelic) {
+      if (relicType !== 'relic' && (relicEffect === "none" || !relicEffect)) {
+        setRelicEffect("/uploads/custom/");
+      } else if (relicType === 'relic' && relicEffect === "/uploads/custom/") {
+        setRelicEffect("none");
+      }
+    }
+  }, [relicType, editingRelic]);
+
   const matchMutation = useMutation({
-    mutationFn: async ({ id, action }: { id: number; action: "approve" | "reject" }) => {
+    mutationFn: async ({ id, action }: { id: number; action: "approve" | "reject" | "punish" }) => {
       await apiRequest("POST", `/api/matches/${id}/${action}`);
     },
     onSuccess: (_, variables) => {
       queryClient.invalidateQueries({ queryKey: ["/api/matches"] });
       queryClient.invalidateQueries({ queryKey: ["/api/players"] });
       toast({
-        title: variables.action === "approve" ? "Veredicto Emitido" : "Combate Invalidado",
-        description: variables.action === "approve" ? "Vitória reconhecida e pontos atualizados." : "As evidências foram insuficientes.",
+        title: variables.action === "approve" ? "Veredicto Emitido" : (variables.action === "punish" ? "JUSTIÇA FEITA" : "Combate Invalidado"),
+        description: variables.action === "approve" ? "Vitória reconhecida e pontos atualizados." : (variables.action === "punish" ? "O fraudador foi severamente punido." : "As evidências foram insuficientes."),
         variant: variables.action === "approve" ? "default" : "destructive",
       });
     }
@@ -619,14 +639,28 @@ export default function Admin() {
                           <div className="flex gap-3">
                             <Button
                               variant="outline"
-                              className="border-rose-500/20 text-rose-500 hover:bg-rose-500 hover:text-white h-12 px-6 rounded-xl uppercase font-bold text-xs"
+                              className="border-white/10 text-muted-foreground hover:bg-white/5 h-12 px-6 rounded-xl uppercase font-bold text-[10px]"
                               onClick={() => matchMutation.mutate({ id: match.id, action: "reject" })}
                               disabled={matchMutation.isPending}
                             >
                               {matchMutation.isPending && matchMutation.variables?.id === match.id && matchMutation.variables?.action === "reject" ? <Loader2 className="w-4 h-4 animate-spin" /> : "Invalidar"}
                             </Button>
+
                             <Button
-                              className="bg-emerald-600 hover:bg-emerald-500 text-white h-12 px-8 rounded-xl uppercase font-black text-xs shadow-lg shadow-emerald-600/20"
+                              variant="destructive"
+                              className="bg-rose-600/20 text-rose-500 border-rose-500/30 hover:bg-rose-600 hover:text-white h-12 px-6 rounded-xl uppercase font-black text-[10px] shadow-lg shadow-rose-900/10"
+                              onClick={() => {
+                                if (confirm(`Confirmar PUNIR FRAUDE para ${match.winnerName}? Ele perderá 100 pontos e 50 moedas de glória.`)) {
+                                  matchMutation.mutate({ id: match.id, action: "punish" });
+                                }
+                              }}
+                              disabled={matchMutation.isPending}
+                            >
+                              {matchMutation.isPending && matchMutation.variables?.id === match.id && matchMutation.variables?.action === "punish" ? <Loader2 className="w-4 h-4 animate-spin" /> : "Punir Fraudador"}
+                            </Button>
+
+                            <Button
+                              className="bg-emerald-600 hover:bg-emerald-500 text-white h-12 px-8 rounded-xl uppercase font-black text-[10px] shadow-lg shadow-emerald-600/20"
                               onClick={() => matchMutation.mutate({ id: match.id, action: "approve" })}
                               disabled={matchMutation.isPending}
                             >
@@ -1011,11 +1045,11 @@ export default function Admin() {
                     }
 
                     const data = {
-                      name: formData.get("name"),
-                      description: formData.get("description"),
+                      name: relicName,
+                      description: relicDescription,
                       rarity: relicRarity,
                       effect: formattedEffect,
-                      stars: parseInt(formData.get("stars") as string || "1"),
+                      stars: relicStars,
                       price: relicPrice,
                       icon: iconUrl,
                       isRankPrize: relicIsRankPrize,
@@ -1047,7 +1081,7 @@ export default function Admin() {
                       <Label className="text-[10px] uppercase font-black">Categoria do Item</Label>
                       <Select value={relicType} onValueChange={setRelicType}>
                         <SelectTrigger className="h-12 bg-black/20 border-white/10 font-bold">
-                          <SelectValue />
+                          <SelectValue placeholder="Selecione a Categoria" />
                         </SelectTrigger>
                         <SelectContent className="bg-slate-900 border-white/10">
                           <SelectItem value="relic">Relíquia (Atributos)</SelectItem>
@@ -1059,13 +1093,19 @@ export default function Admin() {
                     </div>
                     <div className="space-y-2">
                       <Label className="text-[10px] uppercase font-black">Nome da Relíquia</Label>
-                      <Input name="name" defaultValue={editingRelic?.name} placeholder="Ex: Martelo de Thor" required className="bg-black/20 border-white/10 h-12" />
+                      <Input
+                        value={relicName}
+                        onChange={(e) => setRelicName(e.target.value)}
+                        placeholder="Ex: Martelo de Thor"
+                        required
+                        className="bg-black/20 border-white/10 h-12"
+                      />
                     </div>
                     <div className="space-y-2">
                       <Label className="text-[10px] uppercase font-black">Raridade</Label>
                       <Select value={relicRarity} onValueChange={setRelicRarity}>
                         <SelectTrigger className="h-12 bg-black/20 border-white/10">
-                          <SelectValue />
+                          <SelectValue placeholder="Selecione a Raridade" />
                         </SelectTrigger>
                         <SelectContent className="bg-slate-900 border-white/10 text-white">
                           <SelectItem value="mythic">Mythic</SelectItem>
@@ -1078,7 +1118,15 @@ export default function Admin() {
                     </div>
                     <div className="space-y-2">
                       <Label className="text-[10px] uppercase font-black">Nível de Estrelas (1-7)</Label>
-                      <Input name="stars" defaultValue={editingRelic?.stars || 1} type="number" min="1" max="7" required className="bg-black/20 border-white/10 h-12" />
+                      <Input
+                        type="number"
+                        min="1"
+                        max="7"
+                        value={relicStars}
+                        onChange={(e) => setRelicStars(parseInt(e.target.value) || 1)}
+                        required
+                        className="bg-black/20 border-white/10 h-12"
+                      />
                     </div>
                     {relicType === 'relic' ? (
                       <div className="space-y-2">
@@ -1155,7 +1203,13 @@ export default function Admin() {
                     </div>
                     <div className="col-span-full space-y-2">
                       <Label className="text-[10px] uppercase font-black">Descrição da Lenda</Label>
-                      <Input name="description" defaultValue={editingRelic?.description} placeholder="A história por trás deste item..." required className="bg-black/20 border-white/10 h-12" />
+                      <Input
+                        value={relicDescription}
+                        onChange={(e) => setRelicDescription(e.target.value)}
+                        placeholder="A história por trás deste item..."
+                        required
+                        className="bg-black/20 border-white/10 h-12"
+                      />
                     </div>
                   </div>
                   <div className="flex gap-3">

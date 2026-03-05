@@ -1,11 +1,12 @@
 import { useQuery } from "@tanstack/react-query";
 import { Match } from "@shared/schema";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Trophy, Swords, Target, TrendingUp, BarChart3, ChevronLeft } from "lucide-react";
+import { Trophy, Swords, Target, TrendingUp, BarChart3, ChevronLeft, Info } from "lucide-react";
 import { motion } from "framer-motion";
 import { Loader2 } from "lucide-react";
 import { Link } from "wouter";
 import { Button } from "@/components/ui/button";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 
 export default function Meta() {
     const { data: matches, isLoading } = useQuery<Match[]>({
@@ -61,6 +62,30 @@ export default function Meta() {
                     <div className="flex items-center justify-center md:justify-start gap-4 mb-4">
                         <BarChart3 className="w-10 h-10 text-primary animate-pulse" />
                         <h1 className="text-4xl md:text-5xl font-black uppercase tracking-tighter text-glow">Meta da Guilda</h1>
+                        <Popover>
+                            <PopoverTrigger asChild>
+                                <Button variant="ghost" size="sm" className="h-8 w-8 p-0 rounded-full hover:bg-primary/20 text-primary transition-colors">
+                                    <Info className="w-5 h-5" />
+                                </Button>
+                            </PopoverTrigger>
+                            <PopoverContent className="w-80 bg-slate-900/95 backdrop-blur-xl border-primary/20 text-[10px] text-muted-foreground uppercase tracking-[0.15em] leading-loose p-6 shadow-2xl z-50">
+                                <div className="space-y-4">
+                                    <div className="flex items-center gap-2 border-b border-primary/10 pb-2">
+                                        <TrendingUp className="w-4 h-4 text-primary" />
+                                        <h4 className="font-black text-primary">O que é o Meta?</h4>
+                                    </div>
+                                    <p>Aqui você encontra a análise estatística de todos os heróis usados nas partidas aprovadas da aliança.</p>
+                                    <div className="bg-primary/5 p-3 rounded-xl border border-primary/10">
+                                        <p className="text-white font-bold mb-1">Indicadores:</p>
+                                        <ul className="list-disc list-inside space-y-1">
+                                            <li><span className="text-amber-400">Win Rate:</span> Porcentagem de vitórias com o herói.</li>
+                                            <li><span className="text-blue-400">Picks:</span> Quantidade de vezes que foi escolhido.</li>
+                                        </ul>
+                                    </div>
+                                    <p className="text-[8px] italic opacity-50">Dados atualizados em tempo real conforme vitórias são aprovadas.</p>
+                                </div>
+                            </PopoverContent>
+                        </Popover>
                     </div>
                     <p className="text-muted-foreground uppercase tracking-[0.3em] text-sm">Os heróis mais dominantes da arena</p>
                 </div>
@@ -83,8 +108,8 @@ export default function Meta() {
                                 >
                                     <div className="flex items-center gap-4">
                                         <div className={`w-10 h-10 rounded-lg flex items-center justify-center font-black ${i === 0 ? 'bg-amber-500/20 text-amber-500' :
-                                                i === 1 ? 'bg-slate-300/20 text-slate-300' :
-                                                    i === 2 ? 'bg-orange-500/20 text-orange-500' : 'bg-white/10 text-white/50'
+                                            i === 1 ? 'bg-slate-300/20 text-slate-300' :
+                                                i === 2 ? 'bg-orange-500/20 text-orange-500' : 'bg-white/10 text-white/50'
                                             }`}>
                                             {i + 1}
                                         </div>

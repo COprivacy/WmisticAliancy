@@ -15,6 +15,8 @@ import {
     DialogTitle,
     DialogTrigger,
 } from "@/components/ui/dialog";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import { Coins, ShoppingCart } from "lucide-react";
 
 export default function Rewards() {
     const [selectedReward, setSelectedReward] = useState<Reward | null>(null);
@@ -101,9 +103,43 @@ export default function Rewards() {
                             Voltar
                         </Button>
                     </Link>
-                    <div className="text-right">
+                    <div className="text-right flex flex-col items-end">
                         <Badge className="bg-primary text-primary-foreground uppercase tracking-widest px-4 mb-2">Relíquias da Temporada</Badge>
-                        <h1 className="text-4xl md:text-6xl font-serif font-black uppercase tracking-tighter text-glow">Loja WMythic</h1>
+                        <div className="flex items-center gap-4">
+                            <Popover>
+                                <PopoverTrigger asChild>
+                                    <Button variant="ghost" size="sm" className="h-8 w-8 p-0 rounded-full hover:bg-primary/20 text-primary transition-colors">
+                                        <Info className="w-6 h-6" />
+                                    </Button>
+                                </PopoverTrigger>
+                                <PopoverContent className="w-80 bg-slate-900/95 backdrop-blur-xl border-primary/20 text-[10px] text-muted-foreground uppercase tracking-[0.15em] leading-loose p-6 shadow-2xl z-50">
+                                    <div className="space-y-4">
+                                        <div className="flex items-center gap-2 border-b border-primary/10 pb-2">
+                                            <ShoppingCart className="w-4 h-4 text-primary" />
+                                            <h4 className="font-black text-primary">Antiquário da Guilda</h4>
+                                        </div>
+                                        <p>Seja bem-vindo à boutique de glória. Aqui sua honra se transforma em estilo.</p>
+                                        <div className="bg-primary/5 p-3 rounded-xl border border-primary/10">
+                                            <div className="flex items-center gap-2 text-white font-bold mb-1">
+                                                <Coins className="w-3 h-3 text-orange-400" />
+                                                Moedas de Glória:
+                                            </div>
+                                            <p>Ganhe vencendo duelos oficiais na Arena ou através de bônus administrativos por mérito.</p>
+                                        </div>
+                                        <div className="space-y-2">
+                                            <p className="text-white font-bold">O que você encontra aqui:</p>
+                                            <ul className="list-disc list-inside space-y-1">
+                                                <li>Molduras Épicas para o seu Avatar</li>
+                                                <li>Fundos Animados para o seu Perfil</li>
+                                                <li>Trilhas Sonoras Personalizadas (MP3)</li>
+                                            </ul>
+                                        </div>
+                                        <p className="text-[8px] italic opacity-50 text-center">Itens comprados são permanentes e intransferíveis.</p>
+                                    </div>
+                                </PopoverContent>
+                            </Popover>
+                            <h1 className="text-4xl md:text-6xl font-serif font-black uppercase tracking-tighter text-glow">Loja WMythic</h1>
+                        </div>
                     </div>
                 </div>
 

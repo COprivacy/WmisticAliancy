@@ -150,7 +150,10 @@ export default function ActivityFeed() {
             case 'match_drop':
                 return (
                     <p className="text-xs text-muted-foreground uppercase tracking-wider">
-                        {name} recebeu um drop de sorte: <span className={activity.data?.type === 'rank' ? 'text-emerald-400 font-bold' : 'text-orange-400 font-bold'}>{activity.data?.message}</span> 🍀
+                        {name} {activity.data?.type === 'penalty' ? 'foi alvo de justiça:' : 'recebeu um drop de sorte:'} <span className={
+                            activity.data?.type === 'penalty' ? 'text-rose-500 font-black' :
+                                (activity.data?.type === 'rank' ? 'text-emerald-400 font-bold' : 'text-orange-400 font-bold')
+                        }>{activity.data?.message}</span> {activity.data?.type === 'penalty' ? '⚖️' : '🍀'}
                     </p>
                 );
             default:

@@ -1,11 +1,12 @@
 import { useQuery } from "@tanstack/react-query";
 import { Card, CardContent } from "@/components/ui/card";
-import { Trophy, Medal, Crown, Calendar, ChevronLeft, Star } from "lucide-react";
+import { Trophy, Medal, Crown, Calendar, ChevronLeft, Star, Info, History } from "lucide-react";
 import { motion } from "framer-motion";
 import { Loader2 } from "lucide-react";
 import { Link } from "wouter";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 
 export default function HallOfFame() {
     const { data: seasons, isLoading } = useQuery<any[]>({
@@ -38,7 +39,30 @@ export default function HallOfFame() {
                         >
                             <Crown className="w-16 h-16 text-yellow-500 fill-yellow-500/20 drop-shadow-[0_0_15px_rgba(234,179,8,0.5)]" />
                         </motion.div>
-                        <h1 className="text-5xl md:text-6xl font-black uppercase tracking-tighter text-glow">Mural da Glória</h1>
+                        <div className="flex items-center gap-4">
+                            <h1 className="text-5xl md:text-6xl font-black uppercase tracking-tighter text-glow">Mural da Glória</h1>
+                            <Popover>
+                                <PopoverTrigger asChild>
+                                    <Button variant="ghost" size="sm" className="h-8 w-8 p-0 rounded-full hover:bg-yellow-500/20 text-yellow-500 transition-colors">
+                                        <Info className="w-6 h-6" />
+                                    </Button>
+                                </PopoverTrigger>
+                                <PopoverContent className="w-80 bg-slate-900/95 backdrop-blur-xl border-yellow-500/20 text-[10px] text-muted-foreground uppercase tracking-[0.15em] leading-loose p-6 shadow-2xl z-50">
+                                    <div className="space-y-4">
+                                        <div className="flex items-center gap-2 border-b border-yellow-500/10 pb-2">
+                                            <History className="w-4 h-4 text-yellow-500" />
+                                            <h4 className="font-black text-yellow-500">O que é este Mural?</h4>
+                                        </div>
+                                        <p>O Mural da Glória serve para imortalizar os grandes vencedores de cada temporada que já se encerrou.</p>
+                                        <div className="bg-yellow-500/5 p-3 rounded-xl border border-yellow-500/10">
+                                            <p className="text-yellow-200 font-bold mb-1">Como entrar aqui?</p>
+                                            <p>As lendas são forjadas no ranking. Ao final de cada ciclo, os 3 primeiros lugares são registrados aqui para a posteridade.</p>
+                                        </div>
+                                        <p className="text-[8px] italic opacity-50 text-center">Somente os campeões sobrevivem ao tempo.</p>
+                                    </div>
+                                </PopoverContent>
+                            </Popover>
+                        </div>
                     </div>
                     <p className="text-muted-foreground uppercase tracking-[0.4em] text-xs">A linhagem dos imortais da arena</p>
                 </div>
