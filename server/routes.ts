@@ -192,6 +192,9 @@ export async function registerRoutes(
       gloryPoints: gloryPointsAwarded
     });
 
+    // Update Quest: daily_claim
+    await storage.updateQuestProgress(player.id, "daily_claim", 1);
+
     if (rankUp) {
       await storage.createActivity("rank_up", player.id, player.gameName, { newRank });
     }
@@ -202,6 +205,30 @@ export async function registerRoutes(
       gloryPoints: updated.gloryPoints,
       message: `Você recebeu +${rewardPoints} pontos de honra e +${gloryPointsAwarded} Pontos de Glória! ⚔️`
     });
+  }));
+
+  // Quests Routes
+  app.get("/api/quests", requireAuth, asyncHandler(async (req, res, next) => {
+    const player = await storage.getPlayerByAccountId(req.session.user!.id, req.session.user!.zoneId);
+    if (!player) {
+      res.status(404).json({ message: "Jogador não encontrado" });
+      return;
+    }
+
+    const pQuests = await storage.getPlayerQuests(player.id);
+    res.json(pQuests);
+  }));
+
+  app.patch("/api/quests/:id/claim", requireAuth, asyncHandler(async (req, res, next) => {
+    const pqId = parseInt(req.params.id as string);
+    const player = await storage.getPlayerByAccountId(req.session.user!.id, req.session.user!.zoneId);
+    if (!player) {
+      res.status(404).json({ message: "Jogador não encontrado" });
+      return;
+    }
+
+    const result = await storage.claimQuestReward(player.id, pqId);
+    res.json(result);
   }));
 
   // Season Info Route
@@ -907,6 +934,11 @@ export async function registerRoutes(
             newRank: newRank
           });
         }
+
+        // Update Quests for winner: matches, wins, streak
+        await storage.updateQuestProgress(winner.id, "matches", 1);
+        await storage.updateQuestProgress(winner.id, "wins", 1);
+        await storage.updateQuestProgress(winner.id, "streak", winner.streak, true);
       }
 
       // Update Loser
@@ -918,6 +950,11 @@ export async function registerRoutes(
           streak: 0,
           rank: calculateRank(newPoints)
         });
+
+        // Update Quests for loser: matches
+        await storage.updateQuestProgress(loser.id, "matches", 1);
+        // Reset streak quest implicitly by sending 0 absolute
+        await storage.updateQuestProgress(loser.id, "streak", 0, true);
       }
 
       await storage.updateMatchStatus(id, "approved");

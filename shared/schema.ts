@@ -141,6 +141,27 @@ export const gloryTopups = pgTable("glory_topups", {
   createdAt: timestamp("created_at").notNull().defaultNow(),
 });
 
+export const quests = pgTable("quests", {
+  id: serial("id").primaryKey(),
+  title: text("title").notNull(),
+  description: text("description").notNull(),
+  difficulty: text("difficulty").notNull(), // easy, medium, hard, epic
+  points: integer("points").notNull(), // rank points
+  glory: integer("glory").notNull().default(0), // optional glory points reward
+  type: text("type").notNull(), // matches, wins, streak, daily_claim
+  target: integer("target").notNull(),
+});
+
+export const playerQuests = pgTable("player_quests", {
+  id: serial("id").primaryKey(),
+  playerId: integer("player_id").notNull(),
+  questId: integer("quest_id").notNull(),
+  progress: integer("progress").notNull().default(0),
+  status: text("status").notNull().default("pending"), // pending, completed, claimed
+  lastResetAt: timestamp("last_reset_at").notNull().defaultNow(),
+  completedAt: timestamp("completed_at"),
+});
+
 export const insertUserSchema = createInsertSchema(users).pick({
   username: true,
   password: true,
@@ -175,6 +196,11 @@ export type GlobalMessage = typeof globalMessages.$inferSelect;
 export type GloryTopup = typeof gloryTopups.$inferSelect;
 export const insertGloryTopupSchema = createInsertSchema(gloryTopups).omit({ id: true, createdAt: true });
 export type InsertGloryTopup = z.infer<typeof insertGloryTopupSchema>;
+
+export type Quest = typeof quests.$inferSelect;
+export type PlayerQuest = typeof playerQuests.$inferSelect;
+export const insertQuestSchema = createInsertSchema(quests).omit({ id: true });
+export type InsertQuest = z.infer<typeof insertQuestSchema>;
 
 export function calculateRank(points: number): string {
   if (points >= 2000) return "Grande Mestre";

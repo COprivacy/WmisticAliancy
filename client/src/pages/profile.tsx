@@ -184,6 +184,30 @@ export default function Profile() {
         enabled: !!accountId
     });
 
+    const { data: quests, refetch: refetchQuests } = useQuery<any[]>({
+        queryKey: ["/api/quests"],
+        enabled: isOwnProfile
+    });
+
+    const claimQuestMutation = useMutation({
+        mutationFn: async (pqId: number) => {
+            const res = await apiRequest("PATCH", `/api/quests/${pqId}/claim`);
+            return res.json();
+        },
+        onSuccess: (data) => {
+            toast({ title: "✨ Missão Concluída", description: data.message });
+            queryClient.invalidateQueries({ queryKey: [`/api/players/${accountId}/${zoneId}`] });
+            refetchQuests();
+        },
+        onError: (err: any) => {
+            toast({
+                title: "Falha ao resgatar",
+                description: err?.response?.data?.message || "Erro desconhecido",
+                variant: "destructive"
+            });
+        }
+    });
+
     useEffect(() => {
         if (data?.player) {
             setEditBio(data.player.bio || "");
@@ -856,6 +880,78 @@ export default function Profile() {
                         </motion.div>
                     );
                 })()}
+
+                {/* --- NOVA SEÇÃO: MISSÕES DIÁRIAS --- */}
+                {isOwnProfile && quests && quests.length > 0 && (
+                    <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.15 }} className="mb-12">
+                        <div className="flex items-center justify-between border-b border-white/5 pb-4 mb-6">
+                            <div className="flex items-center gap-3">
+                                <Target className="w-5 h-5 text-primary" />
+                                <h3 className="text-xl font-serif uppercase tracking-widest">Missões Diárias</h3>
+                            </div>
+                            <Badge className="bg-primary/10 text-primary border-primary/20 text-[10px] uppercase font-bold tracking-widest h-6">
+                                Reseta em 24h
+                            </Badge>
+                        </div>
+
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                            {quests.map((pq) => {
+                                const isCompleted = pq.status === 'completed';
+                                const isClaimed = pq.status === 'claimed';
+                                const progressPerc = Math.round((pq.progress / pq.quest.target) * 100);
+
+                                return (
+                                    <div
+                                        key={pq.id}
+                                        className={`p-5 rounded-3xl border transition-all ${isClaimed ? 'bg-white/[0.02] border-white/5 opacity-60' : isCompleted ? 'bg-emerald-500/10 border-emerald-500/20 shadow-lg shadow-emerald-500/5' : 'bg-white/5 border-white/10'}`}
+                                    >
+                                        <div className="flex justify-between items-start mb-4">
+                                            <div>
+                                                <Badge className={`text-[8px] uppercase font-black tracking-widest mb-1 ${pq.quest.difficulty === 'easy' ? 'bg-slate-500' : pq.quest.difficulty === 'medium' ? 'bg-blue-500' : pq.quest.difficulty === 'hard' ? 'bg-orange-600' : 'bg-purple-600'}`}>
+                                                    {pq.quest.difficulty}
+                                                </Badge>
+                                                <h4 className="text-sm font-black uppercase tracking-tight">{pq.quest.title}</h4>
+                                                <p className="text-[10px] text-muted-foreground uppercase leading-tight mt-1">{pq.quest.description}</p>
+                                            </div>
+                                            <div className="text-right">
+                                                <div className="flex items-center gap-1.5 text-[10px] font-black text-primary">
+                                                    <Star className="w-3 h-3 fill-primary" />
+                                                    +{pq.quest.points} RANK
+                                                </div>
+                                                <div className="flex items-center gap-1.5 text-[10px] font-black text-amber-500">
+                                                    <Zap className="w-3 h-3 fill-amber-500" />
+                                                    +{pq.quest.glory} GLÓRIA
+                                                </div>
+                                            </div>
+                                        </div>
+
+                                        <div className="space-y-1.5">
+                                            <div className="flex justify-between text-[9px] font-black uppercase tracking-widest text-muted-foreground">
+                                                <span>Progresso</span>
+                                                <span>{pq.progress} / {pq.quest.target}</span>
+                                            </div>
+                                            <div className="w-full h-1.5 rounded-full bg-white/5 overflow-hidden">
+                                                <motion.div
+                                                    initial={{ width: 0 }}
+                                                    animate={{ width: `${progressPerc}%` }}
+                                                    className={`h-full rounded-full ${isClaimed ? 'bg-white/20' : isCompleted ? 'bg-emerald-500' : 'bg-primary'}`}
+                                                />
+                                            </div>
+                                        </div>
+
+                                        <Button
+                                            className={`w-full mt-4 h-9 text-[10px] font-black uppercase tracking-[0.2em] rounded-xl transition-all ${isClaimed ? 'bg-white/5 text-white/20 border-white/5' : isCompleted ? 'bg-emerald-600 hover:bg-emerald-700 text-white shadow-lg shadow-emerald-600/20' : 'bg-white/10 text-white/40 cursor-not-allowed'}`}
+                                            disabled={!isCompleted || isClaimed || claimQuestMutation.isPending}
+                                            onClick={() => claimQuestMutation.mutate(pq.id)}
+                                        >
+                                            {claimQuestMutation.isPending ? <Loader2 className="w-3 h-3 animate-spin" /> : isClaimed ? "RECOMPENSA RESGATADA ✓" : isCompleted ? "RESGATAR RECOMPENSA 🎁" : "EM ANDAMENTO..."}
+                                        </Button>
+                                    </div>
+                                );
+                            })}
+                        </div>
+                    </motion.div>
+                )}
 
                 {/* --- NOVA SEÇÃO: VITRINE DE CONQUISTAS --- */}
                 <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.2 }} className="mb-12">

@@ -1,8 +1,10 @@
 import {
   users, players, matches, rewards, playerRewards, seasons, challenges, activities, reactions, configs, globalMessages, gloryTopups,
+  quests, playerQuests,
   type User, type InsertUser, type Player, type InsertPlayer, type Match, type InsertMatch,
   type Reward, type InsertReward, type Config, type InsertConfig, type Activity, type Reaction,
-  type GlobalMessage, type GloryTopup, type InsertGloryTopup
+  type GlobalMessage, type GloryTopup, type InsertGloryTopup,
+  type Quest, type PlayerQuest, type InsertQuest
 } from "@shared/schema";
 import { db } from "./db";
 import { eq, and, sql } from "drizzle-orm";
@@ -70,6 +72,15 @@ export interface IStorage {
   getGlobalMessages(limit?: number): Promise<GlobalMessage[]>;
   createGlobalMessage(message: Omit<GlobalMessage, "id" | "createdAt">): Promise<GlobalMessage>;
   clearGlobalMessages(): Promise<void>;
+
+  // Quest methods
+  getQuests(): Promise<Quest[]>;
+  getQuest(id: number): Promise<Quest | undefined>;
+  createQuest(quest: InsertQuest): Promise<Quest>;
+  updateQuest(id: number, update: Partial<Quest>): Promise<Quest>;
+  getPlayerQuests(playerId: number): Promise<(PlayerQuest & { quest: Quest })[]>;
+  updateQuestProgress(playerId: number, questType: string, amount?: number): Promise<void>;
+  claimQuestReward(playerId: number, questId: number): Promise<{ success: boolean; message: string; points: number; glory: number }>;
 }
 
 export class DatabaseStorage implements IStorage {
@@ -553,6 +564,147 @@ export class DatabaseStorage implements IStorage {
       console.error("Chat system error while clearing messages:", err);
       throw err;
     }
+  }
+
+  // Quest implementations
+  async getQuests(): Promise<Quest[]> {
+    return await db.select().from(quests);
+  }
+
+  async getQuest(id: number): Promise<Quest | undefined> {
+    const [quest] = await db.select().from(quests).where(eq(quests.id, id));
+    return quest;
+  }
+
+  async createQuest(insertQuest: InsertQuest): Promise<Quest> {
+    const [quest] = await db.insert(quests).values(insertQuest).returning();
+    return quest;
+  }
+
+  async updateQuest(id: number, update: Partial<Quest>): Promise<Quest> {
+    const [quest] = await db.update(quests).set(update).where(eq(quests.id, id)).returning();
+    if (!quest) throw new Error("Quest not found");
+    return quest;
+  }
+
+  async getPlayerQuests(playerId: number): Promise<(PlayerQuest & { quest: Quest })[]> {
+    const results = await db.select({
+      playerQuest: playerQuests,
+      quest: quests
+    })
+      .from(playerQuests)
+      .innerJoin(quests, eq(playerQuests.questId, quests.id))
+      .where(eq(playerQuests.playerId, playerId));
+
+    // Handle daily reset logic here
+    const now = new Date();
+    const startOfToday = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+
+    const enriched = await Promise.all(results.map(async (r) => {
+      const lastReset = new Date(r.playerQuest.lastResetAt);
+      if (lastReset < startOfToday) {
+        // Reset this quest for the player
+        const [reset] = await db.update(playerQuests)
+          .set({
+            progress: 0,
+            status: "pending",
+            lastResetAt: now,
+            completedAt: null
+          })
+          .where(eq(playerQuests.id, r.playerQuest.id))
+          .returning();
+        return { ...reset, quest: r.quest };
+      }
+      return { ...r.playerQuest, quest: r.quest };
+    }));
+
+    // If player doesn't have all quests assigned, assign them
+    const allQuests = await this.getQuests();
+    const assignedQuestIds = results.map(r => r.playerQuest.questId);
+
+    for (const q of allQuests) {
+      if (!assignedQuestIds.includes(q.id)) {
+        const [pq] = await db.insert(playerQuests).values({
+          playerId,
+          questId: q.id,
+          progress: 0,
+          status: "pending",
+          lastResetAt: now
+        }).returning();
+        enriched.push({ ...pq, quest: q });
+      }
+    }
+
+    return enriched;
+  }
+
+  async updateQuestProgress(playerId: number, questType: string, amount: number = 1, isAbsolute: boolean = false): Promise<void> {
+    const pQuests = await this.getPlayerQuests(playerId);
+    const pendingTypeQuests = pQuests.filter(pq => pq.quest.type === questType && pq.status === 'pending');
+
+    for (const pq of pendingTypeQuests) {
+      const newProgress = Math.min(isAbsolute ? amount : pq.progress + amount, pq.quest.target);
+      const isCompleted = newProgress >= pq.quest.target;
+
+      await db.update(playerQuests)
+        .set({
+          progress: newProgress,
+          status: isCompleted ? "completed" : "pending",
+          completedAt: isCompleted ? new Date() : null
+        })
+        .where(eq(playerQuests.id, pq.id));
+
+      if (isCompleted) {
+        const [player] = await db.select().from(players).where(eq(players.id, playerId));
+        if (player) {
+          await this.createActivity("quest_completed", player.id, player.gameName, {
+            questTitle: pq.quest.title,
+            questDifficulty: pq.quest.difficulty
+          });
+        }
+      }
+    }
+  }
+
+  async claimQuestReward(playerId: number, pqId: number): Promise<{ success: boolean; message: string; points: number; glory: number }> {
+    return await db.transaction(async (tx) => {
+      const [pq] = await tx.select().from(playerQuests).where(eq(playerQuests.id, pqId));
+      if (!pq) throw new Error("Missão não encontrada.");
+      if (pq.playerId !== playerId) throw new Error("Não autorizado.");
+      if (pq.status !== "completed") throw new Error("Missão ainda não concluída.");
+
+      const [quest] = await tx.select().from(quests).where(eq(quests.id, pq.questId));
+      if (!quest) throw new Error("Definição da missão não encontrada.");
+
+      const [player] = await tx.select().from(players).where(eq(players.id, playerId));
+      if (!player) throw new Error("Guerreiro não encontrado.");
+
+      // Mark as claimed
+      await tx.update(playerQuests)
+        .set({ status: "claimed" })
+        .where(eq(playerQuests.id, pqId));
+
+      const rewardPoints = quest.points;
+      const rewardGlory = quest.glory;
+
+      // Update player
+      const newPoints = player.points + rewardPoints;
+      const { calculateRank } = await import("@shared/schema");
+      const newRank = calculateRank(newPoints);
+
+      await tx.update(players).set({
+        points: newPoints,
+        rank: newRank,
+        gloryPoints: player.gloryPoints + rewardGlory
+      }).where(eq(players.id, playerId));
+
+      return {
+        success: true,
+        message: `Recompensa resgatada! +${rewardPoints} Pontos e +${rewardGlory} Glória.`,
+        points: rewardPoints,
+        glory: rewardGlory
+      };
+    });
   }
 }
 
