@@ -900,12 +900,12 @@ export default function Rankings() {
                     <Label className="text-xs uppercase tracking-[0.2em] font-bold text-primary/70">Prova da Vitória (Screenshot)</Label>
                     <div className="relative">
                       {!proofFile ? (
-                        <div className="flex flex-col items-center justify-center border-2 border-dashed border-primary/20 bg-white/5 rounded-2xl p-6 transition-all hover:bg-white/10 group cursor-pointer">
+                        <label className="flex flex-col items-center justify-center border-2 border-dashed border-primary/20 bg-white/5 rounded-2xl p-6 transition-all hover:bg-white/10 group cursor-pointer">
                           <Input
                             type="file"
                             accept="image/*"
                             onChange={(e) => handleFileChange(e.target.files?.[0] || null)}
-                            className="absolute inset-0 opacity-0 cursor-pointer"
+                            className="absolute inset-0 w-full h-full opacity-0 cursor-pointer z-50"
                             disabled={isAnalyzing}
                           />
                           {isAnalyzing ? (
@@ -916,7 +916,7 @@ export default function Rankings() {
                           <p className="text-xs uppercase tracking-widest text-muted-foreground">
                             {isAnalyzing ? "Analisando Print..." : "Clique para anexar o print"}
                           </p>
-                        </div>
+                        </label>
                       ) : (
                         <div className="relative rounded-2xl border border-primary/20 overflow-hidden group">
                           <img

@@ -51,21 +51,21 @@ export function SearchableSelect({
                 </Button>
             </PopoverTrigger>
             <PopoverContent
-                className="w-[--radix-popover-trigger-width] p-0 bg-[#020617] border-white/10 z-[100]"
+                className="w-[--radix-popover-trigger-width] p-0 bg-[#020617] border-white/10 z-[100] pointer-events-auto touch-none"
                 align="start"
                 side="bottom"
                 sideOffset={4}
             >
-                <Command className="bg-transparent">
+                <Command className="bg-transparent" loop>
                     <CommandInput placeholder="Pesquisar..." className="h-9 uppercase text-[10px] tracking-widest" />
-                    <CommandList className="max-h-[250px] overflow-y-auto overflow-x-hidden custom-scrollbar">
+                    <CommandList className="max-h-[250px] overflow-y-auto overflow-x-hidden custom-scrollbar touch-pan-y overscroll-contain pointer-events-auto">
                         <CommandEmpty className="text-[10px] uppercase tracking-widest p-4 text-muted-foreground">{emptyText}</CommandEmpty>
                         <CommandGroup>
                             {options.map((option) => (
                                 <CommandItem
                                     key={option.value}
                                     value={option.label}
-                                    onSelect={(currentValue) => {
+                                    onSelect={(currentValue: string) => {
                                         // Match by label to find the correct value
                                         const selected = options.find(o => o.label.toLowerCase() === currentValue.toLowerCase());
                                         onChange(selected ? selected.value : "")
