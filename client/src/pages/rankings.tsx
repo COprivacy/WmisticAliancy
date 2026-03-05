@@ -1070,8 +1070,8 @@ export default function Rankings() {
                                       <span
                                         className={`text-[10px] font-black uppercase text-center leading-tight ${reward.type === 'name_effect' ? reward.effect : ''}`}
                                         style={{
-                                          color: reward.type === 'name_color' ? reward.effect : undefined,
-                                          fontFamily: reward.type === 'name_font' ? reward.effect : undefined
+                                          color: reward.type === 'name_color' ? (reward.effect || undefined) : undefined,
+                                          fontFamily: reward.type === 'name_font' ? (reward.effect || undefined) : undefined
                                         }}
                                       >
                                         Nome<br />Preview
