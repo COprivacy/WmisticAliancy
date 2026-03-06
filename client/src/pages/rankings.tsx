@@ -28,6 +28,7 @@ import {
   Star,
   Sparkles,
   Award,
+  Ticket,
   Shield,
   Timer as ClockIcon,
   Play,
@@ -1030,11 +1031,20 @@ export default function Rankings() {
                       </DialogDescription>
                     </div>
                     {myPlayer && (
-                      <div className="bg-primary/10 border border-primary/20 rounded-2xl px-6 py-3 flex flex-col items-end">
-                        <span className="text-[10px] font-black uppercase tracking-widest text-primary/60">Seu Saldo:</span>
-                        <div className="flex items-center gap-2">
-                          <span className="text-2xl font-serif font-black text-white">{myPlayer.gloryPoints}</span>
-                          <Star className="w-5 h-5 text-primary fill-primary" />
+                      <div className="flex gap-4">
+                        <div className="bg-primary/10 border border-primary/20 rounded-2xl px-6 py-3 flex flex-col items-end">
+                          <span className="text-[10px] font-black uppercase tracking-widest text-primary/60">Tickets Arena:</span>
+                          <div className="flex items-center gap-2 text-white">
+                            <span className="text-2xl font-serif font-black">{myPlayer.arenaTickets ?? 5}</span>
+                            <span className="text-lg">🎫</span>
+                          </div>
+                        </div>
+                        <div className="bg-primary/10 border border-primary/20 rounded-2xl px-6 py-3 flex flex-col items-end">
+                          <span className="text-[10px] font-black uppercase tracking-widest text-primary/60">Seu Saldo:</span>
+                          <div className="flex items-center gap-2">
+                            <span className="text-2xl font-serif font-black text-white">{myPlayer.gloryPoints}</span>
+                            <Star className="w-5 h-5 text-primary fill-primary" />
+                          </div>
                         </div>
                       </div>
                     )}
@@ -1061,7 +1071,8 @@ export default function Rankings() {
                           { id: 'music', label: 'Músicas', icon: Zap },
                           { id: 'name_color', label: 'Cores', icon: Sparkles },
                           { id: 'name_effect', label: 'Efeitos', icon: Flame },
-                          { id: 'name_font', label: 'Fontes', icon: Award }
+                          { id: 'name_font', label: 'Fontes', icon: Award },
+                          { id: 'ticket', label: 'Ingressos', icon: Ticket }
                         ].map(cat => (
                           <Button
                             key={cat.id}
@@ -1079,7 +1090,7 @@ export default function Rankings() {
                       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                         {allRewards.filter(r => r.isAvailableInStore && (r.type || 'relic') === storeCategory).map((reward) => {
                           const isAffordable = myPlayer ? myPlayer.gloryPoints >= reward.price : false;
-                          const alreadyHas = myPlayer?.rewards?.some(r => r.id === reward.id);
+                          const alreadyHas = reward.type !== 'ticket' && myPlayer?.rewards?.some(r => r.id === reward.id);
 
                           return (
                             <div key={reward.id} className={`relative group p-4 rounded-2xl border transition-all ${alreadyHas ? 'bg-white/5 border-white/5 opacity-80' : 'bg-primary/5 border-primary/10 hover:border-primary/30'}`}>

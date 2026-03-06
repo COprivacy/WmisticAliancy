@@ -464,6 +464,20 @@ export async function registerRoutes(
       return;
     }
 
+    // Identificar o jogador atual usando o bd
+    const currentUser = await storage.getPlayerByAccountId(req.session.user!.id, req.session.user!.zoneId);
+    if (!currentUser) {
+      res.status(401).json({ message: "Sessão inválida" });
+      return;
+    }
+
+    // Consome Ticket de quem enviou o report
+    const hasTicket = await storage.consumeArenaTicket(currentUser.id);
+    if (!hasTicket) {
+      res.status(403).json({ message: "Sem Ingressos da Arena! Volte amanhã ou compre mais na Loja." });
+      return;
+    }
+
     const match = await storage.createMatch(result.data);
     res.json(match);
   }));
@@ -910,6 +924,20 @@ export async function registerRoutes(
       res.status(403).json({ message: "Não autorizado" });
       return;
     }
+
+    // Identificar o desafiante no BD
+    const challenger = await storage.getPlayerByAccountId(challengerId, challengerZone);
+    if (!challenger) {
+      res.status(404).json({ message: "Desafiante não encontrado" });
+      return;
+    }
+
+    // Consome Ticket da Arena do desafiante
+    const hasTicket = await storage.consumeArenaTicket(challenger.id);
+    if (!hasTicket) {
+      res.status(403).json({ message: "Você não tem Ingressos da Arena suficientes para desafiar. Volte amanhã ou compre na loja!" });
+      return;
+    }
     const challenge = await storage.createChallenge(
       challengerId,
       challengerZone,
@@ -933,6 +961,18 @@ export async function registerRoutes(
     const { status } = req.body;
     // Basic validation: user must be one of the participants
     // For simplicity, we assume the client sends the correct status update (accept/reject)
+
+    if (status === "accepted") {
+      const currentUser = await storage.getPlayerByAccountId(req.session.user!.id, req.session.user!.zoneId);
+      if (currentUser) {
+        const hasTicket = await storage.consumeArenaTicket(currentUser.id);
+        if (!hasTicket) {
+          res.status(403).json({ message: "Você não possui Ingressos da Arena para aceitar este duelo. Compre na loja ou aguarde amanhã!" });
+          return;
+        }
+      }
+    }
+
     await storage.updateChallengeStatus(id, status);
     res.json({ success: true });
   }));

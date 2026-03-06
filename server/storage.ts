@@ -21,6 +21,8 @@ export interface IStorage {
   getPlayerByAccountIdOnly(accountId: string): Promise<Player | undefined>;
   createPlayer(player: InsertPlayer): Promise<Player>;
   updatePlayer(id: number, update: Partial<Player>): Promise<Player>;
+  consumeArenaTicket(playerId: number): Promise<boolean>;
+  addArenaTickets(playerId: number, amount: number): Promise<void>;
 
   // Match methods
   getPendingMatches(): Promise<(Match & { winnerName: string; loserName: string })[]>;
@@ -198,6 +200,63 @@ export class DatabaseStorage implements IStorage {
     return player;
   }
 
+  async consumeArenaTicket(playerId: number): Promise<boolean> {
+    const [player] = await db.select().from(players).where(eq(players.id, playerId));
+    if (!player) return false;
+
+    const now = new Date();
+    // Verifica se já resetou hoje
+    let isSameDay = false;
+    if (player.lastTicketResetAt) {
+      const resetDate = new Date(player.lastTicketResetAt);
+      isSameDay = resetDate.getDate() === now.getDate() &&
+        resetDate.getMonth() === now.getMonth() &&
+        resetDate.getFullYear() === now.getFullYear();
+    }
+
+    if (!isSameDay) {
+      // Se é um dia novo, o jogador ganha os 5 ingressos base e já consome 1 para a ação atual (sobra 4)
+      await db.update(players).set({
+        arenaTickets: 4,
+        lastTicketResetAt: now
+      }).where(eq(players.id, playerId));
+      return true;
+    }
+
+    // Se é o mesmo dia, valida se o jogador tem ingressos sobrando
+    if (player.arenaTickets > 0) {
+      await db.update(players).set({
+        arenaTickets: player.arenaTickets - 1
+      }).where(eq(players.id, playerId));
+      return true;
+    }
+
+    return false; // Sem ingressos!
+  }
+
+  async addArenaTickets(playerId: number, amount: number): Promise<void> {
+    const [player] = await db.select().from(players).where(eq(players.id, playerId));
+    if (!player) return;
+
+    // Assegurar que os gratis são respeitados se for um dia novo?
+    // Somente adicionamos por cima do que o jogador tem, sem resetar a data pro caso dele ganhar mais
+    const now = new Date();
+    let isSameDay = false;
+    if (player.lastTicketResetAt) {
+      const resetDate = new Date(player.lastTicketResetAt);
+      isSameDay = resetDate.getDate() === now.getDate() &&
+        resetDate.getMonth() === now.getMonth() &&
+        resetDate.getFullYear() === now.getFullYear();
+    }
+
+    const currentTickets = isSameDay ? player.arenaTickets : 5;
+
+    await db.update(players).set({
+      arenaTickets: currentTickets + amount,
+      lastTicketResetAt: isSameDay ? player.lastTicketResetAt : now
+    }).where(eq(players.id, playerId));
+  }
+
   async searchPlayers(query: string): Promise<Player[]> {
     return await db.select().from(players).where(sql`${players.gameName} LIKE ${`%${query}%`}`);
   }
@@ -326,16 +385,24 @@ export class DatabaseStorage implements IStorage {
       if (!player || !reward) throw new Error("Player or Reward not found");
       if (player.gloryPoints < reward.price) throw new Error("Saldo de Glória insuficiente");
 
-      await tx.update(players).set({
-        gloryPoints: player.gloryPoints - reward.price
-      }).where(eq(players.id, playerId));
+      if (reward.type === 'ticket') {
+        // Apenas adiciona os tickets na tabela players
+        await tx.update(players).set({
+          gloryPoints: player.gloryPoints - reward.price,
+          arenaTickets: (player.arenaTickets || 0) + 1
+        }).where(eq(players.id, playerId));
+      } else {
+        await tx.update(players).set({
+          gloryPoints: player.gloryPoints - reward.price
+        }).where(eq(players.id, playerId));
 
-      await tx.insert(playerRewards).values({
-        playerId,
-        rewardId,
-        assignedAt: new Date(),
-        expiresAt: null
-      });
+        await tx.insert(playerRewards).values({
+          playerId,
+          rewardId,
+          assignedAt: new Date(),
+          expiresAt: null
+        });
+      }
 
       // Log Activity: we use 'this' but since we are in a transaction we should be careful. 
       // Activities and logging are secondary, but let's keep it consistent.
@@ -346,7 +413,8 @@ export class DatabaseStorage implements IStorage {
         data: JSON.stringify({
           rewardName: reward.name,
           rewardIcon: reward.icon,
-          price: reward.price
+          price: reward.price,
+          isTicket: reward.type === 'ticket'
         }),
         createdAt: new Date()
       });

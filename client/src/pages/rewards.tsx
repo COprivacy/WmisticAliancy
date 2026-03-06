@@ -3,7 +3,7 @@ import { Reward } from "@shared/schema";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { motion, AnimatePresence } from "framer-motion";
-import { Trophy, Star, Sparkles, Shield, Loader2, ChevronLeft, Info, X, Play, Pause, Music } from "lucide-react";
+import { Trophy, Star, Sparkles, Shield, Loader2, ChevronLeft, Info, X, Play, Pause, Music, Ticket } from "lucide-react";
 import { Link } from "wouter";
 import { Button } from "@/components/ui/button";
 import { useState, useRef, useEffect } from "react";
@@ -153,7 +153,8 @@ export default function Rewards() {
                         { id: 'music', label: 'Músicas', icon: Zap },
                         { id: 'name_color', label: 'Cores', icon: Sparkles },
                         { id: 'name_effect', label: 'Efeitos', icon: Flame },
-                        { id: 'name_font', label: 'Fontes', icon: Award }
+                        { id: 'name_font', label: 'Fontes', icon: Award },
+                        { id: 'ticket', label: 'Ingressos', icon: Ticket }
                     ].map(cat => (
                         <Button
                             key={cat.id}

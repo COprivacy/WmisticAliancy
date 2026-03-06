@@ -36,6 +36,8 @@ export const players = pgTable("players", {
   activeNameColor: text("active_name_color"), // Hex or CSS class
   activeNameEffect: text("active_name_effect"), // CSS animation class
   activeNameFont: text("active_name_font"), // Font family or class
+  arenaTickets: integer("arena_tickets").notNull().default(5),
+  lastTicketResetAt: timestamp("last_ticket_reset_at"),
 });
 
 export const matches = pgTable("matches", {
