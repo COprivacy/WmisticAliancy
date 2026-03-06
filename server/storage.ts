@@ -18,6 +18,7 @@ export interface IStorage {
   getPlayers(): Promise<Player[]>;
   getPlayer(id: number): Promise<Player | undefined>;
   getPlayerByAccountId(accountId: string, zoneId: string): Promise<Player | undefined>;
+  getPlayerByAccountIdOnly(accountId: string): Promise<Player | undefined>;
   createPlayer(player: InsertPlayer): Promise<Player>;
   updatePlayer(id: number, update: Partial<Player>): Promise<Player>;
 
@@ -163,6 +164,13 @@ export class DatabaseStorage implements IStorage {
   async getPlayerByAccountId(accountId: string, zoneId: string): Promise<Player | undefined> {
     const [player] = await db.select().from(players)
       .where(and(eq(players.accountId, accountId), eq(players.zoneId, zoneId)));
+    return player;
+  }
+
+  async getPlayerByAccountIdOnly(accountId: string): Promise<Player | undefined> {
+    const [player] = await db.select().from(players)
+      .where(eq(players.accountId, accountId))
+      .limit(1);
     return player;
   }
 

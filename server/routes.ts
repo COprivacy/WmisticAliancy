@@ -89,8 +89,10 @@ export async function registerRoutes(
     const { username, id, zoneId, pin } = req.body;
     const isAdmin = id === ADMIN_ID;
 
-    // Check if player exists
-    const player = await storage.getPlayerByAccountId(id, zoneId);
+    // For admin, search by accountId only (zone might differ)
+    let player = isAdmin
+      ? await storage.getPlayerByAccountIdOnly(id)
+      : await storage.getPlayerByAccountId(id, zoneId);
 
     if (!player) {
       res.status(404).json({ message: "Jogador não encontrado." });

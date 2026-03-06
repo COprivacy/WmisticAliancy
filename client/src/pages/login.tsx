@@ -31,6 +31,8 @@ export default function Login() {
   const { toast } = useToast();
   const [mlbbInfo, setMlbbInfo] = useState<{ name: string; rank: string; avatarImage: string } | null>(null);
   const [isValidating, setIsValidating] = useState(false);
+  // true when MLBB API timed out or failed — user can still proceed without verification
+  const [mlbbApiReady, setMlbbApiReady] = useState(false);
 
   const registrationMutation = useMutation({
     mutationFn: async (data: { gameName: string; accountId: string; zoneId: string; avatar?: string; currentRank?: string; pin: string }) => {
@@ -54,23 +56,41 @@ export default function Login() {
     setZone(zoneVal);
     setLoginStep("initial");
     setPin("");
+    setMlbbApiReady(false);
 
     if (idVal.length >= 8 && zoneVal.length >= 4) {
       setIsValidating(true);
+      const controller = new AbortController();
+      // 5 second timeout — if MLBB API is down, user can still login
+      const timeout = setTimeout(() => {
+        controller.abort();
+        setIsValidating(false);
+        setMlbbApiReady(true); // unlock button even without MLBB data
+        toast({
+          title: "API MLBB indisponível",
+          description: "Validação de nome desativada temporariamente. Você ainda pode entrar.",
+        });
+      }, 5000);
       try {
-        const res = await fetch(`/api/mlbb/account/${idVal}/${zoneVal}`);
+        const res = await fetch(`/api/mlbb/account/${idVal}/${zoneVal}`, { signal: controller.signal });
+        clearTimeout(timeout);
         if (res.ok) {
           const data = await res.json();
           setMlbbInfo(data);
           setUsername(data.name);
         }
-      } catch (err) {
-        console.error(err);
+        setMlbbApiReady(true);
+      } catch (err: any) {
+        if (err.name !== 'AbortError') {
+          clearTimeout(timeout);
+          setMlbbApiReady(true); // API error — still allow login
+        }
       } finally {
         setIsValidating(false);
       }
     } else {
       setMlbbInfo(null);
+      setMlbbApiReady(false);
     }
   };
 
@@ -130,9 +150,21 @@ export default function Login() {
     }
   };
 
+  const ADMIN_ID = "1792001576";
+  const isAdminAccount = id === ADMIN_ID;
   const isPending = authLoading || registrationMutation.isPending;
 
-  if (authLoading) return null;
+  if (authLoading) return (
+    <div className="min-h-screen flex items-center justify-center bg-[#020617]">
+      <div className="flex flex-col items-center gap-4">
+        <div className="w-16 h-16 rounded-2xl bg-gradient-to-br from-primary/20 to-primary/5 flex items-center justify-center border border-primary/30 shadow-2xl shadow-primary/20">
+          <Trophy className="w-8 h-8 text-primary drop-shadow-[0_0_8px_rgba(234,179,8,0.5)]" />
+        </div>
+        <Loader2 className="w-6 h-6 animate-spin text-primary" />
+        <p className="text-xs uppercase tracking-[0.3em] text-primary/50 font-bold">Carregando Arena...</p>
+      </div>
+    </div>
+  );
 
   return (
     <div className="min-h-screen flex items-center justify-center p-4 bg-[#020617] relative overflow-hidden">
@@ -296,7 +328,7 @@ export default function Login() {
                   disabled={
                     isPending ||
                     isValidating ||
-                    (loginStep === "initial" && !mlbbInfo) ||
+                    (loginStep === "initial" && !mlbbInfo && !isAdminAccount && !mlbbApiReady) ||
                     (loginStep !== "initial" && pin.length < 4)
                   }
                 >

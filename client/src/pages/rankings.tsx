@@ -38,7 +38,8 @@ import {
   Wallet,
   ShoppingCart,
   HelpCircle,
-  Lock
+  Lock,
+  Info
 } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import { useQuery, useMutation } from "@tanstack/react-query";

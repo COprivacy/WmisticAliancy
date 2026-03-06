@@ -24,13 +24,25 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
-    // Check session on mount
+    // Check session on mount with timeout fallback
+    const timeout = setTimeout(() => setIsLoading(false), 5000);
     fetch("/api/user")
-      .then(res => res.json())
-      .then(data => {
-        if (data) setUser(data);
+      .then(res => {
+        if (!res.ok) return null;
+        return res.json();
       })
-      .finally(() => setIsLoading(false));
+      .then(data => {
+        // Only set user if data is a valid object with an id
+        if (data && typeof data === 'object' && data.id) {
+          setUser(data);
+        }
+      })
+      .catch(() => { /* silently fail */ })
+      .finally(() => {
+        clearTimeout(timeout);
+        setIsLoading(false);
+      });
+    return () => clearTimeout(timeout);
   }, []);
 
   const login = async (username: string, id: string, zoneId: string, pin?: string) => {
