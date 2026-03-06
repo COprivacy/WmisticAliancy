@@ -578,10 +578,10 @@ export default function Rankings() {
                       const others = season?.prizes?.filter(p => !["TOP 1", "TOP 2", "TOP 3"].includes(p.rank.toUpperCase())) || [];
 
                       const gloryCoins: Record<string, string> = {
-                        "TOP 1": "5.000",
-                        "TOP 2": "3.000",
-                        "TOP 3": "1.500",
-                        "TOP 10": "500",
+                        "TOP 1": "2.000",
+                        "TOP 2": "1.000",
+                        "TOP 3": "500",
+                        "TOP 10": "200",
                       };
 
                       const renderPodiumItem = (prize: any, position: 1 | 2 | 3) => {
