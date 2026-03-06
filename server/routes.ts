@@ -479,6 +479,14 @@ export async function registerRoutes(
     }
 
     const match = await storage.createMatch(result.data);
+
+    // Auto-complete any existing challenge between these two players so it leaves the "Sala de Guerra"
+    try {
+      await storage.completeChallengeBetween(match.winnerId, match.winnerZone, match.loserId, match.loserZone);
+    } catch (err) {
+      console.error("Failed to auto-complete challenge:", err);
+    }
+
     res.json(match);
   }));
 

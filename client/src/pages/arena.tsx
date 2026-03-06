@@ -53,13 +53,13 @@ export default function ArenaPage() {
     const acceptedChallenges = challenges?.filter(c => {
         if (c.status !== 'accepted') return false;
 
-        // Se o agendamento já passou em mais de 6 horas, consideramos o duelo expirado ou já realizado
+        // Se o agendamento já passou em mais de 1 hora, consideramos o duelo expirado ou já realizado
         // Assim, eles somem da 'Arena Ao Vivo' sozinhos
         if (c.scheduledAt) {
             const scheduledDate = new Date(c.scheduledAt);
             const now = new Date();
-            const sixHoursInMs = 6 * 60 * 60 * 1000;
-            if (now.getTime() - scheduledDate.getTime() > sixHoursInMs) {
+            const oneHourInMs = 1 * 60 * 60 * 1000;
+            if (now.getTime() - scheduledDate.getTime() > oneHourInMs) {
                 return false;
             }
         }
