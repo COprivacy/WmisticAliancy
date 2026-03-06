@@ -728,6 +728,12 @@ export default function Profile() {
                                     <span className="text-muted-foreground block">CONTA VERIFICADA</span>
                                     <span className="text-primary">{player.currentRank || "Arena 1v1"}</span>
                                 </div>
+                                <div className="text-left text-xs font-bold uppercase tracking-widest border-l border-white/10 pl-4">
+                                    <span className="text-muted-foreground block">TICKETS ARENA</span>
+                                    <span className="text-white flex items-center gap-1">
+                                        {player.arenaTickets ?? 5} 🎫
+                                    </span>
+                                </div>
                             </div>
 
                             {/* Social Media Links */}
