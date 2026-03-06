@@ -467,7 +467,7 @@ export async function registerRoutes(
   }));
 
   // Image Upload Route (Persist to Supabase or local storage)
-  app.post("/api/upload", requireAdmin, upload.single('file'), asyncHandler(async (req, res) => {
+  app.post("/api/upload", requireAuth, upload.single('file'), asyncHandler(async (req, res) => {
     if (!req.file) {
       res.status(400).json({ message: "Nenhum arquivo enviado." });
       return;

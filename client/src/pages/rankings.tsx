@@ -310,6 +310,9 @@ export default function Rankings() {
           body: formData,
         });
         const data = await res.json();
+        if (!res.ok) {
+          throw new Error(data.message || "Falha ao realizar upload.");
+        }
         proofUrl = data.url;
       } catch (err) {
         toast({
