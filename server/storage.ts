@@ -525,6 +525,11 @@ export class DatabaseStorage implements IStorage {
     return enriched;
   }
 
+  async getChallengeById(id: number): Promise<any | undefined> {
+    const [challenge] = await db.select().from(challenges).where(eq(challenges.id, id));
+    return challenge;
+  }
+
   async updateChallengeStatus(id: number, status: string): Promise<void> {
     await db.update(challenges).set({ status }).where(eq(challenges.id, id));
   }
