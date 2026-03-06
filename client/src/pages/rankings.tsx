@@ -37,8 +37,8 @@ import {
   QrCode,
   Wallet,
   ShoppingCart,
-  Info,
-  HelpCircle
+  HelpCircle,
+  Lock
 } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import { useQuery, useMutation } from "@tanstack/react-query";
@@ -1046,8 +1046,8 @@ export default function Rankings() {
                       <TabsTrigger value="relics" className="data-[state=active]:bg-primary data-[state=active]:text-primary-foreground font-bold uppercase tracking-widest text-[10px]">
                         <Trophy className="w-3 h-3 mr-2" /> Relíquias
                       </TabsTrigger>
-                      <TabsTrigger value="topup" className="data-[state=active]:bg-primary data-[state=active]:text-primary-foreground font-bold uppercase tracking-widest text-[10px]">
-                        <Coins className="w-3 h-3 mr-2" /> Recarregar
+                      <TabsTrigger value="topup" className="data-[state=active]:bg-primary data-[state=active]:text-primary-foreground font-bold uppercase tracking-widest text-[10px] opacity-50 cursor-not-allowed" disabled>
+                        <Lock className="w-3 h-3 mr-2" /> Recarregar
                       </TabsTrigger>
                     </TabsList>
 
