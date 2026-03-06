@@ -962,13 +962,34 @@ export async function registerRoutes(
     // Basic validation: user must be one of the participants
     // For simplicity, we assume the client sends the correct status update (accept/reject)
 
-    if (status === "accepted") {
+    const oldChallenge = await storage.getChallengeById(id);
+    if (!oldChallenge) {
+      res.status(404).json({ message: "Desafio não encontrado" });
+      return;
+    }
+
+    if (status === "accepted" && oldChallenge.status === "pending") {
       const currentUser = await storage.getPlayerByAccountId(req.session.user!.id, req.session.user!.zoneId);
       if (currentUser) {
         const hasTicket = await storage.consumeArenaTicket(currentUser.id);
         if (!hasTicket) {
           res.status(403).json({ message: "Você não possui Ingressos da Arena para aceitar este duelo. Compre na loja ou aguarde amanhã!" });
           return;
+        }
+      }
+    } else if (status === "cancelled" || status === "rejected") {
+      // Devolver ingressos!
+      const challenger = await storage.getPlayerByAccountIdOnly(oldChallenge.challengerId);
+      if (challenger) {
+        // o desafiante sempre gastou 1 ingresso ao criar
+        await storage.addArenaTickets(challenger.id, 1);
+      }
+
+      if (oldChallenge.status === "accepted") {
+        // SE já tinha sido aceito, o desafiado também tinha gastado 1 ingresso
+        const challenged = await storage.getPlayerByAccountIdOnly(oldChallenge.challengedId);
+        if (challenged) {
+          await storage.addArenaTickets(challenged.id, 1);
         }
       }
     }

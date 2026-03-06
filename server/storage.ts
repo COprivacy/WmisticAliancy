@@ -55,6 +55,7 @@ export interface IStorage {
   createChallenge(challengerId: string, challengerZone: string, challengedId: string, challengedZone: string, message?: string, scheduledAt?: Date): Promise<any>;
   getChallengesByPlayer(accountId: string, zoneId: string): Promise<any[]>;
   getAllChallenges(): Promise<any[]>;
+  getChallengeById(id: number): Promise<any | undefined>;
   updateChallengeStatus(id: number, status: string): Promise<void>;
   completeChallengeBetween(p1Id: string, p1Zone: string, p2Id: string, p2Zone: string): Promise<void>;
 

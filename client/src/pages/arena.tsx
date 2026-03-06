@@ -1,13 +1,16 @@
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { Swords, Calendar, Clock, MessageSquare, Loader2, Info } from "lucide-react";
+import { Swords, Calendar, Clock, MessageSquare, Loader2, Info, X } from "lucide-react";
 import { motion } from "framer-motion";
 import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
 import { PlayerAvatar } from "@/components/player-avatar";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Button } from "@/components/ui/button";
+import { useAuth } from "@/lib/auth";
+import { apiRequest } from "@/lib/queryClient";
+import { useToast } from "@/hooks/use-toast";
 
 type Challenge = {
     id: number;
@@ -24,8 +27,27 @@ type Challenge = {
 };
 
 export default function ArenaPage() {
+    const { user } = useAuth();
+    const queryClient = useQueryClient();
+    const { toast } = useToast();
+
     const { data: challenges, isLoading } = useQuery<Challenge[]>({
         queryKey: ["/api/challenges"],
+    });
+
+    const cancelMutation = useMutation({
+        mutationFn: async (challengeId: number) => {
+            const res = await apiRequest("PATCH", `/api/challenges/${challengeId}`, { status: 'cancelled' });
+            return res.json();
+        },
+        onSuccess: () => {
+            queryClient.invalidateQueries({ queryKey: ["/api/challenges"] });
+            queryClient.invalidateQueries({ queryKey: ["/api/players"] }); // Atualizar tickets
+            toast({ title: "Duelo cancelado", description: "O combate foi anulado e os Tickets da Arena foram devolvidos caso tenham sido gastos." });
+        },
+        onError: () => {
+            toast({ title: "Erro", description: "Não foi possível cancelar o combate.", variant: "destructive" });
+        }
     });
 
     const acceptedChallenges = challenges?.filter(c => {
@@ -216,6 +238,24 @@ export default function ArenaPage() {
                                                 </div>
                                             )}
                                         </div>
+
+                                        {user && (user.id === challenge.challengerId || user.id === challenge.challengedId) && (
+                                            <div className="absolute top-4 right-4 z-50">
+                                                <Button
+                                                    variant="ghost"
+                                                    size="icon"
+                                                    className="w-8 h-8 rounded-full bg-red-500/10 hover:bg-red-500 hover:text-white text-red-500/60 transition-colors"
+                                                    onClick={() => {
+                                                        if (confirm("Você quer realmente cancelar este duelo? Os Ingressos de Arena serão devolvidos.")) {
+                                                            cancelMutation.mutate(challenge.id);
+                                                        }
+                                                    }}
+                                                    disabled={cancelMutation.isPending}
+                                                >
+                                                    <X className="w-4 h-4" />
+                                                </Button>
+                                            </div>
+                                        )}
                                     </CardContent>
                                 </Card>
                             </motion.div>
