@@ -28,7 +28,22 @@ export default function ArenaPage() {
         queryKey: ["/api/challenges"],
     });
 
-    const acceptedChallenges = challenges?.filter(c => c.status === 'accepted') || [];
+    const acceptedChallenges = challenges?.filter(c => {
+        if (c.status !== 'accepted') return false;
+
+        // Se o agendamento já passou em mais de 6 horas, consideramos o duelo expirado ou já realizado
+        // Assim, eles somem da 'Arena Ao Vivo' sozinhos
+        if (c.scheduledAt) {
+            const scheduledDate = new Date(c.scheduledAt);
+            const now = new Date();
+            const sixHoursInMs = 6 * 60 * 60 * 1000;
+            if (now.getTime() - scheduledDate.getTime() > sixHoursInMs) {
+                return false;
+            }
+        }
+
+        return true;
+    }) || [];
 
     if (isLoading) {
         return (

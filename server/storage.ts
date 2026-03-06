@@ -54,6 +54,7 @@ export interface IStorage {
   getChallengesByPlayer(accountId: string, zoneId: string): Promise<any[]>;
   getAllChallenges(): Promise<any[]>;
   updateChallengeStatus(id: number, status: string): Promise<void>;
+  completeChallengeBetween(p1Id: string, p1Zone: string, p2Id: string, p2Zone: string): Promise<void>;
 
   // Activity methods
   createActivity(type: string, playerId?: number, playerGameName?: string, data?: any): Promise<void>;
@@ -446,6 +447,24 @@ export class DatabaseStorage implements IStorage {
 
   async updateChallengeStatus(id: number, status: string): Promise<void> {
     await db.update(challenges).set({ status }).where(eq(challenges.id, id));
+  }
+
+  async completeChallengeBetween(p1Id: string, p1Zone: string, p2Id: string, p2Zone: string): Promise<void> {
+    await db.update(challenges).set({ status: 'completed' }).where(
+      and(
+        eq(challenges.status, 'accepted'),
+        or(
+          and(
+            eq(challenges.challengerId, p1Id), eq(challenges.challengerZone, p1Zone),
+            eq(challenges.challengedId, p2Id), eq(challenges.challengedZone, p2Zone)
+          ),
+          and(
+            eq(challenges.challengerId, p2Id), eq(challenges.challengerZone, p2Zone),
+            eq(challenges.challengedId, p1Id), eq(challenges.challengedZone, p1Zone)
+          )
+        )
+      )
+    );
   }
 
   async createActivity(type: string, playerId?: number, playerGameName?: string, data?: any): Promise<void> {

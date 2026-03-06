@@ -1068,6 +1068,9 @@ export async function registerRoutes(
         console.error("Failed to process random drop:", err);
       }
 
+      // Close the challenge automatically!
+      await storage.completeChallengeBetween(match.winnerId, match.winnerZone, match.loserId, match.loserZone);
+
       res.json({ message: "Combate aprovado e pontos atualizados." });
     } else if (action === "punish") {
       await storage.updateMatchStatus(id, "rejected");
