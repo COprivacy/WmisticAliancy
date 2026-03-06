@@ -778,9 +778,11 @@ export default function Profile() {
                                         </div>
                                         <div>
                                             <p className="text-sm font-bold uppercase tracking-widest">
-                                                {challenge.challengerId === user?.id ? "Você desafiou!" : "Novo Desafio Recebido!"}
+                                                {challenge.challengerId === user?.id
+                                                    ? `Você desafiou ${challenge.challengedName}!`
+                                                    : `${challenge.challengerName} te desafiou!`}
                                             </p>
-                                            <p className="text-xs text-muted-foreground uppercase">Aguardando confirmação</p>
+                                            <p className="text-xs text-muted-foreground uppercase tracking-wider">Aguardando confirmação</p>
                                         </div>
                                     </div>
                                     {challenge.challengedId === user?.id && (

@@ -489,11 +489,22 @@ export class DatabaseStorage implements IStorage {
   }
 
   async getChallengesByPlayer(accountId: string, zoneId: string): Promise<any[]> {
-    return await db.select().from(challenges)
+    const list = await db.select().from(challenges)
       .where(
         sql`(${challenges.challengerId} = ${accountId} AND ${challenges.challengerZone} = ${zoneId}) OR (${challenges.challengedId} = ${accountId} AND ${challenges.challengedZone} = ${zoneId})`
       )
       .orderBy(sql`${challenges.createdAt} DESC`);
+
+    const enriched = await Promise.all(list.map(async (c) => {
+      const challenger = await this.getPlayerByAccountId(c.challengerId, c.challengerZone);
+      const challenged = await this.getPlayerByAccountId(c.challengedId, c.challengedZone);
+      return {
+        ...c,
+        challengerName: challenger?.gameName || "Soldado",
+        challengedName: challenged?.gameName || "Soldado"
+      };
+    }));
+    return enriched;
   }
 
   async getAllChallenges(): Promise<any[]> {
