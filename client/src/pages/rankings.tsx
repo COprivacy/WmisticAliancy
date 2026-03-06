@@ -1027,32 +1027,32 @@ export default function Rankings() {
                   Loja WMythic
                 </Button>
               </DialogTrigger>
-              <DialogContent className="max-w-4xl bg-[#020617]/95 border-primary/20 backdrop-blur-3xl p-8 overflow-y-auto max-h-[90vh]">
-                <DialogHeader className="mb-8">
-                  <div className="flex items-center justify-between">
+              <DialogContent className="max-w-4xl bg-[#020617]/95 border-primary/20 backdrop-blur-3xl p-4 sm:p-8 overflow-y-auto max-h-[90vh]">
+                <DialogHeader className="mb-4 sm:mb-8">
+                  <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
                     <div>
-                      <DialogTitle className="text-3xl font-serif font-black uppercase tracking-widest flex items-center gap-3 italic">
-                        <Sparkles className="w-6 h-6 text-primary animate-pulse" />
+                      <DialogTitle className="text-xl sm:text-3xl font-serif font-black uppercase tracking-widest flex items-center gap-3 italic">
+                        <Sparkles className="w-5 h-5 sm:w-6 sm:h-6 text-primary animate-pulse" />
                         Loja WMythic
                       </DialogTitle>
-                      <DialogDescription className="text-primary/60 font-bold uppercase tracking-widest text-xs mt-1">
+                      <DialogDescription className="text-primary/60 font-bold uppercase tracking-widest text-[10px] sm:text-xs mt-1">
                         Consuma seus Pontos de Glória por poder ancestral
                       </DialogDescription>
                     </div>
                     {myPlayer && (
-                      <div className="flex gap-4">
-                        <div className="bg-primary/10 border border-primary/20 rounded-2xl px-6 py-3 flex flex-col items-end">
-                          <span className="text-[10px] font-black uppercase tracking-widest text-primary/60">Tickets Arena:</span>
-                          <div className="flex items-center gap-2 text-white">
-                            <span className="text-2xl font-serif font-black">{myPlayer.arenaTickets ?? 5}</span>
-                            <span className="text-lg">🎫</span>
+                      <div className="flex gap-2 sm:gap-4">
+                        <div className="flex-1 sm:flex-none bg-primary/10 border border-primary/20 rounded-xl sm:rounded-2xl px-3 sm:px-6 py-2 sm:py-3 flex flex-col items-center sm:items-end">
+                          <span className="text-[8px] sm:text-[10px] font-black uppercase tracking-widest text-primary/60">Tickets:</span>
+                          <div className="flex items-center gap-1 sm:gap-2 text-white">
+                            <span className="text-lg sm:text-2xl font-serif font-black">{myPlayer.arenaTickets ?? 5}</span>
+                            <span className="text-sm sm:text-lg">🎫</span>
                           </div>
                         </div>
-                        <div className="bg-primary/10 border border-primary/20 rounded-2xl px-6 py-3 flex flex-col items-end">
-                          <span className="text-[10px] font-black uppercase tracking-widest text-primary/60">Seu Saldo:</span>
-                          <div className="flex items-center gap-2">
-                            <span className="text-2xl font-serif font-black text-white">{myPlayer.gloryPoints}</span>
-                            <Star className="w-5 h-5 text-primary fill-primary" />
+                        <div className="flex-1 sm:flex-none bg-primary/10 border border-primary/20 rounded-xl sm:rounded-2xl px-3 sm:px-6 py-2 sm:py-3 flex flex-col items-center sm:items-end">
+                          <span className="text-[8px] sm:text-[10px] font-black uppercase tracking-widest text-primary/60">Saldo:</span>
+                          <div className="flex items-center gap-1 sm:gap-2">
+                            <span className="text-lg sm:text-2xl font-serif font-black text-white">{myPlayer.gloryPoints}</span>
+                            <Star className="w-4 h-4 sm:w-5 sm:h-5 text-primary fill-primary" />
                           </div>
                         </div>
                       </div>
@@ -1060,9 +1060,9 @@ export default function Rankings() {
                   </div>
                 </DialogHeader>
 
-                <div className="mt-6">
+                <div className="mt-4 sm:mt-6">
                   <Tabs defaultValue="relics" className="w-full">
-                    <TabsList className="grid w-full grid-cols-2 bg-white/5 border border-white/10 h-12 p-1 rounded-xl">
+                    <TabsList className="grid w-full grid-cols-2 bg-white/5 border border-white/10 h-10 sm:h-12 p-1 rounded-xl">
                       <TabsTrigger value="relics" className="data-[state=active]:bg-primary data-[state=active]:text-primary-foreground font-bold uppercase tracking-widest text-[10px]">
                         <Trophy className="w-3 h-3 mr-2" /> Relíquias
                       </TabsTrigger>
@@ -1071,8 +1071,8 @@ export default function Rankings() {
                       </TabsTrigger>
                     </TabsList>
 
-                    <TabsContent value="relics" className="mt-6 space-y-6">
-                      <div className="flex gap-2 overflow-x-auto pb-2 custom-scrollbar">
+                    <TabsContent value="relics" className="mt-4 sm:mt-6 space-y-4 sm:space-y-6">
+                      <div className="flex gap-1.5 sm:gap-2 overflow-x-auto pb-2 custom-scrollbar -mx-1 px-1">
                         {[
                           { id: 'relic', label: 'Relíquias', icon: Trophy },
                           { id: 'frame', label: 'Molduras', icon: Shield },
@@ -1087,24 +1087,24 @@ export default function Rankings() {
                             key={cat.id}
                             variant={storeCategory === cat.id ? "default" : "outline"}
                             size="sm"
-                            className="h-9 rounded-full uppercase text-[10px] font-black px-4 flex-shrink-0"
+                            className="h-8 sm:h-9 rounded-full uppercase text-[9px] sm:text-[10px] font-black px-2.5 sm:px-4 flex-shrink-0"
                             onClick={() => setStoreCategory(cat.id)}
                           >
-                            <cat.icon className="w-3 h-3 mr-2" />
+                            <cat.icon className="w-3 h-3 mr-1 sm:mr-2" />
                             {cat.label}
                           </Button>
                         ))}
                       </div>
 
-                      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                      <div className="grid grid-cols-1 gap-3 sm:gap-4">
                         {allRewards.filter(r => r.isAvailableInStore && (r.type || 'relic') === storeCategory).map((reward) => {
                           const isAffordable = myPlayer ? myPlayer.gloryPoints >= reward.price : false;
                           const alreadyHas = reward.type !== 'ticket' && myPlayer?.rewards?.some(r => r.id === reward.id);
 
                           return (
-                            <div key={reward.id} className={`relative group p-4 rounded-2xl border transition-all ${alreadyHas ? 'bg-white/5 border-white/5 opacity-80' : 'bg-primary/5 border-primary/10 hover:border-primary/30'}`}>
-                              <div className="flex gap-4">
-                                <div className={`w-20 h-20 rounded-xl overflow-hidden border-2 bg-black/40 flex-shrink-0 relative ${reward.rarity === 'mythic' ? 'border-purple-500/40' : 'border-primary/20'}`}>
+                            <div key={reward.id} className={`relative group p-3 sm:p-4 rounded-xl sm:rounded-2xl border transition-all ${alreadyHas ? 'bg-white/5 border-white/5 opacity-80' : 'bg-primary/5 border-primary/10 hover:border-primary/30'}`}>
+                              <div className="flex gap-3 sm:gap-4">
+                                <div className={`w-14 h-14 sm:w-20 sm:h-20 rounded-lg sm:rounded-xl overflow-hidden border-2 bg-black/40 flex-shrink-0 relative ${reward.rarity === 'mythic' ? 'border-purple-500/40' : 'border-primary/20'}`}>
                                   {/* Item Visual (Icon or Video) */}
                                   {reward.effect && reward.effect.match(/\.(mp4|webm)(\?.*)?$/i) ? (
                                     <video
@@ -1147,23 +1147,23 @@ export default function Rankings() {
                                     </div>
                                   )}
                                 </div>
-                                <div className="flex-1 space-y-1">
-                                  <span className={`text-[10px] font-black uppercase tracking-widest ${reward.rarity === 'mythic' ? 'text-purple-400' : 'text-primary'}`}>{reward.rarity}</span>
-                                  <h4 className="font-serif font-black uppercase tracking-widest text-white leading-tight">{reward.name}</h4>
-                                  <p className="text-xs text-muted-foreground line-clamp-2">{reward.description}</p>
+                                <div className="flex-1 min-w-0 space-y-0.5 sm:space-y-1">
+                                  <span className={`text-[9px] sm:text-[10px] font-black uppercase tracking-widest ${reward.rarity === 'mythic' ? 'text-purple-400' : 'text-primary'}`}>{reward.rarity}</span>
+                                  <h4 className="font-serif font-black uppercase tracking-wider sm:tracking-widest text-white leading-tight text-xs sm:text-sm truncate">{reward.name}</h4>
+                                  <p className="text-[10px] sm:text-xs text-muted-foreground line-clamp-1 sm:line-clamp-2">{reward.description}</p>
 
-                                  <div className="flex items-center justify-between pt-2">
-                                    <div className="flex items-center gap-1.5">
-                                      <span className={`text-sm font-black italic ${isAffordable ? 'text-white' : 'text-red-400'}`}>{reward.price}</span>
+                                  <div className="flex items-center justify-between pt-1.5 sm:pt-2">
+                                    <div className="flex items-center gap-1">
+                                      <span className={`text-xs sm:text-sm font-black italic ${isAffordable ? 'text-white' : 'text-red-400'}`}>{reward.price}</span>
                                       <Star className={`w-3 h-3 ${isAffordable ? 'text-primary fill-primary' : 'text-red-400'}`} />
                                     </div>
                                     <Button
                                       size="sm"
                                       disabled={!isAffordable || alreadyHas || purchaseMutation.isPending}
                                       onClick={() => purchaseMutation.mutate(reward.id)}
-                                      className={`h-8 uppercase text-[10px] font-black tracking-widest ${alreadyHas ? 'bg-emerald-500/20 text-emerald-400' : ''}`}
+                                      className={`h-7 sm:h-8 uppercase text-[9px] sm:text-[10px] font-black tracking-wider sm:tracking-widest px-3 sm:px-4 ${alreadyHas ? 'bg-emerald-500/20 text-emerald-400' : ''}`}
                                     >
-                                      {alreadyHas ? "ADQUIRIDO" : purchaseMutation.isPending ? "PROCESSANDO..." : "ADQUIRIR"}
+                                      {alreadyHas ? "ADQUIRIDO" : purchaseMutation.isPending ? "..." : "ADQUIRIR"}
                                     </Button>
                                   </div>
                                 </div>
