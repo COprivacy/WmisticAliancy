@@ -577,6 +577,13 @@ export default function Rankings() {
                       const top3 = getPrize("TOP 3");
                       const others = season?.prizes?.filter(p => !["TOP 1", "TOP 2", "TOP 3"].includes(p.rank.toUpperCase())) || [];
 
+                      const gloryCoins: Record<string, string> = {
+                        "TOP 1": "5.000",
+                        "TOP 2": "3.000",
+                        "TOP 3": "1.500",
+                        "TOP 10": "500",
+                      };
+
                       const renderPodiumItem = (prize: any, position: 1 | 2 | 3) => {
                         if (!prize) return <div className="flex-1" />;
                         const rarity = getPrizeRarity(prize.rank);
@@ -607,6 +614,12 @@ export default function Rankings() {
                                   </div>
                                   <div className="text-center px-1">
                                     <p className={`text-[11px] font-serif font-black uppercase leading-tight group-hover:drop-shadow-lg ${prize.effect ? prize.effect : 'text-white/90'}`}>{prize.prize}</p>
+                                    {gloryCoins[prize.rank.toUpperCase()] && (
+                                      <div className="flex items-center justify-center gap-1 mt-1 font-sans opacity-80">
+                                        <Coins className="w-3 h-3 text-yellow-500" />
+                                        <span className="text-[10px] font-bold text-yellow-500/90 tracking-widest">+{gloryCoins[prize.rank.toUpperCase()]} GLÓRIA</span>
+                                      </div>
+                                    )}
                                   </div>
                                 </div>
                               </DialogTrigger>
@@ -617,6 +630,12 @@ export default function Rankings() {
                                   </div>
                                   <div className="text-center space-y-2">
                                     <h3 className={`text-2xl font-serif font-black uppercase tracking-widest ${rc.label}`}>{prize.prize}</h3>
+                                    {gloryCoins[prize.rank.toUpperCase()] && (
+                                      <div className="flex items-center justify-center gap-2 mt-1 font-sans">
+                                        <Coins className="w-5 h-5 text-yellow-500 drop-shadow-[0_0_8px_rgba(234,179,8,0.5)]" />
+                                        <span className="text-sm font-black text-yellow-500/90 tracking-widest">+{gloryCoins[prize.rank.toUpperCase()]} MOEDAS DE GLÓRIA</span>
+                                      </div>
+                                    )}
                                     <p className="text-xs font-bold uppercase tracking-widest text-muted-foreground">Recompensa para {prize.rank}</p>
                                     {prize.effect && <Badge variant="outline" className={`mt-2 bg-black/50 ${rc.border} ${rc.label}`}>EFEITO ESPECIAL INCLUÍDO</Badge>}
                                   </div>
@@ -655,6 +674,12 @@ export default function Rankings() {
                                         <div className="min-w-0 flex-1">
                                           <span className={`block text-[10px] sm:text-xs font-black uppercase tracking-widest ${rc.label}`}>{prize.rank}</span>
                                           <p className={`text-xs sm:text-sm font-black uppercase truncate ${prize.effect || 'text-white/90'}`}>{prize.prize}</p>
+                                          {gloryCoins[prize.rank.toUpperCase()] && (
+                                            <div className="flex items-center gap-1 mt-0.5 font-sans opacity-80">
+                                              <Coins className="w-3 h-3 text-yellow-500" />
+                                              <span className="text-[9px] sm:text-[10px] font-bold text-yellow-500/90 tracking-widest">+{gloryCoins[prize.rank.toUpperCase()]} GLÓRIA</span>
+                                            </div>
+                                          )}
                                         </div>
                                       </motion.div>
                                     </DialogTrigger>
@@ -665,6 +690,12 @@ export default function Rankings() {
                                         </div>
                                         <div className="text-center space-y-2">
                                           <h3 className={`text-2xl font-serif font-black uppercase tracking-widest ${rc.label}`}>{prize.prize}</h3>
+                                          {gloryCoins[prize.rank.toUpperCase()] && (
+                                            <div className="flex items-center justify-center gap-2 mt-1 font-sans">
+                                              <Coins className="w-5 h-5 text-yellow-500 drop-shadow-[0_0_8px_rgba(234,179,8,0.5)]" />
+                                              <span className="text-sm font-black text-yellow-500/90 tracking-widest">+{gloryCoins[prize.rank.toUpperCase()]} MOEDAS DE GLÓRIA</span>
+                                            </div>
+                                          )}
                                           <p className="text-xs font-bold uppercase tracking-widest text-muted-foreground">Recompensa para {prize.rank}</p>
                                           {prize.effect && <Badge variant="outline" className={`mt-2 bg-black/50 ${rc.border} ${rc.label}`}>EFEITO ESPECIAL INCLUÍDO</Badge>}
                                         </div>
