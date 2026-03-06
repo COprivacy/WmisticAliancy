@@ -900,38 +900,47 @@ export default function Rankings() {
                   </DialogDescription>
                 </DialogHeader>
                 <div className="grid gap-6 py-6">
-                  <div className="space-y-3">
-                    <Label className="text-xs uppercase tracking-[0.2em] font-bold text-primary/70">Oponente Superado</Label>
+                  <div className="space-y-4">
+                    <div className="flex items-center gap-2">
+                      <div className="w-1 h-4 bg-primary rounded-full" />
+                      <Label className="text-sm uppercase tracking-[0.2em] font-black text-white">Oponente Superado</Label>
+                    </div>
                     <SearchableSelect
                       options={sortedPlayers
                         .filter(p => p.accountId !== user?.id)
                         .map(p => ({ label: p.gameName, value: p.id.toString() }))}
                       value={reportOpponentId?.toString()}
                       onChange={(val) => setReportOpponentId(parseInt(val))}
-                      placeholder="ESCOLHER OPONENTE..."
+                      placeholder="🔍 SELECIONE QUEM VOCÊ VENCEU..."
                       emptyText="JOGADOR NÃO ENCONTRADO."
                     />
                   </div>
 
                   <div className="grid grid-cols-2 gap-4">
-                    <div className="space-y-3">
-                      <Label className="text-xs uppercase tracking-[0.2em] font-bold text-emerald-500/70">Seu Herói</Label>
+                    <div className="space-y-4">
+                      <div className="flex items-center gap-2">
+                        <div className="w-1 h-4 bg-emerald-500 rounded-full" />
+                        <Label className="text-sm uppercase tracking-[0.2em] font-black text-white">Seu Herói</Label>
+                      </div>
                       <SearchableSelect
                         options={heroOptions}
                         value={winnerHero}
                         onChange={setWinnerHero}
-                        placeholder="HERÓI..."
-                        className="border-emerald-500/20"
+                        placeholder="🛡️ SEU HERÓI..."
+                        className="border-emerald-500/40 bg-emerald-500/5 text-emerald-400 font-bold"
                       />
                     </div>
-                    <div className="space-y-3">
-                      <Label className="text-xs uppercase tracking-[0.2em] font-bold text-red-500/70">Herói Inimigo</Label>
+                    <div className="space-y-4">
+                      <div className="flex items-center gap-2">
+                        <div className="w-1 h-4 bg-red-500 rounded-full" />
+                        <Label className="text-sm uppercase tracking-[0.2em] font-black text-white">Herói Inimigo</Label>
+                      </div>
                       <SearchableSelect
                         options={heroOptions}
                         value={loserHero}
                         onChange={setLoserHero}
-                        placeholder="HERÓI..."
-                        className="border-red-500/20"
+                        placeholder="⚔️ HERÓI DELE..."
+                        className="border-red-500/40 bg-red-500/5 text-red-500 font-bold"
                       />
                     </div>
                   </div>
