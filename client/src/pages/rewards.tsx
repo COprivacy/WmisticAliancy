@@ -3,7 +3,7 @@ import { Reward } from "@shared/schema";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { motion, AnimatePresence } from "framer-motion";
-import { Trophy, Star, Sparkles, Shield, Loader2, ChevronLeft, Info, X, Play, Pause, Music, Ticket } from "lucide-react";
+import { Trophy, Star, Sparkles, Shield, Loader2, ChevronLeft, Info, X, Play, Pause, Music, Ticket, Image, Zap, Flame, Award } from "lucide-react";
 import { Link } from "wouter";
 import { Button } from "@/components/ui/button";
 import { useState, useRef, useEffect } from "react";
@@ -149,7 +149,7 @@ export default function Rewards() {
                         { id: 'all', label: 'Tudo', icon: Sparkles },
                         { id: 'relic', label: 'Relíquias', icon: Trophy },
                         { id: 'frame', label: 'Molduras', icon: Shield },
-                        { id: 'background', label: 'Fundos', icon: ImageIcon },
+                        { id: 'background', label: 'Fundos', icon: Image },
                         { id: 'music', label: 'Músicas', icon: Zap },
                         { id: 'name_color', label: 'Cores', icon: Sparkles },
                         { id: 'name_effect', label: 'Efeitos', icon: Flame },
@@ -216,8 +216,8 @@ export default function Rewards() {
                                                 <span
                                                     className={`text-2xl font-black uppercase text-center drop-shadow-lg ${reward.type === 'name_effect' ? reward.effect : ''}`}
                                                     style={{
-                                                        color: reward.type === 'name_color' ? reward.effect : undefined,
-                                                        fontFamily: reward.type === 'name_font' ? reward.effect : undefined
+                                                        color: (reward.type === 'name_color' ? reward.effect : undefined) as any,
+                                                        fontFamily: (reward.type === 'name_font' ? reward.effect : undefined) as any
                                                     }}
                                                 >
                                                     Preview<br />de Nome
@@ -300,7 +300,7 @@ export default function Rewards() {
                                                 <Badge className={`uppercase font-black tracking-[0.2em] ${getRarityColor(selectedReward.rarity)}`}>
                                                     {selectedReward.rarity}
                                                 </Badge>
-                                                <DialogTitle className={`text-4xl font-serif font-black uppercase leading-tight ${selectedReward.effect || 'text-white'}`}>
+                                                <DialogTitle className={`text-4xl font-serif font-black uppercase leading-tight ${(selectedReward.effect as any) || 'text-white'}`}>
                                                     {selectedReward.name}
                                                 </DialogTitle>
                                             </div>

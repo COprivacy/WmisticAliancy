@@ -31,7 +31,8 @@ import {
     Trash2,
     Play,
     Pause,
-    Music
+    Music,
+    MessageSquare
 } from "lucide-react";
 import { useAuth } from "@/lib/auth";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogFooter, DialogDescription } from "@/components/ui/dialog";
@@ -460,8 +461,8 @@ export default function Profile() {
                                 <h1
                                     className={`text-4xl font-black uppercase tracking-tighter text-glow break-all whitespace-normal ${player.activeNameEffect || ''}`}
                                     style={{
-                                        color: player.activeNameColor || undefined,
-                                        fontFamily: player.activeNameFont || undefined
+                                        color: (player.activeNameColor || undefined) as any,
+                                        fontFamily: (player.activeNameFont || undefined) as any
                                     }}
                                 >
                                     {player.gameName}
@@ -666,58 +667,68 @@ export default function Profile() {
                                 </Dialog>
 
                                 {!isOwnProfile && user && (
-                                    <Dialog open={isChallengeDialogOpen} onOpenChange={setIsChallengeDialogOpen}>
-                                        <DialogTrigger asChild>
-                                            <Button className="bg-orange-600 hover:bg-orange-700 text-xs tracking-widest uppercase h-10 px-4 font-bold ml-2 shadow-lg shadow-orange-600/20">
-                                                <Swords className="w-3 h-3 mr-2" />
-                                                Lançar Desafio
-                                            </Button>
-                                        </DialogTrigger>
-                                        <DialogContent className="bg-[#020617] border-orange-500/20">
-                                            <DialogHeader>
-                                                <DialogTitle className="uppercase tracking-widest text-primary">Intimar para Combate</DialogTitle>
-                                                <DialogDescription className="uppercase text-xs tracking-widest opacity-60">
-                                                    Defina os termos e a hora do duelo.
-                                                </DialogDescription>
-                                            </DialogHeader>
-                                            <div className="space-y-6 py-4">
-                                                <div className="space-y-3">
-                                                    <Label className="text-xs uppercase tracking-widest font-black text-primary/70">Provocação / Mensagem</Label>
-                                                    <Textarea
-                                                        placeholder="Ex: Vou te amassar no 1v1 de Gusion! Esteja pronto."
-                                                        className="bg-white/5 border-white/10 min-h-[100px] text-xs"
-                                                        value={challengeMessage}
-                                                        onChange={(e) => setChallengeMessage(e.target.value)}
-                                                    />
-                                                </div>
-                                                <div className="space-y-3">
-                                                    <Label className="text-xs uppercase tracking-widest font-black text-primary/70">Horário Sugerido (BRT)</Label>
-                                                    <Input
-                                                        type="datetime-local"
-                                                        className="bg-white/5 border-white/10 h-12"
-                                                        value={challengeDate}
-                                                        onChange={(e) => setChallengeDate(e.target.value)}
-                                                    />
-                                                </div>
-                                            </div>
-                                            <DialogFooter>
-                                                <Button
-                                                    className="w-full h-14 bg-orange-600 hover:bg-orange-700 uppercase font-black tracking-widest shadow-xl shadow-orange-600/20"
-                                                    disabled={challengeMutation.isPending}
-                                                    onClick={() => challengeMutation.mutate({
-                                                        challengerId: user.id,
-                                                        challengerZone: user.zoneId,
-                                                        challengedId: player.accountId,
-                                                        challengedZone: player.zoneId,
-                                                        message: challengeMessage,
-                                                        scheduledAt: challengeDate
-                                                    })}
-                                                >
-                                                    {challengeMutation.isPending ? <Loader2 className="w-5 h-5 animate-spin" /> : "ENVIAR DESAFIO ⚔️"}
+                                    <div className="flex flex-wrap gap-2 ml-2">
+                                        <Button
+                                            onClick={() => setLocation(`/chat/private/${player.accountId}/${player.zoneId}`)}
+                                            className="bg-blue-600 hover:bg-blue-700 text-xs tracking-widest uppercase h-10 px-4 font-bold shadow-lg shadow-blue-600/20"
+                                        >
+                                            <MessageSquare className="w-3 h-3 mr-2" />
+                                            Mensagem Direta
+                                        </Button>
+
+                                        <Dialog open={isChallengeDialogOpen} onOpenChange={setIsChallengeDialogOpen}>
+                                            <DialogTrigger asChild>
+                                                <Button className="bg-orange-600 hover:bg-orange-700 text-xs tracking-widest uppercase h-10 px-4 font-bold shadow-lg shadow-orange-600/20">
+                                                    <Swords className="w-3 h-3 mr-2" />
+                                                    Lançar Desafio
                                                 </Button>
-                                            </DialogFooter>
-                                        </DialogContent>
-                                    </Dialog>
+                                            </DialogTrigger>
+                                            <DialogContent className="bg-[#020617] border-orange-500/20">
+                                                <DialogHeader>
+                                                    <DialogTitle className="uppercase tracking-widest text-primary">Intimar para Combate</DialogTitle>
+                                                    <DialogDescription className="uppercase text-xs tracking-widest opacity-60">
+                                                        Defina os termos e a hora do duelo.
+                                                    </DialogDescription>
+                                                </DialogHeader>
+                                                <div className="space-y-6 py-4">
+                                                    <div className="space-y-3">
+                                                        <Label className="text-xs uppercase tracking-widest font-black text-primary/70">Provocação / Mensagem</Label>
+                                                        <Textarea
+                                                            placeholder="Ex: Vou te amassar no 1v1 de Gusion! Esteja pronto."
+                                                            className="bg-white/5 border-white/10 min-h-[100px] text-xs"
+                                                            value={challengeMessage}
+                                                            onChange={(e) => setChallengeMessage(e.target.value)}
+                                                        />
+                                                    </div>
+                                                    <div className="space-y-3">
+                                                        <Label className="text-xs uppercase tracking-widest font-black text-primary/70">Horário Sugerido (BRT)</Label>
+                                                        <Input
+                                                            type="datetime-local"
+                                                            className="bg-white/5 border-white/10 h-12"
+                                                            value={challengeDate}
+                                                            onChange={(e) => setChallengeDate(e.target.value)}
+                                                        />
+                                                    </div>
+                                                </div>
+                                                <DialogFooter>
+                                                    <Button
+                                                        className="w-full h-14 bg-orange-600 hover:bg-orange-700 uppercase font-black tracking-widest shadow-xl shadow-orange-600/20"
+                                                        disabled={challengeMutation.isPending}
+                                                        onClick={() => challengeMutation.mutate({
+                                                            challengerId: user.id,
+                                                            challengerZone: user.zoneId,
+                                                            challengedId: player.accountId,
+                                                            challengedZone: player.zoneId,
+                                                            message: challengeMessage,
+                                                            scheduledAt: challengeDate
+                                                        })}
+                                                    >
+                                                        {challengeMutation.isPending ? <Loader2 className="w-5 h-5 animate-spin" /> : "ENVIAR DESAFIO ⚔️"}
+                                                    </Button>
+                                                </DialogFooter>
+                                            </DialogContent>
+                                        </Dialog>
+                                    </div>
                                 )}
                             </div>
                             <p className="text-muted-foreground font-mono text-xs uppercase tracking-[0.3em]">

@@ -16,6 +16,7 @@ import Fame from "@/pages/fame";
 import Arena from "@/pages/arena";
 import Rules from "@/pages/rules";
 import Chat from "@/pages/chat";
+import PrivateChat from "@/pages/private-chat";
 import Guide from "@/pages/guide";
 import Layout from "@/components/layout";
 import { PwaInstallPrompt } from "@/components/pwa-install-prompt";
@@ -76,6 +77,18 @@ function Router() {
       <Route path="/chat">
         <Layout>
           <Chat />
+        </Layout>
+      </Route>
+
+      <Route path="/chat/private">
+        <Layout>
+          <PrivateChat />
+        </Layout>
+      </Route>
+
+      <Route path="/chat/private/:id/:zone">
+        <Layout>
+          <PrivateChat />
         </Layout>
       </Route>
 

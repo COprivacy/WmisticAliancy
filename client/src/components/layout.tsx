@@ -1,12 +1,21 @@
 import { ReactNode } from "react";
 import { useAuth } from "@/lib/auth";
 import { useLocation, Link } from "wouter";
-import { LogOut, Trophy, ShieldAlert, User as UserIcon, BookOpen } from "lucide-react";
+import { LogOut, Trophy, ShieldAlert, User as UserIcon, BookOpen, MessageSquare } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { useQuery } from "@tanstack/react-query";
 
 export default function Layout({ children }: { children: ReactNode }) {
   const { user, logout, isLoading } = useAuth();
   const [location, setLocation] = useLocation();
+
+  const { data: conversations = [] } = useQuery<any[]>({
+    queryKey: ["/api/chat/conversations"],
+    enabled: !!user,
+    refetchInterval: 10000,
+  });
+
+  const totalUnread = conversations.reduce((acc, conv) => acc + (conv.unreadCount || 0), 0);
 
   if (isLoading) {
     return (
@@ -72,6 +81,18 @@ export default function Layout({ children }: { children: ReactNode }) {
             <Link href="/chat">
               <Button variant="ghost" size="sm" className={`font-black uppercase tracking-widest text-[11px] h-8 ${location === '/chat' ? 'text-primary' : 'text-muted-foreground'}`}>
                 Chat Global
+              </Button>
+            </Link>
+
+            <Link href="/chat/private">
+              <Button variant="ghost" size="sm" className={`font-black uppercase tracking-widest text-[11px] h-8 relative ${location.startsWith('/chat/private') ? 'text-primary' : 'text-muted-foreground'}`}>
+                <MessageSquare className="w-3 h-3 mr-1" />
+                Privado
+                {totalUnread > 0 && (
+                  <span className="absolute -top-1 -right-1 flex h-4 w-4 items-center justify-center rounded-full bg-rose-600 text-[10px] text-white animate-pulse shadow-[0_0_10px_rgba(225,29,72,0.5)]">
+                    {totalUnread}
+                  </span>
+                )}
               </Button>
             </Link>
 

@@ -1201,5 +1201,59 @@ export async function registerRoutes(
     res.json(message);
   }));
 
+  // Private Chat Routes
+  app.get("/api/chat/private/:id/:zone", requireAuth, asyncHandler(async (req, res) => {
+    const p1Id = req.session.user!.id;
+    const p1Zone = req.session.user!.zoneId;
+    const p2Id = req.params.id as string;
+    const p2Zone = req.params.zone as string;
+
+    // Mark messages as read when opening conversation
+    await storage.markMessagesAsRead(p2Id, p2Zone, p1Id, p1Zone);
+
+    const messages = await storage.getPrivateMessages(p1Id, p1Zone, p2Id, p2Zone);
+    res.json(messages);
+  }));
+
+  app.post("/api/chat/private/:id/:zone", requireAuth, asyncHandler(async (req, res) => {
+    const senderId = req.session.user!.id;
+    const senderZone = req.session.user!.zoneId;
+    const receiverId = req.params.id as string;
+    const receiverZone = req.params.zone as string;
+    const { content } = req.body;
+
+    if (!content || typeof content !== "string" || !content.trim()) {
+      res.status(400).json({ message: "Mensagem vazia." });
+      return;
+    }
+
+    const message = await storage.createPrivateMessage({
+      senderId,
+      senderZone,
+      receiverId,
+      receiverZone,
+      content: content.trim().substring(0, 500)
+    });
+
+    res.json(message);
+  }));
+
+  app.get("/api/chat/conversations", requireAuth, asyncHandler(async (req, res) => {
+    const playerId = req.session.user!.id;
+    const zoneId = req.session.user!.zoneId;
+    const conversations = await storage.getRecentConversations(playerId, zoneId);
+    res.json(conversations);
+  }));
+
+  app.post("/api/chat/private/:id/:zone/read", requireAuth, asyncHandler(async (req, res) => {
+    const receiverId = req.session.user!.id;
+    const receiverZone = req.session.user!.zoneId;
+    const senderId = req.params.id as string;
+    const senderZone = req.params.zone as string;
+
+    await storage.markMessagesAsRead(senderId, senderZone, receiverId, receiverZone);
+    res.json({ success: true });
+  }));
+
   return httpServer;
 }

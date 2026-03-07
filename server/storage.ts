@@ -1,9 +1,9 @@
 import {
-  users, players, matches, rewards, playerRewards, seasons, challenges, activities, reactions, configs, globalMessages, gloryTopups,
+  users, players, matches, rewards, playerRewards, seasons, challenges, activities, reactions, configs, globalMessages, privateMessages, gloryTopups,
   quests, playerQuests,
   type User, type InsertUser, type Player, type InsertPlayer, type Match, type InsertMatch,
   type Reward, type InsertReward, type Config, type InsertConfig, type Activity, type Reaction,
-  type GlobalMessage, type GloryTopup, type InsertGloryTopup,
+  type GlobalMessage, type PrivateMessage, type GloryTopup, type InsertGloryTopup,
   type Quest, type PlayerQuest, type InsertQuest
 } from "@shared/schema";
 import { db } from "./db";
@@ -77,6 +77,12 @@ export interface IStorage {
   getGlobalMessages(limit?: number): Promise<GlobalMessage[]>;
   createGlobalMessage(message: Omit<GlobalMessage, "id" | "createdAt">): Promise<GlobalMessage>;
   clearGlobalMessages(): Promise<void>;
+
+  // Private Chat
+  getPrivateMessages(p1Id: string, p1Zone: string, p2Id: string, p2Zone: string, limit?: number): Promise<PrivateMessage[]>;
+  createPrivateMessage(data: Omit<PrivateMessage, "id" | "createdAt" | "isRead">): Promise<PrivateMessage>;
+  getRecentConversations(playerId: string, zoneId: string): Promise<any[]>;
+  markMessagesAsRead(senderId: string, senderZone: string, receiverId: string, receiverZone: string): Promise<void>;
 
   // Quest methods
   getQuests(): Promise<Quest[]>;
@@ -690,6 +696,124 @@ export class DatabaseStorage implements IStorage {
       console.error("Chat system error while clearing messages:", err);
       throw err;
     }
+  }
+
+  // --- Private Chat Implementation ---
+  async getPrivateMessages(p1Id: string, p1Zone: string, p2Id: string, p2Zone: string, limit: number = 50): Promise<PrivateMessage[]> {
+    return await db.select().from(privateMessages)
+      .where(
+        or(
+          and(
+            eq(privateMessages.senderId, p1Id), eq(privateMessages.senderZone, p1Zone),
+            eq(privateMessages.receiverId, p2Id), eq(privateMessages.receiverZone, p2Zone)
+          ),
+          and(
+            eq(privateMessages.senderId, p2Id), eq(privateMessages.senderZone, p2Zone),
+            eq(privateMessages.receiverId, p1Id), eq(privateMessages.receiverZone, p1Zone)
+          )
+        )
+      )
+      .orderBy(sql`${privateMessages.createdAt} ASC`)
+      .limit(limit);
+  }
+
+  async createPrivateMessage(data: Omit<PrivateMessage, "id" | "createdAt" | "isRead">): Promise<PrivateMessage> {
+    const [message] = await db.insert(privateMessages).values({
+      ...data,
+      createdAt: new Date(),
+      isRead: false
+    }).returning();
+
+    // Auto cleanup: keep last 50 messages for this specific conversation
+    try {
+      await db.execute(sql`
+        DELETE FROM ${privateMessages}
+        WHERE id IN (
+          SELECT id FROM ${privateMessages}
+          WHERE (
+            (sender_id = ${data.senderId} AND sender_zone = ${data.senderZone} AND receiver_id = ${data.receiverId} AND receiver_zone = ${data.receiverZone})
+            OR 
+            (sender_id = ${data.receiverId} AND sender_zone = ${data.receiverZone} AND receiver_id = ${data.senderId} AND receiver_zone = ${data.senderZone})
+          )
+          ORDER BY created_at DESC
+          OFFSET 50
+        )
+      `);
+    } catch (err) {
+      console.error("Erro ao limpar mensagens privadas antigas:", err);
+    }
+
+    return message;
+  }
+
+  async getRecentConversations(playerId: string, zoneId: string): Promise<any[]> {
+    // Find all unique people the player has chatted with
+    const sent = await db.select({
+      id: privateMessages.receiverId,
+      zone: privateMessages.receiverZone
+    }).from(privateMessages).where(and(eq(privateMessages.senderId, playerId), eq(privateMessages.senderZone, zoneId)));
+
+    const received = await db.select({
+      id: privateMessages.senderId,
+      zone: privateMessages.senderZone
+    }).from(privateMessages).where(and(eq(privateMessages.receiverId, playerId), eq(privateMessages.receiverZone, zoneId)));
+
+    const uniquePairs = new Map<string, { id: string, zone: string }>();
+    [...sent, ...received].forEach(p => {
+      uniquePairs.set(`${p.id}-${p.zone}`, p);
+    });
+
+    const conversationPartners = Array.from(uniquePairs.values());
+    const results = await Promise.all(conversationPartners.map(async (p) => {
+      const player = await this.getPlayerByAccountId(p.id, p.zone);
+
+      // Get last message for this pair
+      const [lastMsg] = await db.select().from(privateMessages)
+        .where(
+          or(
+            and(eq(privateMessages.senderId, playerId), eq(privateMessages.senderZone, zoneId), eq(privateMessages.receiverId, p.id), eq(privateMessages.receiverZone, p.zone)),
+            and(eq(privateMessages.senderId, p.id), eq(privateMessages.senderZone, p.zone), eq(privateMessages.receiverId, playerId), eq(privateMessages.receiverZone, zoneId))
+          )
+        )
+        .orderBy(sql`${privateMessages.createdAt} DESC`)
+        .limit(1);
+
+      // Get unread count sent from this person to the current player
+      const unread = await db.select().from(privateMessages)
+        .where(
+          and(
+            eq(privateMessages.senderId, p.id), eq(privateMessages.senderZone, p.zone),
+            eq(privateMessages.receiverId, playerId), eq(privateMessages.receiverZone, zoneId),
+            eq(privateMessages.isRead, false)
+          )
+        );
+
+      return {
+        id: p.id,
+        zone: p.zone,
+        gameName: player?.gameName || "Soldado",
+        avatar: player?.avatar,
+        lastMessage: lastMsg?.content,
+        lastMessageAt: lastMsg?.createdAt,
+        unreadCount: unread.length
+      };
+    }));
+
+    return results.sort((a, b) => new Date(b.lastMessageAt || 0).getTime() - new Date(a.lastMessageAt || 0).getTime());
+  }
+
+  async markMessagesAsRead(senderId: string, senderZone: string, receiverId: string, receiverZone: string): Promise<void> {
+    await db.update(privateMessages)
+      .set({ isRead: true })
+      .where(
+        and(
+          eq(privateMessages.senderId, senderId),
+          eq(privateMessages.senderZone, senderZone),
+          eq(privateMessages.receiverId, receiverId),
+          eq(privateMessages.receiverZone, receiverZone),
+          eq(privateMessages.isRead, false)
+        )
+      );
   }
 
   // Quest implementations

@@ -140,6 +140,17 @@ export const globalMessages = pgTable("global_messages", {
   createdAt: timestamp("created_at").notNull().defaultNow(),
 });
 
+export const privateMessages = pgTable("private_messages", {
+  id: serial("id").primaryKey(),
+  senderId: text("sender_id").notNull(),
+  senderZone: text("sender_zone").notNull(),
+  receiverId: text("receiver_id").notNull(),
+  receiverZone: text("receiver_zone").notNull(),
+  content: text("content").notNull(),
+  createdAt: timestamp("created_at").notNull().defaultNow(),
+  isRead: boolean("is_read").notNull().default(false),
+});
+
 export const gloryTopups = pgTable("glory_topups", {
   id: serial("id").primaryKey(),
   playerId: integer("player_id").notNull(),
@@ -201,6 +212,7 @@ export type InsertConfig = typeof configs.$inferInsert;
 export type Activity = typeof activities.$inferSelect;
 export type Reaction = typeof reactions.$inferSelect;
 export type GlobalMessage = typeof globalMessages.$inferSelect;
+export type PrivateMessage = typeof privateMessages.$inferSelect;
 export type GloryTopup = typeof gloryTopups.$inferSelect;
 export const insertGloryTopupSchema = createInsertSchema(gloryTopups).omit({ id: true, createdAt: true });
 export type InsertGloryTopup = z.infer<typeof insertGloryTopupSchema>;
