@@ -340,9 +340,9 @@ export async function registerRoutes(
 
     const playerRewards = await storage.getPlayerRewards(player.id);
 
-    // Real arena stats (calculated from actual match data)
-    const arenaWins = history.filter(m => m.winnerId === accountId && m.winnerZone === zoneId).length;
-    const arenaLosses = history.filter(m => m.loserId === accountId && m.loserZone === zoneId).length;
+    // Real arena stats (using stored player stats as primary, or history as fallback)
+    const arenaWins = player.wins || history.filter(m => m.winnerId === accountId && m.winnerZone === zoneId).length;
+    const arenaLosses = player.losses || history.filter(m => m.loserId === accountId && m.loserZone === zoneId).length;
     const totalArena = arenaWins + arenaLosses;
     const arenaStats = {
       totalMatches: totalArena,
@@ -632,7 +632,7 @@ export async function registerRoutes(
 
   app.patch("/api/players/:id/admin", requireAdmin, asyncHandler(async (req, res) => {
     const playerId = parseInt(req.params.id as string);
-    const { points, isBanned, pin, gloryPoints } = req.body;
+    const { points, isBanned, pin, gloryPoints, arenaTickets } = req.body;
 
     const update: any = {};
     if (points !== undefined) {
@@ -647,6 +647,9 @@ export async function registerRoutes(
     }
     if (gloryPoints !== undefined) {
       update.gloryPoints = gloryPoints;
+    }
+    if (arenaTickets !== undefined) {
+      update.arenaTickets = arenaTickets;
     }
 
     const updated = await storage.updatePlayer(playerId, update);

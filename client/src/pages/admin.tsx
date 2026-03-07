@@ -86,6 +86,7 @@ export default function Admin() {
   const [editPointsId, setEditPointsId] = useState<number | null>(null);
   const [newPoints, setNewPoints] = useState<number>(100);
   const [newGlory, setNewGlory] = useState<number>(0);
+  const [newTickets, setNewTickets] = useState<number>(5);
 
   const { data: pendingMatches, isLoading: loadingMatches } = useQuery<MatchWithNames[]>({
     queryKey: ["/api/matches"],
@@ -196,8 +197,8 @@ export default function Admin() {
   });
 
   const playerAdminMutation = useMutation({
-    mutationFn: async ({ id, points, isBanned, pin, gloryPoints }: { id: number; points?: number; isBanned?: boolean; pin?: string | null; gloryPoints?: number }) => {
-      await apiRequest("PATCH", `/api/players/${id}/admin`, { points, isBanned, pin, gloryPoints });
+    mutationFn: async ({ id, points, isBanned, pin, gloryPoints, arenaTickets }: { id: number; points?: number; isBanned?: boolean; pin?: string | null; gloryPoints?: number; arenaTickets?: number }) => {
+      await apiRequest("PATCH", `/api/players/${id}/admin`, { points, isBanned, pin, gloryPoints, arenaTickets });
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["/api/players"] });
@@ -717,6 +718,7 @@ export default function Admin() {
                             setEditPointsId(player.id);
                             setNewPoints(player.points || 100);
                             setNewGlory(player.gloryPoints || 0);
+                            setNewTickets(player.arenaTickets || 0);
                           }}
                         >
                           <Edit2 className="w-3 h-3" />
@@ -1437,11 +1439,29 @@ export default function Admin() {
                 className="h-14 bg-white/5 border-white/10 text-2xl font-black text-center text-primary"
               />
             </div>
+
+            <div className="space-y-2">
+              <Label className="uppercase text-[10px] font-black tracking-widest opacity-60">Ingressos da Arena (Tickets)</Label>
+              <Input
+                type="number"
+                value={newTickets}
+                onChange={(e) => {
+                  const val = parseInt(e.target.value);
+                  setNewTickets(isNaN(val) ? 0 : val);
+                }}
+                className="h-14 bg-white/5 border-white/10 text-2xl font-black text-center text-blue-400"
+              />
+            </div>
           </div>
           <DialogFooter>
             <Button
               className="w-full h-14 bg-primary text-primary-foreground font-black uppercase tracking-widest rounded-2xl shadow-lg shadow-primary/20"
-              onClick={() => editPointsId && playerAdminMutation.mutate({ id: editPointsId, points: newPoints, gloryPoints: newGlory })}
+              onClick={() => editPointsId && playerAdminMutation.mutate({
+                id: editPointsId,
+                points: newPoints,
+                gloryPoints: newGlory,
+                arenaTickets: newTickets
+              })}
               disabled={playerAdminMutation.isPending}
             >
               APLICAR MUDANÇA

@@ -1,0 +1,71 @@
+{
+  "users_with_monys_in_username": [],
+  "players_with_monys": [
+    {
+      "player": {
+        "id": 8,
+        "gameName": "Monys✩",
+        "accountId": "1432804059 ",
+        "zoneId": "1619",
+        "points": 155,
+        "wins": 1,
+        "losses": 0,
+        "rank": "Soldado",
+        "avatar": "https://api.dicebear.com/7.x/initials/svg?seed=Monys%E2%9C%A9&backgroundColor=1e3a5f&textColor=f1f5f9&fontSize=36",
+        "currentRank": "Verificado",
+        "streak": 1,
+        "bio": null,
+        "twitch": null,
+        "instagram": null,
+        "youtube": null,
+        "mainHero": null,
+        "isBanned": false,
+        "pin": "1590",
+        "lastClaimedAt": "2026-03-07T14:55:19.079Z",
+        "gloryPoints": 10,
+        "activeFrame": null,
+        "activeBackground": null,
+        "activeMusic": null,
+        "activeNameColor": null,
+        "activeNameEffect": null,
+        "activeNameFont": null,
+        "arenaTickets": 3,
+        "lastTicketResetAt": "2026-03-07T15:08:11.687Z"
+      },
+      "user": []
+    },
+    {
+      "player": {
+        "id": 3,
+        "gameName": "Monys✩",
+        "accountId": "1432804059 ",
+        "zoneId": " 1619",
+        "points": 140,
+        "wins": 1,
+        "losses": 1,
+        "rank": "Soldado",
+        "avatar": "https://efyoeznyvlcqhqjgaoel.supabase.co/storage/v1/object/public/avatars/1772819332837-340052482.jpg",
+        "currentRank": "Verificado",
+        "streak": 0,
+        "bio": null,
+        "twitch": null,
+        "instagram": null,
+        "youtube": null,
+        "mainHero": null,
+        "isBanned": false,
+        "pin": "1590",
+        "lastClaimedAt": "2026-03-06T19:32:10.840Z",
+        "gloryPoints": 19,
+        "activeFrame": null,
+        "activeBackground": null,
+        "activeMusic": null,
+        "activeNameColor": null,
+        "activeNameEffect": null,
+        "activeNameFont": null,
+        "arenaTickets": 2,
+        "lastTicketResetAt": "2026-03-06T19:16:31.425Z"
+      },
+      "user": []
+    }
+  ]
+}
