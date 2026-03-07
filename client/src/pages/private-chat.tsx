@@ -270,16 +270,16 @@ export default function PrivateChat() {
                                             >
                                                 <div className={`max-w-[85%] md:max-w-[70%] p-4 rounded-3xl relative
                                                     ${isMe
-                                                        ? 'bg-primary/20 text-primary-foreground rounded-tr-none border border-primary/20'
-                                                        : 'bg-white/5 text-foreground rounded-tl-none border border-white/10'}`}
+                                                        ? 'bg-primary text-black rounded-tr-none shadow-lg shadow-primary/30'
+                                                        : 'bg-white/10 text-white rounded-tl-none border border-white/10'}`}
                                                 >
-                                                    <p className="text-sm leading-relaxed whitespace-pre-wrap">{msg.content}</p>
-                                                    <div className={`flex items-center gap-1.5 mt-2 justify-end ${isMe ? 'text-primary/70' : 'text-muted-foreground/60'}`}>
+                                                    <p className="text-sm leading-relaxed whitespace-pre-wrap font-medium">{msg.content}</p>
+                                                    <div className={`flex items-center gap-1.5 mt-2 justify-end ${isMe ? 'text-black/50' : 'text-white/40'}`}>
                                                         <span className="text-[8px] font-black uppercase">
                                                             {format(new Date(msg.createdAt), "HH:mm")}
                                                         </span>
                                                         {isMe && (
-                                                            <span className="text-[10px]">
+                                                            <span className="text-[10px] font-bold">
                                                                 {msg.isRead ? "✓✓" : "✓"}
                                                             </span>
                                                         )}
