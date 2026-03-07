@@ -11,8 +11,6 @@ async function getImageBuffer(url: string): Promise<Buffer> {
         const arrayBuffer = await response.arrayBuffer();
         return Buffer.from(arrayBuffer);
     } else {
-        // Handle local paths
-        // Convert /uploads/xxx to ./uploads/xxx
         const localPath = url.startsWith('/') ? url.substring(1) : url;
         const filePath = path.resolve(process.cwd(), localPath);
         if (!fs.existsSync(filePath)) {
@@ -22,11 +20,73 @@ async function getImageBuffer(url: string): Promise<Buffer> {
     }
 }
 
+/**
+ * Cleans a string for fuzzy matching:
+ * - Removes accents (é -> e)
+ * - Removes all non-alphanumeric characters (✩, ☆, spaces, clan tags brackets, etc.)
+ * - Converts to lowercase
+ * 
+ * Example: "GAM Monys☆" -> "gammonys"
+ * Example: "Monys✩" -> "monys"
+ */
+function cleanString(str: string): string {
+    return str.toLowerCase()
+        .normalize("NFD").replace(/[\u0300-\u036f]/g, "") // Remove accents (à -> a)
+        .replace(/[^a-z0-9]/g, ''); // Keep only letters and numbers
+}
+
+/**
+ * Extract the core part of the player name by removing potential
+ * clan tags (e.g. "[GAM]", "GAM ", "[AOE]" etc.)
+ * Returns an array of name variants to try:
+ * - The original cleaned name
+ * - The name without the first "word" (which might be a clan tag like "GAM")
+ */
+function getNameVariants(name: string): string[] {
+    const cleanFull = cleanString(name);
+    const variants: string[] = [cleanFull];
+
+    // Try to get just the "core" name by splitting by spaces/special chars
+    // In MLBB, a player's name might be displayed as "[TAG] Name" or "TAG Name"
+    const parts = name.split(/[\s\[\]|]+/).filter(p => p.length > 1);
+    if (parts.length > 1) {
+        // Add the last word (usually the actual name) and any part that is >= 4 chars
+        for (const part of parts) {
+            const cleanPart = cleanString(part);
+            if (cleanPart && cleanPart.length >= 3 && !variants.includes(cleanPart)) {
+                variants.push(cleanPart);
+            }
+        }
+    }
+
+    return variants;
+}
+
+/**
+ * Checks if a player's name is present in the OCR text.
+ * Uses multiple strategies:
+ * 1. Exact cleaned match
+ * 2. Partial match of name variants (handles clan tags)
+ * 3. Substring of name (min 4 chars) present in cleaned OCR
+ */
+function isNameFoundInText(playerName: string, cleanedOcrText: string): boolean {
+    if (!playerName || !cleanedOcrText) return false;
+
+    const variants = getNameVariants(playerName);
+
+    for (const variant of variants) {
+        if (variant.length >= 3 && cleanedOcrText.includes(variant)) {
+            return true;
+        }
+    }
+
+    return false;
+}
+
 export async function autoAnalyzeMatch(storage: IStorage, matchId: number) {
     console.log(`[AI] Starting analysis for match ${matchId}...`);
 
     try {
-        // Fetch the match from DB to get the image URL
         const match = await storage.getMatch(matchId);
 
         if (!match || !match.proofImage) {
@@ -34,40 +94,52 @@ export async function autoAnalyzeMatch(storage: IStorage, matchId: number) {
             return;
         }
 
-        // Update status to processing
         await storage.updateMatchAiInfo(matchId, "processing");
 
         const buffer = await getImageBuffer(match.proofImage);
         const result = await processMatchScreenshot(buffer);
 
-        const normalizedText = result.text.toLowerCase();
+        const cleanedOcrText = cleanString(result.text);
 
-        // Match names
+        // Log the raw OCR text for debugging
+        console.log(`[AI] Match ${matchId} OCR text (first 500 chars):`);
+        console.log(result.text.substring(0, 500));
+        console.log(`[AI] Match ${matchId} Cleaned OCR text (first 300 chars): ${cleanedOcrText.substring(0, 300)}`);
+        console.log(`[AI] Match ${matchId} Victory detected: ${result.isVictory}`);
+
         const winner = await storage.getPlayerByAccountId(match.winnerId, match.winnerZone);
         const loser = await storage.getPlayerByAccountId(match.loserId, match.loserZone);
 
-        const winnerNameFound = winner && normalizedText.includes(winner.gameName.toLowerCase());
-        const loserNameFound = loser && normalizedText.includes(loser.gameName.toLowerCase());
+        const winnerGameName = winner?.gameName || "";
+        const loserGameName = loser?.gameName || "";
 
-        // Confidence: Victory detected + Winner name detected
-        // Note: Sometimes the loser name might not be on the same screen (MVP screen),
-        // so we prioritize the winner name and the Victory message.
+        console.log(`[AI] Looking for winner: "${winnerGameName}" → cleaned: "${cleanString(winnerGameName)}"`);
+        console.log(`[AI] Looking for loser: "${loserGameName}" → cleaned: "${cleanString(loserGameName)}"`);
+
+        const winnerNameFound = isNameFoundInText(winnerGameName, cleanedOcrText);
+        const loserNameFound = isNameFoundInText(loserGameName, cleanedOcrText);
+
+        console.log(`[AI] Winner found? ${winnerNameFound} | Loser found? ${loserNameFound}`);
+
+        // Victory + at least one name found = approved
+        // Victory + no names = inconclusive (image might be right but name mismatch)
         const isFullyValidated = result.isVictory && winnerNameFound;
 
         const analysisResult = {
-            ...result,
+            isVictory: result.isVictory,
             winnerNameFound,
             loserNameFound,
             autoApproved: isFullyValidated,
+            ocrTextPreview: result.text.substring(0, 300),
             timestamp: new Date().toISOString()
         };
 
         if (isFullyValidated) {
-            console.log(`[AI] Match ${matchId} VALIDATED. Auto-approving...`);
+            console.log(`[AI] Match ${matchId} VALIDATED ✅. Auto-approving...`);
             await storage.approveMatch(matchId);
             await storage.updateMatchAiInfo(matchId, "success", JSON.stringify(analysisResult));
         } else {
-            console.log(`[AI] Match ${matchId} INCONCLUSIVE. WinnerNameFound: ${winnerNameFound}, VictoryDetected: ${result.isVictory}`);
+            console.log(`[AI] Match ${matchId} INCONCLUSIVE ⚠️. WinnerFound=${winnerNameFound}, VictoryDetected=${result.isVictory}`);
             await storage.updateMatchAiInfo(matchId, "inconclusive", JSON.stringify(analysisResult));
         }
 

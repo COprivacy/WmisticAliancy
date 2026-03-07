@@ -7,27 +7,47 @@ export interface OCRResult {
 }
 
 export async function processMatchScreenshot(imageBuffer: Buffer): Promise<OCRResult> {
-    const worker = await createWorker('por'); // Using Portuguese
+    // Use both English and Portuguese for better coverage
+    // MLBB victory/defeat screens use English words primarily
+    const worker = await createWorker(['eng', 'por']);
+
+    // Tesseract OCR options for better results on game screenshots
+    await worker.setParameters({
+        tessedit_pageseg_mode: '6' as any, // Assume uniform block of text (better for game UI)
+    });
 
     const { data: { text } } = await worker.recognize(imageBuffer);
     await worker.terminate();
 
     const normalizedText = text.toLowerCase();
 
-    // Basic patterns for Victory/Defeat
-    const victoryPatterns = ['victory', 'vitoria', 'vitória', 'mvp', 'vitoria da', 'vitoria mvp'];
-    const defeatPatterns = ['defeat', 'derrota', 'derrota da', 'derrota mvp'];
+    // Patterns for Victory/Defeat
+    // MLBB primarily shows "VICTORY" and "DEFEAT" in English
+    // Also handle common OCR misreadings like "VICT0RY", "VICTOBY" etc.
+    const victoryPatterns = [
+        'victory',        // Standard English
+        'vitoria',        // Portuguese
+        'vitória',        // Portuguese with accent
+        'victor',         // Partial (OCR cut-off)
+        'ictory',         // Partial (OCR cut-off or "VICTORY" misread)
+        'vict0ry',        // OCR digit confusion
+        'victofy',        // OCR letter confusion
+        'victoby',        // OCR letter confusion
+    ];
+
+    const defeatPatterns = [
+        'defeat',         // Standard English
+        'derrota',        // Portuguese
+        'defea',          // Partial
+        'defe4t',         // OCR digit confusion
+    ];
 
     const isVictory = victoryPatterns.some(p => normalizedText.includes(p)) &&
         !defeatPatterns.some(p => normalizedText.includes(p));
 
-    // Extract potential names (this is tricky with just OCR)
-    // Usually, we'll want to match detected names against our database
-    // For now, we return the full text for more advanced matching later
-
     return {
         text,
         isVictory,
-        detectedNames: [] // We'll implement name matching in the route
+        detectedNames: []
     };
 }
