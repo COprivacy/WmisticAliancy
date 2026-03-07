@@ -15,9 +15,11 @@ import { useToast } from "@/hooks/use-toast";
 type Challenge = {
     id: number;
     challengerId: string;
+    challengerZone: string;
     challengerName: string;
     challengerAvatar?: string;
     challengedId: string;
+    challengedZone: string;
     challengedName: string;
     challengedAvatar?: string;
     status: 'pending' | 'accepted' | 'rejected' | 'completed';
@@ -54,12 +56,19 @@ export default function ArenaPage() {
         if (c.status !== 'accepted') return false;
 
         // Se o agendamento já passou em mais de 1 hora, consideramos o duelo expirado ou já realizado
-        // Assim, eles somem da 'Arena Ao Vivo' sozinhos
         if (c.scheduledAt) {
             const scheduledDate = new Date(c.scheduledAt);
             const now = new Date();
             const oneHourInMs = 1 * 60 * 60 * 1000;
             if (now.getTime() - scheduledDate.getTime() > oneHourInMs) {
+                return false;
+            }
+        } else {
+            // Se não tem agendamento, expira após 24 horas da criação para não acumular
+            const createdDate = new Date(c.createdAt);
+            const now = new Date();
+            const oneDayInMs = 24 * 60 * 60 * 1000;
+            if (now.getTime() - createdDate.getTime() > oneDayInMs) {
                 return false;
             }
         }
@@ -159,12 +168,12 @@ export default function ArenaPage() {
                                                     <PlayerAvatar
                                                         player={{
                                                             accountId: challenge.challengerId,
-                                                            zoneId: challenge.challengerId, // Zone ID might be missing in challenge type, defaulting
+                                                            zoneId: challenge.challengerZone,
                                                             gameName: challenge.challengerName,
                                                             avatar: challenge.challengerAvatar,
-                                                            activeFrame: (challenge as any).challengerFrame || null, // Assuming we might add this or it's enough
-                                                            isBanned: false,
-                                                            streak: 0
+                                                            activeFrame: (challenge as any).challengerFrame || null,
+                                                            isBanned: (challenge as any).challengerIsBanned || false,
+                                                            streak: (challenge as any).challengerStreak || 0
                                                         } as any}
                                                         size="xl"
                                                     />
@@ -191,12 +200,12 @@ export default function ArenaPage() {
                                                     <PlayerAvatar
                                                         player={{
                                                             accountId: challenge.challengedId,
-                                                            zoneId: challenge.challengedId,
+                                                            zoneId: challenge.challengedZone,
                                                             gameName: challenge.challengedName,
                                                             avatar: challenge.challengedAvatar,
                                                             activeFrame: (challenge as any).challengedFrame || null,
-                                                            isBanned: false,
-                                                            streak: 0
+                                                            isBanned: (challenge as any).challengedIsBanned || false,
+                                                            streak: (challenge as any).challengedStreak || 0
                                                         } as any}
                                                         size="xl"
                                                     />

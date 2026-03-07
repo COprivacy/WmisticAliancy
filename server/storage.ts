@@ -525,7 +525,13 @@ export class DatabaseStorage implements IStorage {
         challengerName: challenger?.gameName || "Desconhecido",
         challengedName: challenged?.gameName || "Desconhecido",
         challengerAvatar: challenger?.avatar,
-        challengedAvatar: challenged?.avatar
+        challengedAvatar: challenged?.avatar,
+        challengerFrame: challenger?.activeFrame,
+        challengedFrame: challenged?.activeFrame,
+        challengerStreak: challenger?.streak || 0,
+        challengedStreak: challenged?.streak || 0,
+        challengerIsBanned: challenger?.isBanned || false,
+        challengedIsBanned: challenged?.isBanned || false
       };
     }));
     return enriched;
@@ -543,7 +549,7 @@ export class DatabaseStorage implements IStorage {
   async completeChallengeBetween(p1Id: string, p1Zone: string, p2Id: string, p2Zone: string): Promise<void> {
     await db.update(challenges).set({ status: 'completed' }).where(
       and(
-        eq(challenges.status, 'accepted'),
+        or(eq(challenges.status, 'accepted'), eq(challenges.status, 'pending')),
         or(
           and(
             eq(challenges.challengerId, p1Id), eq(challenges.challengerZone, p1Zone),

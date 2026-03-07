@@ -186,11 +186,30 @@ export const insertUserSchema = createInsertSchema(users).pick({
   password: true,
 });
 
-export const insertPlayerSchema = createInsertSchema(players).omit({
+export const insertPlayerSchema = createInsertSchema(players, {
+  accountId: z.string().trim(),
+  zoneId: z.string().trim(),
+}).omit({
   id: true,
 });
 
-export const insertMatchSchema = createInsertSchema(matches).omit({
+export const insertMatchSchema = createInsertSchema(matches, {
+  winnerId: z.string().trim(),
+  winnerZone: z.string().trim(),
+  loserId: z.string().trim(),
+  loserZone: z.string().trim(),
+}).omit({
+  id: true,
+  status: true,
+  createdAt: true,
+});
+
+export const insertChallengeSchema = createInsertSchema(challenges, {
+  challengerId: z.string().trim(),
+  challengerZone: z.string().trim(),
+  challengedId: z.string().trim(),
+  challengedZone: z.string().trim(),
+}).omit({
   id: true,
   status: true,
   createdAt: true,

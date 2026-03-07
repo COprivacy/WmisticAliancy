@@ -1,7 +1,7 @@
 import type { Express } from "express";
 import { createServer, type Server } from "http";
 import { storage } from "./storage";
-import { insertPlayerSchema, insertMatchSchema, calculateRank } from "@shared/schema";
+import { insertPlayerSchema, insertMatchSchema, insertChallengeSchema, calculateRank } from "@shared/schema";
 import { getHeroDetails } from "./mlbb-api";
 import asyncHandler from "express-async-handler";
 import multer from "multer";
@@ -933,7 +933,13 @@ export async function registerRoutes(
   }));
 
   app.post("/api/challenges", requireAuth, asyncHandler(async (req, res) => {
-    const { challengerId, challengerZone, challengedId, challengedZone, message, scheduledAt } = req.body;
+    const result = insertChallengeSchema.safeParse(req.body);
+    if (!result.success) {
+      res.status(400).json({ error: result.error });
+      return;
+    }
+
+    const { challengerId, challengerZone, challengedId, challengedZone, message, scheduledAt } = result.data;
     // Check if user is the challenger
     if (req.session.user?.id !== challengerId) {
       res.status(403).json({ message: "Não autorizado" });
@@ -952,7 +958,7 @@ export async function registerRoutes(
       challengerZone,
       challengedId,
       challengedZone,
-      message,
+      message || undefined,
       scheduledAt ? new Date(scheduledAt) : undefined
     );
     res.json(challenge);
