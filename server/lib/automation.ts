@@ -121,26 +121,34 @@ export async function autoAnalyzeMatch(storage: IStorage, matchId: number) {
 
         console.log(`[AI] Winner found? ${winnerNameFound} | Loser found? ${loserNameFound}`);
 
-        // Victory + at least one name found = approved
-        // Victory + no names = inconclusive (image might be right but name mismatch)
-        const isFullyValidated = result.isVictory && winnerNameFound;
+        // === VALIDATION LOGIC ===
+        // The submitter is the LOGGED-IN winner, so if the OCR confirms VICTORY
+        // on the screenshot, that is strong enough evidence to auto-approve.
+        //
+        // Confidence levels:
+        //   HIGH  → victory=true  + winner name found in image
+        //   MEDIUM→ victory=true  + winner name NOT found (clan tag, font issues)
+        //   INCONCLUSIVE → victory=false (screenshot not confirmed as a win)
 
         const analysisResult = {
             isVictory: result.isVictory,
             winnerNameFound,
             loserNameFound,
-            autoApproved: isFullyValidated,
             ocrTextPreview: result.text.substring(0, 300),
             timestamp: new Date().toISOString()
         };
 
-        if (isFullyValidated) {
-            console.log(`[AI] Match ${matchId} VALIDATED ✅. Auto-approving...`);
+        if (result.isVictory) {
+            const confidence = winnerNameFound ? "high" : "medium";
+            const updatedAnalysis = { ...analysisResult, confidence, autoApproved: true };
+
+            console.log(`[AI] Match ${matchId} APPROVED ✅ (confidence=${confidence}). Auto-approving...`);
             await storage.approveMatch(matchId);
-            await storage.updateMatchAiInfo(matchId, "success", JSON.stringify(analysisResult));
+            await storage.updateMatchAiInfo(matchId, "success", JSON.stringify(updatedAnalysis));
         } else {
-            console.log(`[AI] Match ${matchId} INCONCLUSIVE ⚠️. WinnerFound=${winnerNameFound}, VictoryDetected=${result.isVictory}`);
-            await storage.updateMatchAiInfo(matchId, "inconclusive", JSON.stringify(analysisResult));
+            // No victory signal found at all — flag for human review
+            console.log(`[AI] Match ${matchId} INCONCLUSIVE ⚠️. No victory detected. WinnerNameFound=${winnerNameFound}`);
+            await storage.updateMatchAiInfo(matchId, "inconclusive", JSON.stringify({ ...analysisResult, autoApproved: false }));
         }
 
     } catch (err) {
