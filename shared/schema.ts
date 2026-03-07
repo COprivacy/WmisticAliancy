@@ -50,6 +50,8 @@ export const matches = pgTable("matches", {
   loserHero: text("loser_hero"),
   proofImage: text("proof_image"),
   status: text("status").notNull().default("pending"),
+  aiStatus: text("ai_status").default("none"), // none, processing, success, failed, inconclusive
+  aiAnalysis: text("ai_analysis"), // JSON string of results
   createdAt: timestamp("created_at").notNull().defaultNow(),
 });
 
@@ -209,6 +211,7 @@ export const insertChallengeSchema = createInsertSchema(challenges, {
   challengerZone: z.string().trim(),
   challengedId: z.string().trim(),
   challengedZone: z.string().trim(),
+  scheduledAt: z.preprocess((val) => (val === "" ? undefined : val), z.string().or(z.date()).optional()),
 }).omit({
   id: true,
   status: true,

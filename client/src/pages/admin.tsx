@@ -39,6 +39,12 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { PlayerAvatar } from "@/components/player-avatar";
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from "@/components/ui/tooltip";
 
 type MatchWithNames = Match & { winnerName: string; loserName: string };
 
@@ -617,6 +623,37 @@ export default function Admin() {
                           <div className="text-center">
                             <span className="block text-xl font-black text-emerald-400 uppercase">{match.winnerName}</span>
                             <span className="text-[10px] text-muted-foreground font-mono">ID: {match.winnerId}</span>
+                            {match.aiStatus && match.aiStatus !== 'none' && (
+                              <div className="mt-1 flex justify-center">
+                                <TooltipProvider>
+                                  <Tooltip>
+                                    <TooltipTrigger>
+                                      <Badge variant="outline" className={`text-[8px] h-4 px-1 uppercase font-black tracking-tighter ${match.aiStatus === 'success' ? 'border-emerald-500 text-emerald-500' :
+                                        match.aiStatus === 'failed' ? 'border-rose-500 text-rose-500' :
+                                          'border-amber-500 text-amber-500'
+                                        }`}>
+                                        IA {match.aiStatus === 'processing' ? '⚙️' : match.aiStatus === 'inconclusive' ? '⚠️' : match.aiStatus === 'success' ? '✨' : '❌'}
+                                      </Badge>
+                                    </TooltipTrigger>
+                                    <TooltipContent className="bg-slate-950 border-white/10 text-[9px] max-w-xs">
+                                      <p className="font-bold uppercase text-primary mb-1">Análise da IA wmistic:</p>
+                                      <p className="opacity-80 leading-tight">
+                                        {match.aiAnalysis ? (
+                                          (() => {
+                                            try {
+                                              const analysis = JSON.parse(match.aiAnalysis);
+                                              return `Vitória: ${analysis.isVictory ? 'SIM' : 'NÃO'} | Winner: ${analysis.winnerNameFound ? 'OK' : 'N/D'} | Loser: ${analysis.loserNameFound ? 'OK' : 'N/D'}`;
+                                            } catch (e) {
+                                              return match.aiAnalysis;
+                                            }
+                                          })()
+                                        ) : "Aguardando processamento..."}
+                                      </p>
+                                    </TooltipContent>
+                                  </Tooltip>
+                                </TooltipProvider>
+                              </div>
+                            )}
                           </div>
                           <div className="px-4 py-1 rounded-full bg-white/5 border border-white/10 text-[10px] font-black uppercase tracking-widest opacity-40">VS</div>
                           <div className="text-center">

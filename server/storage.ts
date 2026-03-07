@@ -4,10 +4,11 @@ import {
   type User, type InsertUser, type Player, type InsertPlayer, type Match, type InsertMatch,
   type Reward, type InsertReward, type Config, type InsertConfig, type Activity, type Reaction,
   type GlobalMessage, type PrivateMessage, type GloryTopup, type InsertGloryTopup,
-  type Quest, type PlayerQuest, type InsertQuest
+  type Quest, type PlayerQuest, type InsertQuest, calculateRank
 } from "@shared/schema";
 import { db } from "./db";
-import { eq, and, or, sql } from "drizzle-orm";
+import { eq, and, or, sql, desc } from "drizzle-orm";
+import { pgTable, alias } from "drizzle-orm/pg-core";
 
 export interface IStorage {
   getUser(id: number): Promise<User | undefined>;
@@ -25,9 +26,13 @@ export interface IStorage {
   addArenaTickets(playerId: number, amount: number): Promise<void>;
 
   // Match methods
+  getMatch(id: number): Promise<Match | undefined>;
   getPendingMatches(): Promise<(Match & { winnerName: string; loserName: string })[]>;
   createMatch(match: InsertMatch): Promise<Match>;
   updateMatchStatus(id: number, status: string): Promise<Match>;
+  approveMatch(id: number): Promise<void>;
+  rejectMatch(id: number, action: "reject" | "punish"): Promise<void>;
+  updateMatchAiInfo(id: number, aiStatus: string, aiAnalysis?: string): Promise<void>;
   getMatchesByPlayerId(accountId: string, zoneId: string): Promise<Match[]>;
   getAllApprovedMatches(): Promise<Match[]>;
 
@@ -90,7 +95,7 @@ export interface IStorage {
   createQuest(quest: InsertQuest): Promise<Quest>;
   updateQuest(id: number, update: Partial<Quest>): Promise<Quest>;
   getPlayerQuests(playerId: number): Promise<(PlayerQuest & { quest: Quest })[]>;
-  updateQuestProgress(playerId: number, questType: string, amount?: number): Promise<void>;
+  updateQuestProgress(playerId: number, questType: string, amount?: number, isAbsolute?: boolean): Promise<void>;
   claimQuestReward(playerId: number, questId: number): Promise<{ success: boolean; message: string; points: number; glory: number }>;
 }
 
@@ -268,22 +273,31 @@ export class DatabaseStorage implements IStorage {
     return await db.select().from(players).where(sql`${players.gameName} LIKE ${`%${query}%`}`);
   }
 
+  async getMatch(id: number): Promise<Match | undefined> {
+    const [match] = await db.select().from(matches).where(eq(matches.id, id));
+    return match;
+  }
+
   async getPendingMatches(): Promise<(Match & { winnerName: string; loserName: string })[]> {
-    const pending = await db.select().from(matches)
+    const p1 = alias(players, "p1");
+    const p2 = alias(players, "p2");
+
+    const results = await db.select({
+      match: matches,
+      winnerName: p1.gameName,
+      loserName: p2.gameName
+    })
+      .from(matches)
+      .leftJoin(p1, and(eq(matches.winnerId, p1.accountId), eq(matches.winnerZone, p1.zoneId)))
+      .leftJoin(p2, and(eq(matches.loserId, p2.accountId), eq(matches.loserZone, p2.zoneId)))
       .where(eq(matches.status, "pending"))
-      .orderBy(sql`${matches.createdAt} DESC`);
+      .orderBy(desc(matches.createdAt));
 
-    const playersList = await this.getPlayers();
-
-    return pending.map(m => {
-      const winner = playersList.find(p => p.accountId === m.winnerId && p.zoneId === m.winnerZone);
-      const loser = playersList.find(p => p.accountId === m.loserId && p.zoneId === m.loserZone);
-      return {
-        ...m,
-        winnerName: winner?.gameName || "Soldado Desconhecido",
-        loserName: loser?.gameName || "Soldado Desconhecido"
-      };
-    });
+    return results.map(r => ({
+      ...r.match,
+      winnerName: r.winnerName || "Soldado Desconhecido",
+      loserName: r.loserName || "Soldado Desconhecido"
+    }));
   }
 
   async createMatch(insertMatch: InsertMatch): Promise<Match> {
@@ -294,17 +308,163 @@ export class DatabaseStorage implements IStorage {
     return match;
   }
 
+  async approveMatch(id: number): Promise<void> {
+    const [match] = await db.select().from(matches).where(eq(matches.id, id));
+    if (!match || match.status !== "pending") return;
+
+    // Update Winner
+    const winner = await this.getPlayerByAccountId(match.winnerId, match.winnerZone);
+    const loser = await this.getPlayerByAccountId(match.loserId, match.loserZone);
+
+    if (winner) {
+      const newPoints = winner.points + 50;
+      const newRank = calculateRank(newPoints);
+      const rankUp = newRank !== winner.rank;
+
+      await this.updatePlayer(winner.id, {
+        points: newPoints,
+        wins: winner.wins + 1,
+        streak: winner.streak + 1,
+        rank: newRank,
+      });
+
+      // Award 5 Glory Points for a win (moved from updateMatchStatus)
+      await this.awardGloryPoints(winner.id, 5);
+
+      // Log Activity: Match Win
+      await this.createActivity("match_approved", winner.id, winner.gameName, {
+        opponentName: loser?.gameName || "Oponente",
+        winnerHero: match.winnerHero,
+        proofImage: match.proofImage,
+      });
+
+      if (rankUp) {
+        await this.createActivity("rank_up", winner.id, winner.gameName, {
+          newRank: newRank,
+        });
+      }
+
+      // Update Quests for winner
+      await this.updateQuestProgress(winner.id, "matches", 1);
+      await this.updateQuestProgress(winner.id, "wins", 1);
+      await this.updateQuestProgress(winner.id, "streak", winner.streak + 1, true);
+    }
+
+    // Update Loser
+    if (loser) {
+      const newPoints = Math.max(0, loser.points - 20);
+      await this.updatePlayer(loser.id, {
+        points: newPoints,
+        losses: loser.losses + 1,
+        streak: 0,
+        rank: calculateRank(newPoints),
+      });
+
+      // Update Quests for loser
+      await this.updateQuestProgress(loser.id, "matches", 1);
+      await this.updateQuestProgress(loser.id, "streak", 0, true);
+    }
+
+    await this.updateMatchStatus(id, "approved");
+
+    // --- RANDOM DROP ON WIN (25% Chance) ---
+    try {
+      const dropChance = 0.25;
+      if (Math.random() < dropChance && winner) {
+        const dropType = Math.floor(Math.random() * 3); // 0: Relic, 1: Rank Points, 2: Glory Points
+
+        if (dropType === 0) {
+          const allRewards = await this.getRewards();
+          const droppableRelics = allRewards.filter(r => r.type === 'relic' && !r.isRankPrize);
+
+          if (droppableRelics.length > 0) {
+            const randomRelic = droppableRelics[Math.floor(Math.random() * droppableRelics.length)];
+            const playerRewards = await this.getPlayerRewards(winner.id);
+            const alreadyHas = playerRewards.some(pr => pr.id === randomRelic.id);
+
+            if (!alreadyHas) {
+              await this.assignReward(winner.id, randomRelic.id);
+              await this.createActivity("reward_earned", winner.id, winner.gameName, {
+                rewardName: randomRelic.name,
+                rewardIcon: randomRelic.icon,
+                isDrop: true,
+              });
+            } else {
+              await this.awardGloryPoints(winner.id, 5);
+              await this.createActivity("match_drop", winner.id, winner.gameName, {
+                type: "glory",
+                amount: 5,
+                message: "Recebeu +5 Glória como prêmio de consolação (Relíquia repetida)",
+              });
+            }
+          }
+        } else if (dropType === 1) {
+          const bonusPoints = 15;
+          const newPoints = winner.points + bonusPoints;
+          const newRank = calculateRank(newPoints);
+          await this.updatePlayer(winner.id, {
+            points: newPoints,
+            rank: newRank,
+          });
+          await this.createActivity("match_drop", winner.id, winner.gameName, {
+            type: "rank",
+            amount: bonusPoints,
+            message: `Ganhou um bônus de +${bonusPoints} pontos de Rank!`,
+          });
+        } else {
+          const bonusGlory = 5;
+          await this.awardGloryPoints(winner.id, bonusGlory);
+          await this.createActivity("match_drop", winner.id, winner.gameName, {
+            type: "glory",
+            amount: bonusGlory,
+            message: `Ganhou um bônus de +${bonusGlory} moedas de Glória!`,
+          });
+        }
+      }
+    } catch (err) {
+      console.error("Failed to process random drop:", err);
+    }
+
+    // Close the challenge automatically
+    await this.completeChallengeBetween(match.winnerId, match.winnerZone, match.loserId, match.loserZone);
+  }
+
+  async rejectMatch(id: number, action: "reject" | "punish"): Promise<void> {
+    const [match] = await db.select().from(matches).where(eq(matches.id, id));
+    if (!match || match.status !== "pending") return;
+
+    await this.updateMatchStatus(id, "rejected");
+
+    if (action === "punish") {
+      const reporter = await this.getPlayerByAccountId(match.winnerId, match.winnerZone);
+      if (reporter) {
+        const penaltyPoints = 100;
+        const penaltyGlory = 50;
+
+        const newPoints = Math.max(0, reporter.points - penaltyPoints);
+        await this.updatePlayer(reporter.id, {
+          points: newPoints,
+          gloryPoints: Math.max(0, reporter.gloryPoints - penaltyGlory),
+          rank: calculateRank(newPoints),
+        });
+
+        await this.createActivity("match_drop", reporter.id, reporter.gameName, {
+          type: "penalty",
+          message: `🚫 FRAUDE DETECTADA: Punido com -${penaltyPoints} pontos e -${penaltyGlory} Glória.`,
+        });
+      }
+    }
+  }
+
+  async updateMatchAiInfo(id: number, aiStatus: string, aiAnalysis?: string): Promise<void> {
+    await db.update(matches)
+      .set({ aiStatus, aiAnalysis })
+      .where(eq(matches.id, id));
+  }
+
   async updateMatchStatus(id: number, status: string): Promise<Match> {
     const [match] = await db.update(matches).set({ status }).where(eq(matches.id, id)).returning();
     if (!match) throw new Error("Match not found");
-
-    if (status === "approved") {
-      const winner = await this.getPlayerByAccountId(match.winnerId, match.winnerZone);
-      if (winner) {
-        // Award 5 Glory Points for a win
-        await this.awardGloryPoints(winner.id, 5);
-      }
-    }
     return match;
   }
 

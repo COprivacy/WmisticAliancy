@@ -140,6 +140,13 @@ export default function Profile() {
             setIsChallengeDialogOpen(false);
             setChallengeMessage("");
             setChallengeDate("");
+        },
+        onError: (err: any) => {
+            toast({
+                title: "Falha ao Lançar Desafio",
+                description: err?.response?.data?.message || "Verifique sua conexão e tente novamente.",
+                variant: "destructive"
+            });
         }
     });
 

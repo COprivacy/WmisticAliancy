@@ -15,8 +15,8 @@ export async function processMatchScreenshot(imageBuffer: Buffer): Promise<OCRRe
     const normalizedText = text.toLowerCase();
 
     // Basic patterns for Victory/Defeat
-    const victoryPatterns = ['victory', 'vitoria', 'vitória', 'mvp'];
-    const defeatPatterns = ['defeat', 'derrota'];
+    const victoryPatterns = ['victory', 'vitoria', 'vitória', 'mvp', 'vitoria da', 'vitoria mvp'];
+    const defeatPatterns = ['defeat', 'derrota', 'derrota da', 'derrota mvp'];
 
     const isVictory = victoryPatterns.some(p => normalizedText.includes(p)) &&
         !defeatPatterns.some(p => normalizedText.includes(p));

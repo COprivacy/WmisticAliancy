@@ -152,13 +152,16 @@ export default function Rankings() {
       queryClient.invalidateQueries({ queryKey: ["/api/matches"] });
       toast({
         title: "⚔️ Desafio Registrado",
-        description: `Sua vitória foi enviada para análise da guilda.`,
+        description: ocrResult?.isVictory
+          ? "A IA está validando sua vitória! Se confirmado, seus pontos subirão em instantes. ✨"
+          : "Sua vitória foi enviada para análise criteriosa da guilda.",
       });
       setIsReportOpen(false);
       setReportOpponentId(null);
       setProofFile(null);
       setWinnerHero("");
       setLoserHero("");
+      setOcrResult(null);
     },
     onError: () => {
       toast({

@@ -9,6 +9,7 @@ import path from "path";
 import fs from "fs";
 import { createClient } from "@supabase/supabase-js";
 import { processMatchScreenshot } from "./lib/ocr";
+import { autoAnalyzeMatch } from "./lib/automation";
 
 // Supabase configuration for persistent storage
 const supabaseUrl = process.env.SUPABASE_URL || `https://${process.env.SUPABASE_PROJECT_ID}.supabase.co`;
@@ -491,6 +492,11 @@ export async function registerRoutes(
       console.error("Failed to auto-complete challenge:", err);
     }
 
+    // Trigger AI Analysis independently
+    autoAnalyzeMatch(storage, match.id).catch(err => {
+      console.error("[AI] Match analysis failed to initiate:", err);
+    });
+
     res.json(match);
   }));
 
@@ -940,8 +946,9 @@ export async function registerRoutes(
     }
 
     const { challengerId, challengerZone, challengedId, challengedZone, message, scheduledAt } = result.data;
-    // Check if user is the challenger
-    if (req.session.user?.id !== challengerId) {
+    // Check if user is the challenger (robust comparison)
+    const sessionUserId = req.session.user?.id?.trim();
+    if (sessionUserId !== challengerId) {
       res.status(403).json({ message: "Não autorizado" });
       return;
     }
@@ -953,13 +960,16 @@ export async function registerRoutes(
       return;
     }
 
+    const parsedDate = scheduledAt ? new Date(scheduledAt) : undefined;
+    const finalDate = (parsedDate && !isNaN(parsedDate.getTime())) ? parsedDate : undefined;
+
     const challenge = await storage.createChallenge(
       challengerId,
       challengerZone,
       challengedId,
       challengedZone,
       message || undefined,
-      scheduledAt ? new Date(scheduledAt) : undefined
+      finalDate
     );
     res.json(challenge);
   }));
@@ -999,151 +1009,13 @@ export async function registerRoutes(
     }
 
     if (action === "approve") {
-      // Update Winner
-      const winner = await storage.getPlayerByAccountId(match.winnerId, match.winnerZone);
-      const loser = await storage.getPlayerByAccountId(match.loserId, match.loserZone);
-
-      if (winner) {
-        const newPoints = winner.points + 50;
-        const newRank = calculateRank(newPoints);
-        const rankUp = newRank !== winner.rank;
-
-        await storage.updatePlayer(winner.id, {
-          points: newPoints,
-          wins: winner.wins + 1,
-          streak: winner.streak + 1,
-          rank: newRank
-        });
-
-        // Log Activity: Match Win
-        await storage.createActivity("match_approved", winner.id, winner.gameName, {
-          opponentName: loser?.gameName || "Oponente",
-          winnerHero: match.winnerHero,
-          proofImage: match.proofImage
-        });
-
-        if (rankUp) {
-          await storage.createActivity("rank_up", winner.id, winner.gameName, {
-            newRank: newRank
-          });
-        }
-
-        // Update Quests for winner: matches, wins, streak
-        await storage.updateQuestProgress(winner.id, "matches", 1);
-        await storage.updateQuestProgress(winner.id, "wins", 1);
-        await storage.updateQuestProgress(winner.id, "streak", winner.streak, true);
-      }
-
-      // Update Loser
-      if (loser) {
-        const newPoints = Math.max(0, loser.points - 20);
-        await storage.updatePlayer(loser.id, {
-          points: newPoints,
-          losses: loser.losses + 1,
-          streak: 0,
-          rank: calculateRank(newPoints)
-        });
-
-        // Update Quests for loser: matches
-        await storage.updateQuestProgress(loser.id, "matches", 1);
-        // Reset streak quest implicitly by sending 0 absolute
-        await storage.updateQuestProgress(loser.id, "streak", 0, true);
-      }
-
-      await storage.updateMatchStatus(id, "approved");
-
-      // --- RANDOM DROP ON WIN (25% Chance) ---
-      try {
-        const dropChance = 0.25;
-        if (Math.random() < dropChance && winner) {
-          const dropType = Math.floor(Math.random() * 3); // 0: Relic, 1: Rank Points, 2: Glory Points
-
-          if (dropType === 0) {
-            const allRewards = await storage.getRewards();
-            const droppableRelics = allRewards.filter(r => r.type === 'relic' && !r.isRankPrize);
-
-            if (droppableRelics.length > 0) {
-              const randomRelic = droppableRelics[Math.floor(Math.random() * droppableRelics.length)];
-              const playerRewards = await storage.getPlayerRewards(winner.id);
-              const alreadyHas = playerRewards.some(pr => pr.id === randomRelic.id);
-
-              if (!alreadyHas) {
-                await storage.assignReward(winner.id, randomRelic.id);
-                await storage.createActivity("reward_earned", winner.id, winner.gameName, {
-                  rewardName: randomRelic.name,
-                  rewardIcon: randomRelic.icon,
-                  isDrop: true
-                });
-                console.log(`MATCH DROP: Player ${winner.gameName} earned relic ${randomRelic.name}`);
-              } else {
-                // Fallback to Glory Points if player already has the relic
-                await storage.awardGloryPoints(winner.id, 5);
-                await storage.createActivity("match_drop", winner.id, winner.gameName, {
-                  type: "glory",
-                  amount: 5,
-                  message: "Recebeu +5 Glória como prêmio de consolação (Relíquia repetida)"
-                });
-              }
-            }
-          } else if (dropType === 1) {
-            // Choice 1: +15 Rank Points
-            const bonusPoints = 15;
-            const newPoints = winner.points + bonusPoints;
-            const newRank = calculateRank(newPoints);
-            await storage.updatePlayer(winner.id, {
-              points: newPoints,
-              rank: newRank
-            });
-            await storage.createActivity("match_drop", winner.id, winner.gameName, {
-              type: "rank",
-              amount: bonusPoints,
-              message: `Ganhou um bônus de +${bonusPoints} pontos de Rank!`
-            });
-            console.log(`MATCH DROP: Player ${winner.gameName} earned ${bonusPoints} rank points`);
-          } else {
-            // Choice 2: +5 Glory Points
-            const bonusGlory = 5;
-            await storage.awardGloryPoints(winner.id, bonusGlory);
-            await storage.createActivity("match_drop", winner.id, winner.gameName, {
-              type: "glory",
-              amount: bonusGlory,
-              message: `Ganhou um bônus de +${bonusGlory} moedas de Glória!`
-            });
-            console.log(`MATCH DROP: Player ${winner.gameName} earned ${bonusGlory} glory points`);
-          }
-        }
-      } catch (err) {
-        console.error("Failed to process random drop:", err);
-      }
-
-      // Close the challenge automatically!
-      await storage.completeChallengeBetween(match.winnerId, match.winnerZone, match.loserId, match.loserZone);
-
+      await storage.approveMatch(id);
       res.json({ message: "Combate aprovado e pontos atualizados." });
     } else if (action === "punish") {
-      await storage.updateMatchStatus(id, "rejected");
-
-      const reporter = await storage.getPlayerByAccountId(match.winnerId, match.winnerZone);
-      if (reporter) {
-        const penaltyPoints = 100;
-        const penaltyGlory = 50;
-
-        const newPoints = Math.max(0, reporter.points - penaltyPoints);
-        await storage.updatePlayer(reporter.id, {
-          points: newPoints,
-          gloryPoints: Math.max(0, reporter.gloryPoints - penaltyGlory),
-          rank: calculateRank(newPoints)
-        });
-
-        await storage.createActivity("match_drop", reporter.id, reporter.gameName, {
-          type: "penalty",
-          message: `🚫 FRAUDE DETECTADA: Punido com -${penaltyPoints} pontos e -${penaltyGlory} Glória.`
-        });
-      }
-
+      await storage.rejectMatch(id, "punish");
       res.json({ message: "Combate rejeitado e fraudador punido." });
     } else {
-      await storage.updateMatchStatus(id, "rejected");
+      await storage.rejectMatch(id, "reject");
       res.json({ message: "Combate rejeitado." });
     }
   }));
