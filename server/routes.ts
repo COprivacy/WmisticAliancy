@@ -86,7 +86,9 @@ export async function registerRoutes(
 ): Promise<Server> {
   // Authentication Routes
   app.post("/api/login", asyncHandler(async (req, res) => {
-    const { username, id, zoneId, pin } = req.body;
+    let { username, id, zoneId, pin } = req.body;
+    id = String(id).trim();
+    zoneId = String(zoneId).trim();
     const isAdmin = id === ADMIN_ID;
 
     // For admin, search by accountId only (zone might differ)
@@ -408,6 +410,8 @@ export async function registerRoutes(
 
   // Register or Claim a spot
   app.post("/api/players", asyncHandler(async (req, res) => {
+    if (req.body.accountId) req.body.accountId = String(req.body.accountId).trim();
+    if (req.body.zoneId) req.body.zoneId = String(req.body.zoneId).trim();
     const result = insertPlayerSchema.safeParse(req.body);
     if (!result.success) {
       res.status(400).json({ error: result.error });
