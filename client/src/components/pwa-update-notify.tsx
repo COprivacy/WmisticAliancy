@@ -4,11 +4,7 @@ import { RefreshCcw, X, Sparkles, Zap } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 
 export function PwaUpdateNotify() {
-    const {
-        offlineReady: [offlineReady, setOfflineReady],
-        needUpdate: [needUpdate, setNeedUpdate],
-        updateServiceWorker,
-    } = useRegisterSW({
+    const sw = useRegisterSW({
         onRegistered(r: ServiceWorkerRegistration | undefined) {
             console.log('SW Registered:', r);
         },
@@ -17,14 +13,20 @@ export function PwaUpdateNotify() {
         },
     });
 
+    const offlineReady = sw.offlineReady?.[0];
+    const setOfflineReady = sw.offlineReady?.[1];
+    const needRefresh = (sw as any).needRefresh?.[0] ?? (sw as any).needUpdate?.[0];
+    const setNeedRefresh = (sw as any).needRefresh?.[1] ?? (sw as any).needUpdate?.[1];
+    const updateServiceWorker = sw.updateServiceWorker;
+
     const close = () => {
-        setOfflineReady(false);
-        setNeedUpdate(false);
+        if (setOfflineReady) setOfflineReady(false);
+        if (setNeedRefresh) setNeedRefresh(false);
     };
 
     return (
         <AnimatePresence>
-            {(offlineReady || needUpdate) && (
+            {(offlineReady || needRefresh) && (
                 <motion.div
                     initial={{ y: 100, opacity: 0 }}
                     animate={{ y: 0, opacity: 1 }}
@@ -43,10 +45,10 @@ export function PwaUpdateNotify() {
                                     </div>
                                     <div className="space-y-1">
                                         <h4 className="text-lg font-black uppercase tracking-widest text-white leading-tight">
-                                            {needUpdate ? "Expansão de Conteúdo!" : "Arena Pronta!"}
+                                            {needRefresh ? "Expansão de Conteúdo!" : "Arena Pronta!"}
                                         </h4>
                                         <p className="text-[10px] font-bold text-primary/60 uppercase tracking-widest">
-                                            {needUpdate
+                                            {needRefresh
                                                 ? "Novas melhorias foram forjadas para sua jornada."
                                                 : "O portal agora funciona totalmente offline."}
                                         </p>
@@ -61,13 +63,13 @@ export function PwaUpdateNotify() {
                             </div>
 
                             <p className="text-xs text-muted-foreground leading-relaxed font-medium uppercase tracking-wide opacity-80">
-                                {needUpdate
+                                {needRefresh
                                     ? "Recomendamos atualizar agora para receber as últimas otimizações de performance e recursos visuais."
                                     : "Acesse a Arena SPG de qualquer lugar, mesmo sem sinal."}
                             </p>
 
                             <div className="flex items-center gap-3 mt-2">
-                                {needUpdate ? (
+                                {needRefresh ? (
                                     <Button
                                         onClick={() => updateServiceWorker(true)}
                                         className="flex-1 h-12 bg-primary text-primary-foreground font-black uppercase tracking-[0.2em] rounded-xl shadow-lg shadow-primary/20 hover:scale-[1.02] transition-transform active:scale-95"
