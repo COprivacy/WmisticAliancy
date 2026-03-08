@@ -13,7 +13,7 @@ export default defineConfig({
     tailwindcss(),
     metaImagesPlugin(),
     VitePWA({
-      registerType: "autoUpdate",
+      registerType: "prompt",
       includeAssets: ["favicon.png", "apple-touch-icon.png", "pwa-192x192.png", "pwa-512x512.png"],
       manifest: {
         name: "SUA PARTIDA GAMER - Rank 1v1",

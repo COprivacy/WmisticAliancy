@@ -21,6 +21,7 @@ import Guide from "@/pages/guide";
 import Arcade from "@/pages/arcade";
 import Layout from "@/components/layout";
 import { PwaInstallPrompt } from "@/components/pwa-install-prompt";
+import { PwaUpdateNotify } from "@/components/pwa-update-notify";
 
 function Router() {
   return (
@@ -117,6 +118,7 @@ function App() {
         <TooltipProvider>
           <Toaster />
           <PwaInstallPrompt />
+          <PwaUpdateNotify />
           <Router />
         </TooltipProvider>
       </AuthProvider>
