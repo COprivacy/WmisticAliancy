@@ -476,7 +476,7 @@ export async function registerRoutes(
       return;
     }
 
-    // Check if there is an accepted challenge for this match
+    // STRICT REQUIREMENT: Must have an accepted challenge in "Sala de Guerra"
     const playerChallenges = await storage.getChallengesByPlayer(result.data.winnerId, result.data.winnerZone);
     const challenge = playerChallenges.find(c =>
       c.status === 'accepted' &&
@@ -485,21 +485,19 @@ export async function registerRoutes(
     );
 
     if (!challenge) {
-      // If no accepted challenge exists, this is a manual report and we consume a ticket from the winner
-      const hasTicket = await storage.consumeArenaTicket(currentUser.id);
-      if (!hasTicket) {
-        res.status(403).json({ message: "Sem Ingressos da Arena! Volte amanhã ou compre mais na Loja." });
-        return;
-      }
+      res.status(403).json({
+        message: "Combate bloqueado! Você precisa ter um desafio ACEITO na Sala de Guerra para registrar o resultado."
+      });
+      return;
     }
 
     const match = await storage.createMatch(result.data);
 
-    // Auto-complete any existing challenge between these two players so it leaves the "Sala de Guerra"
+    // Complete the challenge so it leaves the "Sala de Guerra"
     try {
-      await storage.completeChallengeBetween(match.winnerId, match.winnerZone, match.loserId, match.loserZone);
+      await storage.updateChallengeStatus(challenge.id, 'completed');
     } catch (err) {
-      console.error("Failed to auto-complete challenge:", err);
+      console.error("Failed to complete challenge:", err);
     }
 
     // Trigger AI Analysis independently
