@@ -1,7 +1,7 @@
 import { ReactNode } from "react";
 import { useAuth } from "@/lib/auth";
 import { useLocation, Link } from "wouter";
-import { LogOut, Trophy, ShieldAlert, User as UserIcon, BookOpen, MessageSquare } from "lucide-react";
+import { LogOut, Trophy, ShieldAlert, User as UserIcon, BookOpen, MessageSquare, Gamepad2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useQuery } from "@tanstack/react-query";
 
@@ -60,17 +60,13 @@ export default function Layout({ children }: { children: ReactNode }) {
               </Button>
             </Link>
 
-            <Link href="/arena">
-              <Button variant="ghost" size="sm" className={`font-black uppercase tracking-widest text-[11px] h-8 ${location === '/arena' ? 'text-primary' : 'text-muted-foreground'}`}>
-                Sala de Guerra
+            <Link href="/arcade">
+              <Button variant="ghost" size="sm" className={`font-black uppercase tracking-widest text-[11px] h-8 ${location === '/arcade' ? 'text-primary' : 'text-orange-400 hover:text-orange-300'}`}>
+                <Gamepad2 className="w-3 h-3 mr-1" />
+                Arcade
               </Button>
             </Link>
 
-            <Link href="/fame">
-              <Button variant="ghost" size="sm" className={`font-black uppercase tracking-widest text-[11px] h-8 ${location === '/fame' ? 'text-primary' : 'text-muted-foreground'}`}>
-                Glória
-              </Button>
-            </Link>
 
             <Link href="/rules">
               <Button variant="ghost" size="sm" className={`font-black uppercase tracking-widest text-[11px] h-8 ${location === '/rules' ? 'text-primary' : 'text-muted-foreground'}`}>

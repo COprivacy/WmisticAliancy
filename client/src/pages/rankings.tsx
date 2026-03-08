@@ -1247,7 +1247,7 @@ export default function Rankings() {
             <Link href="/arena">
               <Button variant="outline" className="w-full h-14 border-orange-500/20 bg-orange-500/5 hover:bg-orange-500/10 text-orange-500 font-bold uppercase tracking-widest group">
                 <Swords className="w-5 h-5 mr-3 group-hover:rotate-12 transition-transform" />
-                War Room
+                Sala de Guerra
               </Button>
             </Link>
 
@@ -1261,7 +1261,7 @@ export default function Rankings() {
             <Link href="/fame">
               <Button variant="outline" className="w-full h-14 border-yellow-500/20 bg-yellow-500/5 hover:bg-yellow-500/10 text-yellow-500 font-bold uppercase tracking-widest group">
                 <Trophy className="w-5 h-5 mr-3 group-hover:scale-110 transition-transform" />
-                Mural da Glória
+                Glória
               </Button>
             </Link>
           </div >

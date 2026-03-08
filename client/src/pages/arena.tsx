@@ -1,7 +1,7 @@
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { Swords, Calendar, Clock, MessageSquare, Loader2, Info, X } from "lucide-react";
+import { Swords, Calendar, Clock, MessageSquare, Loader2, Info, X, Gamepad2, Zap } from "lucide-react";
 import { motion } from "framer-motion";
 import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
@@ -9,6 +9,7 @@ import { PlayerAvatar } from "@/components/player-avatar";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Button } from "@/components/ui/button";
 import { useAuth } from "@/lib/auth";
+import { Link } from "wouter";
 import { apiRequest } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
 
@@ -335,6 +336,34 @@ export default function ArenaPage() {
                     )}
                 </div>
             </section>
+
+            {/* ARCADE PROMO */}
+            <motion.section
+                initial={{ opacity: 0, y: 20 }}
+                whileInView={{ opacity: 1, y: 0 }}
+                viewport={{ once: true }}
+                className="pt-10"
+            >
+                <div className="bg-gradient-to-r from-orange-500/10 via-[#020617] to-blue-500/10 p-1 rounded-[2.5rem] border border-white/5 overflow-hidden">
+                    <div className="bg-[#020617]/90 backdrop-blur-3xl p-8 md:p-12 rounded-[2.4rem] flex flex-col md:flex-row items-center gap-8">
+                        <div className="w-20 h-20 rounded-3xl bg-primary/20 flex items-center justify-center shrink-0 border border-primary/20">
+                            <Gamepad2 className="w-10 h-10 text-primary" />
+                        </div>
+                        <div className="flex-1 text-center md:text-left space-y-2">
+                            <h3 className="text-2xl font-black uppercase tracking-widest text-glow">Tédio na Espera?</h3>
+                            <p className="text-sm text-muted-foreground uppercase font-bold tracking-widest opacity-70">
+                                Enquanto seu oponente não aceita o desafio ou a batalha não começa, explore nosso novo Arcade Gamezop!
+                            </p>
+                        </div>
+                        <Link href="/arcade">
+                            <Button size="lg" className="bg-primary text-primary-foreground font-black uppercase tracking-widest h-14 px-10 shadow-lg shadow-primary/20 hover:scale-105 transition-transform active:scale-95">
+                                Acessar Arcade
+                                <Zap className="w-4 h-4 ml-3 fill-current" />
+                            </Button>
+                        </Link>
+                    </div>
+                </div>
+            </motion.section>
         </div>
     );
 }

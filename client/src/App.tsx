@@ -18,6 +18,7 @@ import Rules from "@/pages/rules";
 import Chat from "@/pages/chat";
 import PrivateChat from "@/pages/private-chat";
 import Guide from "@/pages/guide";
+import Arcade from "@/pages/arcade";
 import Layout from "@/components/layout";
 import { PwaInstallPrompt } from "@/components/pwa-install-prompt";
 
@@ -29,6 +30,12 @@ function Router() {
       <Route path="/rankings">
         <Layout>
           <Rankings />
+        </Layout>
+      </Route>
+
+      <Route path="/arcade">
+        <Layout>
+          <Arcade />
         </Layout>
       </Route>
 
