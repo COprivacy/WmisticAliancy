@@ -476,11 +476,21 @@ export async function registerRoutes(
       return;
     }
 
-    // Consome Ticket de quem enviou o report
-    const hasTicket = await storage.consumeArenaTicket(currentUser.id);
-    if (!hasTicket) {
-      res.status(403).json({ message: "Sem Ingressos da Arena! Volte amanhã ou compre mais na Loja." });
-      return;
+    // Check if there is an accepted challenge for this match
+    const playerChallenges = await storage.getChallengesByPlayer(result.data.winnerId, result.data.winnerZone);
+    const challenge = playerChallenges.find(c =>
+      c.status === 'accepted' &&
+      ((c.challengerId === result.data.winnerId && c.challengerZone === result.data.winnerZone && c.challengedId === result.data.loserId && c.challengedZone === result.data.loserZone) ||
+        (c.challengerId === result.data.loserId && c.challengerZone === result.data.loserZone && c.challengedId === result.data.winnerId && c.challengedZone === result.data.winnerZone))
+    );
+
+    if (!challenge) {
+      // If no accepted challenge exists, this is a manual report and we consume a ticket from the winner
+      const hasTicket = await storage.consumeArenaTicket(currentUser.id);
+      if (!hasTicket) {
+        res.status(403).json({ message: "Sem Ingressos da Arena! Volte amanhã ou compre mais na Loja." });
+        return;
+      }
     }
 
     const match = await storage.createMatch(result.data);
@@ -953,10 +963,14 @@ export async function registerRoutes(
       return;
     }
 
-    // Identificar o desafiante no BD
     const challenger = await storage.getPlayerByAccountId(challengerId, challengerZone);
     if (!challenger) {
       res.status(404).json({ message: "Desafiante não encontrado" });
+      return;
+    }
+
+    if (challenger.arenaTickets < 1) {
+      res.status(403).json({ message: "Você não possui Ingressos da Arena suficientes para lançar um desafio." });
       return;
     }
 
@@ -991,8 +1005,36 @@ export async function registerRoutes(
       return;
     }
 
+    if (status === 'accepted' && oldChallenge.status !== 'accepted') {
+      const challenger = await storage.getPlayerByAccountId(oldChallenge.challengerId, oldChallenge.challengerZone);
+      const challenged = await storage.getPlayerByAccountId(oldChallenge.challengedId, oldChallenge.challengedZone);
+
+      if (!challenger || !challenged) {
+        res.status(404).json({ message: "Um dos combatentes não foi encontrado." });
+        return;
+      }
+
+      if (challenger.arenaTickets < 1 || challenged.arenaTickets < 1) {
+        res.status(403).json({
+          message: `Tickets insuficientes! Você: ${challenged.arenaTickets}, Oponente: ${challenger.arenaTickets}.`
+        });
+        return;
+      }
+
+      // Consume from both upfront
+      await storage.consumeArenaTicket(challenger.id);
+      await storage.consumeArenaTicket(challenged.id);
+    } else if (status === 'cancelled' || status === 'rejected') {
+      if (oldChallenge.status === 'accepted') {
+        const challenger = await storage.getPlayerByAccountId(oldChallenge.challengerId, oldChallenge.challengerZone);
+        const challenged = await storage.getPlayerByAccountId(oldChallenge.challengedId, oldChallenge.challengedZone);
+        if (challenger) await storage.addArenaTickets(challenger.id, 1);
+        if (challenged) await storage.addArenaTickets(challenged.id, 1);
+      }
+    }
+
     await storage.updateChallengeStatus(id, status);
-    res.json({ success: true });
+    res.json({ success: true, message: status === 'accepted' ? "Duelo confirmado! Ingressos consumidos de ambos os guerreiros." : "Status atualizado." });
   }));
 
   // Admin Actions: Approve or Reject
