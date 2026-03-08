@@ -229,7 +229,7 @@ export default function Login() {
                       placeholder="ID: 1792001576"
                       value={id}
                       readOnly={loginStep !== "initial"}
-                      onChange={(e) => validateAccount(e.target.value, zone)}
+                      onChange={(e) => validateAccount(e.target.value.replace(/\s/g, ""), zone)}
                       className={`bg-white/5 border-primary/20 focus-visible:ring-primary h-14 text-center text-lg font-mono transition-all group-hover:border-primary/40 rounded-xl ${loginStep !== "initial" ? "opacity-50" : ""}`}
                     />
                     {isValidating && (
@@ -244,7 +244,7 @@ export default function Login() {
                       placeholder="2888"
                       value={zone}
                       readOnly={loginStep !== "initial"}
-                      onChange={(e) => validateAccount(id, e.target.value)}
+                      onChange={(e) => validateAccount(id, e.target.value.replace(/\s/g, ""))}
                       className={`bg-white/5 border-primary/20 focus-visible:ring-primary h-14 text-center text-lg font-mono transition-all group-hover:border-primary/40 rounded-xl ${loginStep !== "initial" ? "opacity-50" : ""}`}
                     />
                   </div>

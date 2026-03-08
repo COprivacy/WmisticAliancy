@@ -1,5 +1,5 @@
 import { sql } from "drizzle-orm";
-import { pgTable, text, integer, serial, timestamp, boolean } from "drizzle-orm/pg-core";
+import { pgTable, text, integer, serial, timestamp, boolean, uniqueIndex } from "drizzle-orm/pg-core";
 import { createInsertSchema } from "drizzle-zod";
 import { z } from "zod";
 
@@ -38,6 +38,10 @@ export const players = pgTable("players", {
   activeNameFont: text("active_name_font"), // Font family or class
   arenaTickets: integer("arena_tickets").notNull().default(5),
   lastTicketResetAt: timestamp("last_ticket_reset_at"),
+}, (table) => {
+  return [
+    uniqueIndex("account_zone_idx").on(table.accountId, table.zoneId)
+  ];
 });
 
 export const matches = pgTable("matches", {
