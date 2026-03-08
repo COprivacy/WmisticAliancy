@@ -46,7 +46,7 @@ export default function Layout({ children }: { children: ReactNode }) {
       <header className="border-b border-border/50 bg-card/50 backdrop-blur-md sticky top-0 z-50">
         <div className="container mx-auto px-4 h-16 flex items-center justify-between">
           <div className="flex items-center gap-2">
-            <Trophy className="w-6 h-6 text-primary" />
+            <img src="/logo.png" className="w-8 h-8 object-contain" alt="SPG Logo" />
             <h1 className="text-xl font-bold text-transparent bg-clip-text bg-gradient-to-r from-primary to-yellow-200 uppercase tracking-wider hidden sm:block">
               SUA PARTIDA GAMER
             </h1>

@@ -204,7 +204,7 @@ export default function Login() {
               className="mx-auto w-24 h-24 rounded-2xl bg-gradient-to-br from-primary/20 to-primary/5 flex items-center justify-center mb-8 border border-primary/30 relative group shadow-2xl shadow-primary/20"
             >
               <div className="absolute inset-0 rounded-2xl border-2 border-primary/50 scale-110 opacity-0 group-hover:opacity-100 transition-all duration-500" />
-              <Trophy className="w-12 h-12 text-primary drop-shadow-[0_0_8px_rgba(234,179,8,0.5)]" />
+              <img src="/logo.png" className="w-16 h-16 object-contain drop-shadow-[0_0_8px_rgba(234,179,8,0.5)]" alt="SPG Logo" />
               <Sparkles className="absolute -top-2 -right-2 w-6 h-6 text-yellow-400 animate-bounce" />
             </motion.div>
 
