@@ -198,22 +198,48 @@ export default function Login() {
         <Card className="border-primary/20 bg-card/40 backdrop-blur-2xl shadow-[0_0_50px_-12px_rgba(234,179,8,0.15)] overflow-hidden">
           <div className="absolute top-0 left-0 w-full h-[2px] bg-gradient-to-r from-transparent via-primary to-transparent opacity-50" />
 
-          <CardHeader className="text-center pb-8 pt-12 relative">
+          <CardHeader className="text-center pb-8 pt-10 relative">
             <motion.div
-              whileHover={{ scale: 1.05, rotate: 5 }}
-              className="mx-auto w-24 h-24 rounded-2xl bg-gradient-to-br from-primary/20 to-primary/5 flex items-center justify-center mb-8 border border-primary/30 relative group shadow-2xl shadow-primary/20"
+              initial={{ y: 0 }}
+              animate={{
+                y: [0, -10, 0],
+                filter: ["drop-shadow(0 0 10px rgba(234,179,8,0.2))", "drop-shadow(0 0 25px rgba(234,179,8,0.5))", "drop-shadow(0 0 10px rgba(234,179,8,0.2))"]
+              }}
+              transition={{
+                duration: 4,
+                repeat: Infinity,
+                ease: "easeInOut"
+              }}
+              className="mx-auto w-48 h-48 flex items-center justify-center mb-6 relative group"
             >
-              <div className="absolute inset-0 rounded-2xl border-2 border-primary/50 scale-110 opacity-0 group-hover:opacity-100 transition-all duration-500" />
-              <img src="/logo.png" className="w-16 h-16 object-contain drop-shadow-[0_0_8px_rgba(234,179,8,0.5)]" alt="SPG Logo" />
-              <Sparkles className="absolute -top-2 -right-2 w-6 h-6 text-yellow-400 animate-bounce" />
+              {/* Decorative elements */}
+              <motion.div
+                animate={{ rotate: 360 }}
+                transition={{ duration: 20, repeat: Infinity, ease: "linear" }}
+                className="absolute inset-0 rounded-full border-2 border-dashed border-primary/10 scale-125 opacity-20"
+              />
+              <motion.div
+                animate={{ rotate: -360 }}
+                transition={{ duration: 15, repeat: Infinity, ease: "linear" }}
+                className="absolute inset-0 rounded-full border border-primary/5 scale-110 opacity-30"
+              />
+
+              <img
+                src="/login-brand.png"
+                className="w-full h-full object-contain relative z-10"
+                alt="SUA PARTIDA GAMER"
+              />
+              <Sparkles className="absolute -top-4 -right-4 w-8 h-8 text-yellow-500 animate-pulse drop-shadow-[0_0_5px_rgba(234,179,8,0.8)]" />
             </motion.div>
 
-            <CardTitle className="text-4xl font-serif tracking-[0.2em] text-transparent bg-clip-text bg-gradient-to-b from-white to-primary/80 uppercase">
-              SUA PARTIDA
-            </CardTitle>
-            <CardDescription className="text-sm font-medium tracking-[0.3em] uppercase text-primary/60 mt-2">
-              GAMER - Rank 1v1
-            </CardDescription>
+            <div className="space-y-1">
+              <CardTitle className="text-4xl font-serif tracking-[0.2em] text-transparent bg-clip-text bg-gradient-to-b from-white to-primary/80 uppercase">
+                SUA PARTIDA
+              </CardTitle>
+              <CardDescription className="text-sm font-black tracking-[0.4em] uppercase text-primary/60">
+                GAMER - Rank 1v1
+              </CardDescription>
+            </div>
           </CardHeader>
 
           <CardContent className="px-8 pb-12">
