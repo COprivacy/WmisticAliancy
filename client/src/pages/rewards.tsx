@@ -140,7 +140,7 @@ export default function Rewards() {
                                     </div>
                                 </PopoverContent>
                             </Popover>
-                            <h1 className="text-4xl md:text-6xl font-serif font-black uppercase tracking-tighter text-glow">Loja WMythic</h1>
+                            <h1 className="text-4xl md:text-6xl font-serif font-black uppercase tracking-tighter text-glow">Loja SPG</h1>
                         </div>
                     </div>
                 </div>

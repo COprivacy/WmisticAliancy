@@ -22,7 +22,7 @@ export default function Layout({ children }: { children: ReactNode }) {
       <div className="flex items-center justify-center min-h-screen bg-background">
         <div className="flex flex-col items-center gap-4">
           <Trophy className="w-12 h-12 text-primary animate-pulse" />
-          <p className="text-xs font-black uppercase tracking-[0.3em] text-primary/60">Sincronizando com a Arena...</p>
+          <p className="text-xs font-black uppercase tracking-[0.3em] text-primary/60">Sincronizando com a Partida...</p>
         </div>
       </div>
     );
@@ -48,9 +48,9 @@ export default function Layout({ children }: { children: ReactNode }) {
           <div className="flex items-center gap-2">
             <Trophy className="w-6 h-6 text-primary" />
             <h1 className="text-xl font-bold text-transparent bg-clip-text bg-gradient-to-r from-primary to-yellow-200 uppercase tracking-wider hidden sm:block">
-              WMythic Alliance
+              SUA PARTIDA GAMER
             </h1>
-            <h1 className="text-xl font-bold text-primary sm:hidden">WMA</h1>
+            <h1 className="text-xl font-bold text-primary sm:hidden">SPG</h1>
           </div>
 
           <nav className="flex items-center gap-1 sm:gap-4 overflow-x-auto no-scrollbar max-w-full pb-1">

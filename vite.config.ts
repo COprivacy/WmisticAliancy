@@ -16,9 +16,9 @@ export default defineConfig({
       registerType: "autoUpdate",
       includeAssets: ["favicon.png", "apple-touch-icon.png", "pwa-192x192.png", "pwa-512x512.png"],
       manifest: {
-        name: "WMythic Alliance - Rank 1v1",
-        short_name: "WMythic",
-        description: "Official 1v1 Ranking System for WMythic Alliance Mobile Legends Clan",
+        name: "SUA PARTIDA GAMER - Rank 1v1",
+        short_name: "SPG",
+        description: "Sistema de Ranking 1v1 oficial do portal SUA PARTIDA GAMER",
         theme_color: "#1a1a1a",
         icons: [
           {

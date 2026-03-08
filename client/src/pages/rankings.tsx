@@ -1027,7 +1027,7 @@ export default function Rankings() {
               <DialogTrigger asChild>
                 <Button variant="outline" className="w-full h-14 border-primary/20 bg-primary/5 hover:bg-primary/10 text-primary font-bold uppercase tracking-widest group">
                   <Gift className="w-5 h-5 mr-3 group-hover:bounce" />
-                  Loja WMythic
+                  Loja SPG
                 </Button>
               </DialogTrigger>
               <DialogContent className="max-w-4xl bg-[#020617]/95 border-primary/20 backdrop-blur-3xl p-4 sm:p-8 overflow-y-auto max-h-[90vh]">
@@ -1036,7 +1036,7 @@ export default function Rankings() {
                     <div>
                       <DialogTitle className="text-xl sm:text-3xl font-serif font-black uppercase tracking-widest flex items-center gap-3 italic">
                         <Sparkles className="w-5 h-5 sm:w-6 sm:h-6 text-primary animate-pulse" />
-                        Loja WMythic
+                        Loja SPG
                       </DialogTitle>
                       <DialogDescription className="text-primary/60 font-bold uppercase tracking-widest text-[10px] sm:text-xs mt-1">
                         Consuma seus Pontos de Glória por poder ancestral

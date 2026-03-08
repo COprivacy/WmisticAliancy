@@ -42,7 +42,7 @@ export default function Login() {
     onSuccess: () => {
       toast({
         title: "🗡️ Registro Concluído",
-        description: "Bem-vindo à Arena WMythic.",
+        description: "Bem-vindo ao SUA PARTIDA GAMER.",
       });
     },
     onError: (error: any) => {
@@ -161,7 +161,7 @@ export default function Login() {
           <Trophy className="w-8 h-8 text-primary drop-shadow-[0_0_8px_rgba(234,179,8,0.5)]" />
         </div>
         <Loader2 className="w-6 h-6 animate-spin text-primary" />
-        <p className="text-xs uppercase tracking-[0.3em] text-primary/50 font-bold">Carregando Arena...</p>
+        <p className="text-xs uppercase tracking-[0.3em] text-primary/50 font-bold">Iniciando Partida...</p>
       </div>
     </div>
   );
@@ -209,10 +209,10 @@ export default function Login() {
             </motion.div>
 
             <CardTitle className="text-4xl font-serif tracking-[0.2em] text-transparent bg-clip-text bg-gradient-to-b from-white to-primary/80 uppercase">
-              WMythic
+              SUA PARTIDA
             </CardTitle>
             <CardDescription className="text-sm font-medium tracking-[0.3em] uppercase text-primary/60 mt-2">
-              Alliance Arena 1v1
+              GAMER - Rank 1v1
             </CardDescription>
           </CardHeader>
 

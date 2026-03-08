@@ -330,7 +330,7 @@ export default function Admin() {
         </div>
         <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} className="relative z-10 text-center space-y-4">
           <Badge className="bg-primary text-primary-foreground uppercase tracking-widest px-4 py-1">Controle Supremo</Badge>
-          <h2 className="text-5xl font-serif tracking-[0.3em] uppercase text-glow">Governança WMythic</h2>
+          <h2 className="text-5xl font-serif tracking-[0.3em] uppercase text-glow">Governança SPG</h2>
           <p className="text-muted-foreground max-w-lg mx-auto tracking-widest text-xs font-black uppercase opacity-60">
             Painel administrativo para gestão de conflitos, membros e economia da guilda
           </p>
@@ -636,7 +636,7 @@ export default function Admin() {
                                       </Badge>
                                     </TooltipTrigger>
                                     <TooltipContent className="bg-slate-950 border-white/10 text-[9px] max-w-xs">
-                                      <p className="font-bold uppercase text-primary mb-1">Análise da IA wmistic:</p>
+                                      <p className="font-bold uppercase text-primary mb-1">Análise da IA SPG:</p>
                                       <p className="opacity-80 leading-tight">
                                         {match.aiAnalysis ? (
                                           (() => {

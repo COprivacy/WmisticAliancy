@@ -74,7 +74,7 @@ export default function Meta() {
                                         <TrendingUp className="w-4 h-4 text-primary" />
                                         <h4 className="font-black text-primary">O que é o Meta?</h4>
                                     </div>
-                                    <p>Aqui você encontra a análise estatística de todos os heróis usados nas partidas aprovadas da aliança.</p>
+                                    <p>Aqui você encontra a análise estatística de todos os heróis usados nas partidas aprovadas do portal.</p>
                                     <div className="bg-primary/5 p-3 rounded-xl border border-primary/10">
                                         <p className="text-white font-bold mb-1">Indicadores:</p>
                                         <ul className="list-disc list-inside space-y-1">

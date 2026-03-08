@@ -1220,7 +1220,7 @@ export default function Profile() {
                                                 <div className="flex items-center gap-4 p-4 rounded-2xl bg-white/5 border border-white/5">
                                                     <Shield className="w-6 h-6 text-primary" />
                                                     <p className="text-xs font-black uppercase tracking-widest text-white/60">
-                                                        ITEM AUTÊNTICO • WMYTHIC
+                                                        ITEM AUTÊNTICO • SPG
                                                     </p>
                                                 </div>
                                                 <Button

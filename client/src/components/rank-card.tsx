@@ -31,7 +31,7 @@ export function RankCard({ player, stats, topHero }: RankCardProps) {
         try {
             const dataUrl = await toPng(cardRef.current, { cacheBust: true, quality: 1, pixelRatio: 2 });
             const link = document.createElement('a');
-            link.download = `WMythic-Card-${player.gameName}.png`;
+            link.download = `SPG-Card-${player.gameName}.png`;
             link.href = dataUrl;
             link.click();
             toast({ title: "✨ Glória Capturada!", description: "Seu card de rank foi salvo com sucesso." });
@@ -62,7 +62,7 @@ export function RankCard({ player, stats, topHero }: RankCardProps) {
                     <div className="flex justify-between items-start relative z-10">
                         <div className="flex flex-col">
                             <span className="text-[10px] font-black tracking-[0.4em] text-primary uppercase">Membro Vitalício</span>
-                            <span className="text-[8px] font-bold tracking-[0.2em] text-muted-foreground uppercase opacity-60">WMYTHIC CLAN • 2024</span>
+                            <span className="text-[8px] font-bold tracking-[0.2em] text-muted-foreground uppercase opacity-60">SUA PARTIDA GAMER • 2024</span>
                         </div>
                         <ShieldCheck className="w-6 h-6 text-primary/40" />
                     </div>

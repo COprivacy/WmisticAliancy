@@ -38,7 +38,7 @@ export default function Guide() {
                 </div>
                 <h1 className="text-5xl sm:text-7xl font-serif font-black uppercase tracking-widest text-glow leading-none">
                     Guia da<br />
-                    <span className="text-transparent bg-clip-text bg-gradient-to-r from-yellow-400 via-primary to-orange-400">Aliança</span>
+                    <span className="text-transparent bg-clip-text bg-gradient-to-r from-yellow-400 via-primary to-orange-400">Partida</span>
                 </h1>
                 <p className="text-muted-foreground max-w-2xl mx-auto text-sm leading-relaxed uppercase tracking-widest font-bold opacity-70">
                     Tudo que você precisa saber para dominar a arena, conquistar relíquias e ascender ao topo do ranking.
@@ -107,7 +107,7 @@ export default function Guide() {
                     </div>
                     <div>
                         <h2 className="text-2xl font-serif font-black uppercase tracking-widest">Sistema de Patentes</h2>
-                        <p className="text-muted-foreground text-[10px] uppercase font-bold tracking-widest">Seu posto na hierarquia da Aliança</p>
+                        <p className="text-muted-foreground text-[10px] uppercase font-bold tracking-widest">Seu posto na hierarquia da Partida</p>
                     </div>
                 </motion.div>
 
@@ -143,13 +143,13 @@ export default function Guide() {
                     </div>
                     <div>
                         <h2 className="text-2xl font-serif font-black uppercase tracking-widest">Pontos de Glória</h2>
-                        <p className="text-muted-foreground text-[10px] uppercase font-bold tracking-widest">A moeda secreta da Aliança</p>
+                        <p className="text-muted-foreground text-[10px] uppercase font-bold tracking-widest">A moeda secreta da Partida</p>
                     </div>
                 </motion.div>
 
                 <motion.div variants={fadeInUp} className="p-6 rounded-3xl border border-orange-500/20 bg-gradient-to-br from-orange-500/10 to-yellow-500/5 mb-6">
                     <p className="text-sm text-muted-foreground leading-relaxed">
-                        <span className="text-orange-400 font-black uppercase">Pontos de Glória</span> são a moeda premium da aliança. Diferentes dos pontos de ranking, eles <strong className="text-foreground">nunca diminuem</strong> — só acumulam. Use-os para comprar relíquias exclusivas na loja da guilda.
+                        <span className="text-orange-400 font-black uppercase">Pontos de Glória</span> são a moeda premium do portal. Diferentes dos pontos de ranking, eles <strong className="text-foreground">nunca diminuem</strong> — só acumulam. Use-os para comprar relíquias exclusivas na loja da guilda.
                     </p>
                 </motion.div>
 
@@ -188,7 +188,7 @@ export default function Guide() {
                     </div>
                     <div>
                         <h2 className="text-2xl font-serif font-black uppercase tracking-widest">Relíquias e Drops</h2>
-                        <p className="text-muted-foreground text-[10px] uppercase font-bold tracking-widest">Os tesouros sagrados da guilda</p>
+                        <p className="text-muted-foreground text-[10px] uppercase font-bold tracking-widest">Os tesouros sagrados do portal</p>
                     </div>
                 </motion.div>
 
@@ -349,8 +349,8 @@ export default function Guide() {
                         <Users className="w-6 h-6 text-emerald-400" />
                     </div>
                     <div>
-                        <h2 className="text-2xl font-serif font-black uppercase tracking-widest">Chat Global da Aliança</h2>
-                        <p className="text-muted-foreground text-[10px] uppercase font-bold tracking-widest">A voz da guilda, em tempo real</p>
+                        <h2 className="text-2xl font-serif font-black uppercase tracking-widest">Chat Global</h2>
+                        <p className="text-muted-foreground text-[10px] uppercase font-bold tracking-widest">A voz dos jogadores, em tempo real</p>
                     </div>
                 </motion.div>
 
