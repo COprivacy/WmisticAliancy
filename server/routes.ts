@@ -1105,15 +1105,71 @@ export async function registerRoutes(
       return;
     }
 
-    const message = await storage.createPrivateMessage({
-      senderId,
-      senderZone,
-      receiverId,
-      receiverZone,
-      content: content.trim().substring(0, 500)
-    });
+    try {
+      const message = await storage.createPrivateMessage({
+        senderId,
+        senderZone,
+        receiverId,
+        receiverZone,
+        content: content.trim().substring(0, 500)
+      });
+      res.json(message);
+    } catch (err: any) {
+      res.status(403).json({ message: err.message });
+    }
+  }));
 
-    res.json(message);
+  app.delete("/api/chat/private/:id/:zone", requireAuth, asyncHandler(async (req, res) => {
+    const p1Id = req.session.user!.id;
+    const p1Zone = req.session.user!.zoneId;
+    const p2Id = req.params.id as string;
+    const p2Zone = req.params.zone as string;
+
+    await storage.deletePrivateConversation(p1Id, p1Zone, p2Id, p2Zone);
+    res.json({ success: true, message: "Conversa apagada para sempre." });
+  }));
+
+  // Block/Unblock routes
+  app.get("/api/chat/blocks", requireAuth, asyncHandler(async (req, res) => {
+    const userId = req.session.user!.id;
+    const zoneId = req.session.user!.zoneId;
+    const blocks = await storage.getBlocksForPlayer(userId, zoneId);
+    res.json(blocks);
+  }));
+
+  app.post("/api/chat/blocks/:id/:zone", requireAuth, asyncHandler(async (req, res) => {
+    const blockerId = req.session.user!.id;
+    const blockerZone = req.session.user!.zoneId;
+    const blockedId = req.params.id as string;
+    const blockedZone = req.params.zone as string;
+
+    if (blockerId === blockedId && blockerZone === blockedZone) {
+      res.status(400).json({ message: "Você não pode se bloquear." });
+      return;
+    }
+
+    await storage.blockUser(blockerId, blockerZone, blockedId, blockedZone);
+    res.json({ success: true, message: "Usuário bloqueado." });
+  }));
+
+  app.delete("/api/chat/blocks/:id/:zone", requireAuth, asyncHandler(async (req, res) => {
+    const blockerId = req.session.user!.id;
+    const blockerZone = req.session.user!.zoneId;
+    const blockedId = req.params.id as string;
+    const blockedZone = req.params.zone as string;
+
+    await storage.unblockUser(blockerId, blockerZone, blockedId, blockedZone);
+    res.json({ success: true, message: "Usuário desbloqueado." });
+  }));
+
+  app.get("/api/chat/is-blocked/:id/:zone", requireAuth, asyncHandler(async (req, res) => {
+    const u1Id = req.session.user!.id;
+    const u1Zone = req.session.user!.zoneId;
+    const u2Id = req.params.id as string;
+    const u2Zone = req.params.zone as string;
+
+    const blocked = await storage.isBlocked(u1Id, u1Zone, u2Id, u2Zone);
+    res.json({ blocked });
   }));
 
   app.get("/api/chat/conversations", requireAuth, asyncHandler(async (req, res) => {

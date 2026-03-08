@@ -2,7 +2,7 @@ import { useState, useRef, useEffect } from "react";
 import { useQuery, useMutation } from "@tanstack/react-query";
 import { useAuth } from "@/lib/auth";
 import { queryClient, apiRequest } from "@/lib/queryClient";
-import { Send, MessageSquare, AlertCircle, Loader2, User as UserIcon, ArrowLeft, MoreVertical, Search } from "lucide-react";
+import { Send, MessageSquare, AlertCircle, Loader2, User as UserIcon, ArrowLeft, MoreVertical, Search, Trash2, Slash, ShieldAlert } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { ScrollArea } from "@/components/ui/scroll-area";
@@ -13,6 +13,13 @@ import { motion, AnimatePresence } from "framer-motion";
 import { PlayerAvatar } from "@/components/player-avatar";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
+import {
+    DropdownMenu,
+    DropdownMenuContent,
+    DropdownMenuItem,
+    DropdownMenuTrigger,
+    DropdownMenuSeparator
+} from "@/components/ui/dropdown-menu";
 
 type PrivateMessage = {
     id: number;
@@ -60,6 +67,12 @@ export default function PrivateChat() {
         refetchInterval: 3000,
     });
 
+    const { data: blockStatus } = useQuery<{ blocked: boolean }>({
+        queryKey: [`/api/chat/is-blocked/${activeId}/${activeZone}`],
+        enabled: !!activeId && !!activeZone,
+        refetchInterval: 5000,
+    });
+
     const sendMessageMutation = useMutation({
         mutationFn: async (content: string) => {
             const res = await apiRequest("POST", `/api/chat/private/${activeId}/${activeZone}`, { content });
@@ -80,6 +93,43 @@ export default function PrivateChat() {
                 description: err.message || "Tente novamente mais tarde.",
                 variant: "destructive"
             });
+        }
+    });
+
+    const deleteConvMutation = useMutation({
+        mutationFn: async () => {
+            const res = await apiRequest("DELETE", `/api/chat/private/${activeId}/${activeZone}`);
+            return res.json();
+        },
+        onSuccess: () => {
+            queryClient.invalidateQueries({ queryKey: [`/api/chat/private/${activeId}/${activeZone}`] });
+            queryClient.invalidateQueries({ queryKey: ["/api/chat/conversations"] });
+            toast({ title: "🗑️ Conversa apagada", description: "O histórico foi removido definitivamente." });
+        },
+        onError: () => {
+            toast({ title: "Erro", description: "Não foi possível apagar a conversa.", variant: "destructive" });
+        }
+    });
+
+    const blockMutation = useMutation({
+        mutationFn: async () => {
+            const res = await apiRequest("POST", `/api/chat/blocks/${activeId}/${activeZone}`);
+            return res.json();
+        },
+        onSuccess: () => {
+            queryClient.invalidateQueries({ queryKey: [`/api/chat/is-blocked/${activeId}/${activeZone}`] });
+            toast({ title: "🚫 Usuário Bloqueado", description: "Você não receberá mais mensagens deste guerreiro." });
+        }
+    });
+
+    const unblockMutation = useMutation({
+        mutationFn: async () => {
+            const res = await apiRequest("DELETE", `/api/chat/blocks/${activeId}/${activeZone}`);
+            return res.json();
+        },
+        onSuccess: () => {
+            queryClient.invalidateQueries({ queryKey: [`/api/chat/is-blocked/${activeId}/${activeZone}`] });
+            toast({ title: "🔓 Usuário Desbloqueado", description: "O canal de comunicação está aberto novamente." });
         }
     });
 
@@ -234,9 +284,59 @@ export default function PrivateChat() {
                                     </div>
                                 )}
                             </div>
-                            <Button variant="ghost" size="icon" className="rounded-xl hover:bg-white/5" onClick={() => setLocation(`/player/${activeId}/${activeZone}`)}>
-                                <UserIcon className="w-5 h-5 text-muted-foreground" />
-                            </Button>
+
+                            <div className="flex items-center gap-1">
+                                <DropdownMenu>
+                                    <DropdownMenuTrigger asChild>
+                                        <Button variant="ghost" size="icon" className="rounded-xl hover:bg-white/5">
+                                            <MoreVertical className="w-5 h-5 text-muted-foreground" />
+                                        </Button>
+                                    </DropdownMenuTrigger>
+                                    <DropdownMenuContent align="end" className="bg-[#020617]/95 border-white/10 backdrop-blur-xl w-56 rounded-2xl p-2">
+                                        <DropdownMenuItem
+                                            onClick={() => setLocation(`/player/${activeId}/${activeZone}`)}
+                                            className="rounded-xl focus:bg-white/5 uppercase text-[10px] font-black tracking-widest p-3"
+                                        >
+                                            <UserIcon className="w-4 h-4 mr-2" />
+                                            Ver Perfil
+                                        </DropdownMenuItem>
+
+                                        <DropdownMenuSeparator className="bg-white/5" />
+
+                                        <DropdownMenuItem
+                                            onClick={() => {
+                                                if (confirm("Deseja realmente apagar todo o histórico desta conversa? Isso não pode ser desfeito.")) {
+                                                    deleteConvMutation.mutate();
+                                                }
+                                            }}
+                                            className="rounded-xl focus:bg-red-500/10 text-red-500 uppercase text-[10px] font-black tracking-widest p-3"
+                                        >
+                                            <Trash2 className="w-4 h-4 mr-2" />
+                                            Apagar Conversa
+                                        </DropdownMenuItem>
+
+                                        <DropdownMenuItem
+                                            onClick={() => {
+                                                if (blockStatus?.blocked) {
+                                                    unblockMutation.mutate();
+                                                } else {
+                                                    if (confirm(`Deseja bloquear ${activeConversation?.gameName}? Vocês não poderão trocar mensagens.`)) {
+                                                        blockMutation.mutate();
+                                                    }
+                                                }
+                                            }}
+                                            className={`rounded-xl uppercase text-[10px] font-black tracking-widest p-3 ${blockStatus?.blocked ? 'focus:bg-emerald-500/10 text-emerald-500' : 'focus:bg-orange-500/10 text-orange-500'}`}
+                                        >
+                                            <Slash className="w-4 h-4 mr-2" />
+                                            {blockStatus?.blocked ? "Desbloquear Guerreiro" : "Bloquear Guerreiro"}
+                                        </DropdownMenuItem>
+                                    </DropdownMenuContent>
+                                </DropdownMenu>
+
+                                <Button variant="ghost" size="icon" className="md:hidden rounded-xl hover:bg-white/5" onClick={() => setLocation(`/player/${activeId}/${activeZone}`)}>
+                                    <UserIcon className="w-5 h-5 text-muted-foreground" />
+                                </Button>
+                            </div>
                         </div>
 
                         {/* Messages Area */}
@@ -295,24 +395,33 @@ export default function PrivateChat() {
 
                         {/* Input Area */}
                         <div className="p-4 border-t border-white/5 bg-white/[0.02]">
-                            <form onSubmit={handleSend} className="flex gap-2">
-                                <Input
-                                    value={newMessage}
-                                    onChange={(e) => setNewMessage(e.target.value)}
-                                    placeholder="Digite sua mensagem privada..."
-                                    className="flex-1 bg-white/5 border-white/10 focus-visible:ring-primary/50 h-14 rounded-2xl px-6 text-sm"
-                                    disabled={sendMessageMutation.isPending}
-                                    maxLength={500}
-                                />
-                                <Button
-                                    type="submit"
-                                    size="icon"
-                                    className="h-14 w-14 rounded-2xl bg-primary hover:bg-primary/90 text-primary-foreground shadow-lg shadow-primary/20"
-                                    disabled={sendMessageMutation.isPending || !newMessage.trim()}
-                                >
-                                    {sendMessageMutation.isPending ? <Loader2 className="w-5 h-5 animate-spin" /> : <Send className="w-5 h-5" />}
-                                </Button>
-                            </form>
+                            {blockStatus?.blocked ? (
+                                <div className="h-14 flex items-center justify-center gap-3 bg-red-500/10 border border-red-500/20 rounded-2xl text-red-500 px-6">
+                                    <ShieldAlert className="w-5 h-5" />
+                                    <p className="text-[10px] font-black uppercase tracking-widest">
+                                        Canal selado por bloqueio. Desbloqueie para enviar mensagens.
+                                    </p>
+                                </div>
+                            ) : (
+                                <form onSubmit={handleSend} className="flex gap-2">
+                                    <Input
+                                        value={newMessage}
+                                        onChange={(e) => setNewMessage(e.target.value)}
+                                        placeholder="Digite sua mensagem privada..."
+                                        className="flex-1 bg-white/5 border-white/10 focus-visible:ring-primary/50 h-14 rounded-2xl px-6 text-sm"
+                                        disabled={sendMessageMutation.isPending}
+                                        maxLength={500}
+                                    />
+                                    <Button
+                                        type="submit"
+                                        size="icon"
+                                        className="h-14 w-14 rounded-2xl bg-primary hover:bg-primary/90 text-primary-foreground shadow-lg shadow-primary/20"
+                                        disabled={sendMessageMutation.isPending || !newMessage.trim()}
+                                    >
+                                        {sendMessageMutation.isPending ? <Loader2 className="w-5 h-5 animate-spin" /> : <Send className="w-5 h-5" />}
+                                    </Button>
+                                </form>
+                            )}
                             <p className="text-[8px] text-muted-foreground mt-2 text-center uppercase font-black tracking-widest opacity-40">
                                 Limite de 50 mensagens por conversa. As mais antigas são destruídas automaticamente.
                             </p>

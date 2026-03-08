@@ -1,5 +1,5 @@
 import {
-  users, players, matches, rewards, playerRewards, seasons, challenges, activities, reactions, configs, globalMessages, privateMessages, gloryTopups,
+  users, players, matches, rewards, playerRewards, seasons, challenges, activities, reactions, configs, globalMessages, privateMessages, userBlocks, gloryTopups,
   quests, playerQuests,
   type User, type InsertUser, type Player, type InsertPlayer, type Match, type InsertMatch,
   type Reward, type InsertReward, type Config, type InsertConfig, type Activity, type Reaction,
@@ -7,7 +7,7 @@ import {
   type Quest, type PlayerQuest, type InsertQuest, calculateRank
 } from "@shared/schema";
 import { db } from "./db";
-import { eq, and, or, sql, desc } from "drizzle-orm";
+import { eq, and, or, sql, desc, ne } from "drizzle-orm";
 import { pgTable, alias } from "drizzle-orm/pg-core";
 
 export interface IStorage {
@@ -88,6 +88,13 @@ export interface IStorage {
   createPrivateMessage(data: Omit<PrivateMessage, "id" | "createdAt" | "isRead">): Promise<PrivateMessage>;
   getRecentConversations(playerId: string, zoneId: string): Promise<any[]>;
   markMessagesAsRead(senderId: string, senderZone: string, receiverId: string, receiverZone: string): Promise<void>;
+  deletePrivateConversation(p1Id: string, p1Zone: string, p2Id: string, p2Zone: string): Promise<void>;
+
+  // Blocking methods
+  blockUser(blockerId: string, blockerZone: string, blockedId: string, blockedZone: string): Promise<void>;
+  unblockUser(blockerId: string, blockerZone: string, blockedId: string, blockedZone: string): Promise<void>;
+  isBlocked(u1Id: string, u1Zone: string, u2Id: string, u2Zone: string): Promise<boolean>;
+  getBlocksForPlayer(playerId: string, zoneId: string): Promise<any[]>;
 
   // Quest methods
   getQuests(): Promise<Quest[]>;
@@ -900,6 +907,12 @@ export class DatabaseStorage implements IStorage {
   }
 
   async createPrivateMessage(data: Omit<PrivateMessage, "id" | "createdAt" | "isRead">): Promise<PrivateMessage> {
+    // Check if either user has blocked the other
+    const blocked = await this.isBlocked(data.senderId, data.senderZone, data.receiverId, data.receiverZone);
+    if (blocked) {
+      throw new Error("Você não pode enviar mensagens para este usuário pois há um bloqueio ativo.");
+    }
+
     const [message] = await db.insert(privateMessages).values({
       ...data,
       createdAt: new Date(),
@@ -1137,6 +1150,61 @@ export class DatabaseStorage implements IStorage {
         glory: rewardGlory
       };
     });
+  }
+
+  async deletePrivateConversation(p1Id: string, p1Zone: string, p2Id: string, p2Zone: string): Promise<void> {
+    await db.delete(privateMessages).where(
+      or(
+        and(
+          eq(privateMessages.senderId, p1Id), eq(privateMessages.senderZone, p1Zone),
+          eq(privateMessages.receiverId, p2Id), eq(privateMessages.receiverZone, p2Zone)
+        ),
+        and(
+          eq(privateMessages.senderId, p2Id), eq(privateMessages.senderZone, p2Zone),
+          eq(privateMessages.receiverId, p1Id), eq(privateMessages.receiverZone, p1Zone)
+        )
+      )
+    );
+  }
+
+  // Blocking Methods
+  async blockUser(blockerId: string, blockerZone: string, blockedId: string, blockedZone: string): Promise<void> {
+    await db.insert(userBlocks).values({
+      blockerId, blockerZone, blockedId, blockedZone
+    }).onConflictDoNothing();
+  }
+
+  async unblockUser(blockerId: string, blockerZone: string, blockedId: string, blockedZone: string): Promise<void> {
+    await db.delete(userBlocks).where(
+      and(
+        eq(userBlocks.blockerId, blockerId), eq(userBlocks.blockerZone, blockerZone),
+        eq(userBlocks.blockedId, blockedId), eq(userBlocks.blockedZone, blockedZone)
+      )
+    );
+  }
+
+  async isBlocked(u1Id: string, u1Zone: string, u2Id: string, u2Zone: string): Promise<boolean> {
+    const blocks = await db.select().from(userBlocks).where(
+      or(
+        and(
+          eq(userBlocks.blockerId, u1Id), eq(userBlocks.blockerZone, u1Zone),
+          eq(userBlocks.blockedId, u2Id), eq(userBlocks.blockedZone, u2Zone)
+        ),
+        and(
+          eq(userBlocks.blockerId, u2Id), eq(userBlocks.blockerZone, u2Zone),
+          eq(userBlocks.blockedId, u1Id), eq(userBlocks.blockedZone, u1Zone)
+        )
+      )
+    );
+    return blocks.length > 0;
+  }
+
+  async getBlocksForPlayer(playerId: string, zoneId: string): Promise<any[]> {
+    return await db.select().from(userBlocks).where(
+      and(
+        eq(userBlocks.blockerId, playerId), eq(userBlocks.blockerZone, zoneId)
+      )
+    );
   }
 }
 

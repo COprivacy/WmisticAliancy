@@ -157,6 +157,16 @@ export const privateMessages = pgTable("private_messages", {
   isRead: boolean("is_read").notNull().default(false),
 });
 
+export const userBlocks = pgTable("user_blocks", {
+  id: serial("id").primaryKey(),
+  blockerId: text("blocker_id").notNull(),
+  blockerZone: text("blocker_zone").notNull(),
+  blockedId: text("blocked_id").notNull(),
+  blockedZone: text("blocked_zone").notNull(),
+  createdAt: timestamp("created_at").notNull().defaultNow(),
+});
+
+
 export const gloryTopups = pgTable("glory_topups", {
   id: serial("id").primaryKey(),
   playerId: integer("player_id").notNull(),
