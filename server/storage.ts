@@ -173,12 +173,45 @@ export class DatabaseStorage implements IStorage {
 
   async getPlayer(id: number): Promise<Player | undefined> {
     const [player] = await db.select().from(players).where(eq(players.id, id));
+    if (player) {
+      return await this.checkAndResetTickets(player);
+    }
     return player;
   }
 
   async getPlayerByAccountId(accountId: string, zoneId: string): Promise<Player | undefined> {
     const [player] = await db.select().from(players)
       .where(and(eq(players.accountId, accountId), eq(players.zoneId, zoneId)));
+
+    if (player) {
+      return await this.checkAndResetTickets(player);
+    }
+    return player;
+  }
+
+  // Private helper to ensure tickets are reset at 00:00 (Brazil Time)
+  private async checkAndResetTickets(player: Player): Promise<Player> {
+    const now = new Date();
+    // Use Brazil Time (America/Sao_Paulo) for day comparison
+    const brTimeStr = now.toLocaleDateString("en-US", { timeZone: "America/Sao_Paulo" });
+    const today = new Date(brTimeStr);
+
+    let lastResetDate: Date | null = null;
+    if (player.lastTicketResetAt) {
+      const resetTimeStr = new Date(player.lastTicketResetAt).toLocaleDateString("en-US", { timeZone: "America/Sao_Paulo" });
+      lastResetDate = new Date(resetTimeStr);
+    }
+
+    // If it's a new day or no reset date recorded, HARD RESET to 5 tickets
+    if (!lastResetDate || lastResetDate.getTime() < today.getTime()) {
+      console.log(`[Arena] Resetting tickets for player ${player.id} (${player.gameName}). New day in Brazil.`);
+      const [updated] = await db.update(players).set({
+        arenaTickets: 5,
+        lastTicketResetAt: now
+      }).where(eq(players.id, player.id)).returning();
+      return updated;
+    }
+
     return player;
   }
 
@@ -213,29 +246,12 @@ export class DatabaseStorage implements IStorage {
   }
 
   async consumeArenaTicket(playerId: number): Promise<boolean> {
-    const [player] = await db.select().from(players).where(eq(players.id, playerId));
+    let player = await this.getPlayer(playerId);
     if (!player) return false;
 
-    const now = new Date();
-    // Verifica se já resetou hoje
-    let isSameDay = false;
-    if (player.lastTicketResetAt) {
-      const resetDate = new Date(player.lastTicketResetAt);
-      isSameDay = resetDate.getDate() === now.getDate() &&
-        resetDate.getMonth() === now.getMonth() &&
-        resetDate.getFullYear() === now.getFullYear();
-    }
+    // The call to getPlayer (which calls checkAndResetTickets) already ensured 
+    // the tickets are up to date for the current day.
 
-    if (!isSameDay) {
-      // Se é um dia novo, o jogador ganha os 5 ingressos base e já consome 1 para a ação atual (sobra 4)
-      await db.update(players).set({
-        arenaTickets: 4,
-        lastTicketResetAt: now
-      }).where(eq(players.id, playerId));
-      return true;
-    }
-
-    // Se é o mesmo dia, valida se o jogador tem ingressos sobrando
     if (player.arenaTickets > 0) {
       await db.update(players).set({
         arenaTickets: player.arenaTickets - 1

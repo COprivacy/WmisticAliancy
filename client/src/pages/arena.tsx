@@ -76,6 +76,22 @@ export default function ArenaPage() {
         return true;
     }) || [];
 
+    const pendingReceived = challenges?.filter(c => c.status === 'pending' && c.challengedId === user?.id) || [];
+    const pendingSent = challenges?.filter(c => c.status === 'pending' && c.challengerId === user?.id) || [];
+
+    const handleChallengeAction = async (id: number, status: 'accepted' | 'rejected') => {
+        try {
+            await apiRequest("PATCH", `/api/challenges/${id}`, { status });
+            queryClient.invalidateQueries({ queryKey: ["/api/challenges"] });
+            toast({
+                title: status === 'accepted' ? "⚔️ Desafio Aceito!" : "Desafio Recusado",
+                description: status === 'accepted' ? "Prepare-se para o combate!" : "O convite foi removido."
+            });
+        } catch (err) {
+            toast({ title: "Erro", description: "Não foi possível processar o desafio.", variant: "destructive" });
+        }
+    };
+
     if (isLoading) {
         return (
             <div className="flex flex-col items-center justify-center min-h-[60vh] gap-4">
@@ -129,6 +145,53 @@ export default function ArenaPage() {
                     <div className="h-1 w-24 bg-primary mx-auto rounded-full" />
                 </div>
                 <p className="text-muted-foreground uppercase tracking-widest text-xs font-bold opacity-60">Prepare seu coração: os duelos mais esperados do clã acontecem aqui.</p>
+
+                {/* --- SEÇÃO DE DESAFIOS PENDENTES --- */}
+                {(pendingReceived.length > 0 || pendingSent.length > 0) && (
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mt-8">
+                        {pendingReceived.length > 0 && (
+                            <div className="space-y-4">
+                                <h3 className="text-xs font-black uppercase tracking-[0.3em] text-orange-500 flex items-center gap-2">
+                                    <Swords className="w-4 h-4" /> Desafios Recebidos
+                                </h3>
+                                {pendingReceived.map(c => (
+                                    <Card key={c.id} className="bg-orange-500/10 border-orange-500/20 p-4 rounded-2xl flex items-center justify-between gap-4">
+                                        <div className="flex items-center gap-3">
+                                            <PlayerAvatar player={{ accountId: c.challengerId, zoneId: c.challengerZone, avatar: c.challengerAvatar, gameName: c.challengerName } as any} size="sm" />
+                                            <div>
+                                                <p className="text-sm font-bold">{c.challengerName} te desafiou!</p>
+                                                <p className="text-[10px] text-muted-foreground uppercase">{c.message || "Sem mensagem"}</p>
+                                            </div>
+                                        </div>
+                                        <div className="flex gap-2">
+                                            <Button size="sm" className="h-8 bg-emerald-600 hover:bg-emerald-700 text-[10px] font-black" onClick={() => handleChallengeAction(c.id, 'accepted')}>ACEITAR</Button>
+                                            <Button size="sm" variant="outline" className="h-8 border-red-500/20 text-red-500 hover:bg-red-500/10 text-[10px] font-black" onClick={() => handleChallengeAction(c.id, 'rejected')}>RECUSAR</Button>
+                                        </div>
+                                    </Card>
+                                ))}
+                            </div>
+                        )}
+                        {pendingSent.length > 0 && (
+                            <div className="space-y-4">
+                                <h3 className="text-xs font-black uppercase tracking-[0.3em] text-blue-500 flex items-center gap-2">
+                                    <Clock className="w-4 h-4" /> Duvidas do Destino
+                                </h3>
+                                {pendingSent.map(c => (
+                                    <Card key={c.id} className="bg-blue-500/10 border-blue-500/20 p-4 rounded-2xl flex items-center justify-between gap-4">
+                                        <div className="flex items-center gap-3 opacity-60">
+                                            <PlayerAvatar player={{ accountId: c.challengedId, zoneId: c.challengedZone, avatar: c.challengedAvatar, gameName: c.challengedName } as any} size="sm" />
+                                            <div>
+                                                <p className="text-sm font-bold">Aguardando {c.challengedName}...</p>
+                                                <p className="text-[10px] text-muted-foreground uppercase">Convite enviado</p>
+                                            </div>
+                                        </div>
+                                        <Button variant="ghost" size="sm" className="h-8 text-xs text-muted-foreground hover:text-red-500" onClick={() => cancelMutation.mutate(c.id)}>CANCELAR</Button>
+                                    </Card>
+                                ))}
+                            </div>
+                        )}
+                    </div>
+                )}
             </header>
 
             <section className="space-y-10">
