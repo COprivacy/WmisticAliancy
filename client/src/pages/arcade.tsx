@@ -1,5 +1,5 @@
 import { motion, AnimatePresence } from "framer-motion";
-import { Gamepad2, Trophy, Sparkles, Zap, Play, Info, ExternalLink, Dices, Flame, Star, X, Maximize2, Minimize2, Timer, Award, Share2 } from "lucide-react";
+import { Gamepad2, Trophy, Sparkles, Zap, Play, Info, ExternalLink, Dices, Flame, Star, X, Maximize2, Minimize2, Timer, Award, Share2, ChevronRight } from "lucide-react";
 import React, { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
@@ -46,8 +46,7 @@ const CATEGORIES = ["Todos", "Ação", "Esportes", "Puzzle", "Corrida"];
 export default function Arcade() {
     const { user } = useAuth();
     const [selectedGame, setSelectedGame] = useState<Game | null>(null);
-    const [adPhase, setAdPhase] = useState<"none" | "opening" | "playing" | "closing">("none");
-    const [isFullscreen, setIsFullscreen] = useState(false);
+    const [adPhase, setAdPhase] = useState<"none" | "opening">("none");
     const [countdown, setCountdown] = useState(5);
     const [searchTerm, setSearchTerm] = useState("");
     const [activeCategory, setActiveCategory] = useState("Todos");
@@ -63,44 +62,39 @@ export default function Arcade() {
         setCountdown(5);
     };
 
-    const toggleFullscreen = () => {
-        setIsFullscreen(!isFullscreen);
-    };
-
     const handleSkipAd = () => {
-        setAdPhase("playing");
-    };
-
-    const handleClosePlayer = () => {
-        if (adPhase === "playing") {
-            setAdPhase("closing");
-        } else {
-            setAdPhase("none");
-            setSelectedGame(null);
-            setIsFullscreen(false);
+        if (selectedGame) {
+            window.location.href = getGameUrl(selectedGame.slug);
         }
     };
 
-    // Countdown logic for the opening ad
-    useEffect(() => {
-        if (adPhase === "opening" && countdown > 0) {
-            const timer = setTimeout(() => setCountdown(countdown - 1), 1000);
-            return () => clearTimeout(timer);
-        } else if (adPhase === "opening" && countdown === 0) {
-            // Auto-start the game when countdown ends
-            setAdPhase("playing");
-        }
-    }, [adPhase, countdown]);
+    const handleCloseAd = () => {
+        setAdPhase("none");
+        setSelectedGame(null);
+    };
 
-    // Prevent scrolling when playing in "fullscreen" mode within the site
+    // Countdown logic for the redirect ad
     useEffect(() => {
-        if (isFullscreen || adPhase !== "none") {
+        if (adPhase === "opening" && selectedGame) {
+            if (countdown > 0) {
+                const timer = setTimeout(() => setCountdown(countdown - 1), 1000);
+                return () => clearTimeout(timer);
+            } else {
+                // Auto-redirect when countdown ends
+                window.location.href = getGameUrl(selectedGame.slug);
+            }
+        }
+    }, [adPhase, countdown, selectedGame]);
+
+    // Prevent scrolling when ad is active
+    useEffect(() => {
+        if (adPhase === "opening") {
             document.body.style.overflow = 'hidden';
         } else {
             document.body.style.overflow = 'auto';
         }
         return () => { document.body.style.overflow = 'auto'; };
-    }, [isFullscreen, adPhase]);
+    }, [adPhase]);
 
     const filteredGames = ARCADE_GAMES.filter(game => {
         const matchesSearch = game.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -300,162 +294,118 @@ export default function Arcade() {
                 </Button>
             </motion.section>
 
-            {/* INTEGRATED GAME PLAYER (IFRAME) + AD SYSTEM */}
+            {/* FULLSCREEN AD OVERLAY / REDIRECTING */}
             <AnimatePresence>
-                {adPhase !== "none" && selectedGame && (
+                {adPhase === "opening" && selectedGame && (
                     <motion.div
                         initial={{ opacity: 0 }}
                         animate={{ opacity: 1 }}
                         exit={{ opacity: 0 }}
-                        className="fixed inset-0 z-[100] flex items-center justify-center p-4 md:p-10"
+                        className="fixed inset-0 z-[100] bg-[#020617] flex flex-col items-center justify-center p-6 text-center"
                     >
-                        {/* Backdrop Blur */}
-                        <div className="absolute inset-0 bg-black/90 backdrop-blur-xl" />
+                        {/* High Quality Background Effects */}
+                        <div className="absolute inset-0 bg-[radial-gradient(circle_at_50%_50%,rgba(234,179,8,0.1),transparent_70%)]" />
+                        <div className="absolute top-0 left-0 w-full h-1 bg-white/5">
+                            <motion.div
+                                initial={{ width: "0%" }}
+                                animate={{ width: "100%" }}
+                                transition={{ duration: 5, ease: "linear" }}
+                                className="h-full bg-primary shadow-[0_0_15px_rgba(234,179,8,0.5)]"
+                            />
+                        </div>
 
-                        <motion.div
-                            initial={{ scale: 0.9, y: 20 }}
-                            animate={{ scale: 1, y: 0 }}
-                            exit={{ scale: 0.9, y: 20 }}
-                            className={`relative w-full h-full bg-background border border-white/10 overflow-hidden shadow-2xl flex flex-col transition-all duration-300 ${isFullscreen ? 'rounded-none' : 'rounded-3xl'}`}
+                        <Button
+                            variant="ghost"
+                            size="icon"
+                            className="absolute top-6 right-6 text-white/40 hover:text-white"
+                            onClick={() => { setAdPhase("none"); setSelectedGame(null); }}
                         >
+                            <X className="w-8 h-8" />
+                        </Button>
 
-                            {/* Player Header */}
-                            <div className="bg-card/80 backdrop-blur-md border-b border-white/5 p-4 flex items-center justify-between">
-                                <div className="flex items-center gap-4">
-                                    <div className="w-10 h-10 bg-primary/20 rounded-xl flex items-center justify-center">
-                                        <Gamepad2 className="w-6 h-6 text-primary" />
-                                    </div>
-                                    <div>
-                                        <h4 className="text-sm font-black uppercase tracking-widest">{selectedGame.name}</h4>
-                                        <p className="text-[10px] text-muted-foreground uppercase font-bold tracking-widest">Sua Partida Gamer • Arcade</p>
-                                    </div>
+                        <div className="relative space-y-8 max-w-lg w-full">
+                            <motion.div
+                                initial={{ scale: 0.8, opacity: 0 }}
+                                animate={{ scale: 1, opacity: 1 }}
+                                className="mx-auto w-32 h-32 rounded-[2.5rem] overflow-hidden border-2 border-primary/30 shadow-2xl shadow-primary/20"
+                            >
+                                <img src={selectedGame.image} alt={selectedGame.name} className="w-full h-full object-cover" />
+                            </motion.div>
+
+                            <div className="space-y-2">
+                                <Badge className="bg-primary/20 text-primary border-primary/30 font-black uppercase tracking-widest text-[10px] px-4 py-1">
+                                    Encaminhando para Arena
+                                </Badge>
+                                <h2 className="text-4xl font-serif font-black uppercase tracking-tighter text-glow truncate px-4">
+                                    {selectedGame.name}
+                                </h2>
+                                <p className="text-muted-foreground text-xs uppercase font-bold tracking-[0.2em] opacity-60">
+                                    Preparando sua sessão de jogo...
+                                </p>
+                            </div>
+
+                            {/* Ad Space Placeholder (Premium Look) */}
+                            <div className="aspect-video w-full bg-white/5 border border-white/5 rounded-[2rem] flex flex-col items-center justify-center p-6 space-y-4 shadow-inner">
+                                <div className="p-3 bg-primary/10 rounded-2xl">
+                                    <Sparkles className="w-6 h-6 text-primary animate-pulse" />
                                 </div>
-                                <div className="flex items-center gap-2">
-                                    {adPhase === "playing" && (
-                                        <Button
-                                            variant="ghost"
-                                            size="icon"
-                                            onClick={toggleFullscreen}
-                                            className="hover:bg-white/5 text-muted-foreground hover:text-white"
-                                        >
-                                            {isFullscreen ? <Minimize2 className="w-5 h-5" /> : <Maximize2 className="w-5 h-5" />}
-                                        </Button>
-                                    )}
+                                <div className="space-y-1">
+                                    <p className="text-[10px] uppercase font-black tracking-widest text-primary/80">Espaço Publicitário Premium</p>
+                                    <p className="text-[9px] text-muted-foreground uppercase font-bold tracking-widest opacity-40">Seu anúncio AdSense ou patrocinador aqui</p>
+                                </div>
+                            </div>
+
+                            <div className="flex flex-col items-center gap-6">
+                                <div className="relative w-20 h-20 flex items-center justify-center">
+                                    <svg className="absolute inset-0 w-full h-full -rotate-90">
+                                        <circle
+                                            cx="40"
+                                            cy="40"
+                                            r="36"
+                                            fill="transparent"
+                                            stroke="currentColor"
+                                            strokeWidth="4"
+                                            className="text-white/5"
+                                        />
+                                        <motion.circle
+                                            cx="40"
+                                            cy="40"
+                                            r="36"
+                                            fill="transparent"
+                                            stroke="currentColor"
+                                            strokeWidth="4"
+                                            strokeDasharray="226.2"
+                                            initial={{ strokeDashoffset: 0 }}
+                                            animate={{ strokeDashoffset: 226.2 }}
+                                            transition={{ duration: 5, ease: "linear" }}
+                                            className="text-primary"
+                                        />
+                                    </svg>
+                                    <span className="text-3xl font-black font-serif italic">{countdown}</span>
+                                </div>
+
+                                <div className="flex gap-4 w-full">
                                     <Button
-                                        variant="ghost"
-                                        size="icon"
-                                        onClick={handleClosePlayer}
-                                        className="hover:bg-rose-500/20 text-muted-foreground hover:text-rose-500"
+                                        variant="outline"
+                                        className="flex-1 border-white/10 bg-white/5 font-black uppercase tracking-widest h-12 hover:bg-white/10"
+                                        onClick={() => { setAdPhase("none"); setSelectedGame(null); }}
                                     >
-                                        <X className="w-5 h-5" />
+                                        Cancelar
+                                    </Button>
+                                    <Button
+                                        className="flex-1 bg-primary text-black font-black uppercase tracking-widest h-12 shadow-lg shadow-primary/20 group"
+                                        onClick={() => window.location.href = getGameUrl(selectedGame.slug)}
+                                    >
+                                        Pular Ad
+                                        <ChevronRight className="w-4 h-4 ml-2 group-hover:translate-x-1 transition-transform" />
                                     </Button>
                                 </div>
                             </div>
 
-                            <div className="flex-1 relative overflow-hidden flex flex-col">
-                                {/* PHASE 1: OPENING AD INTERSTITIAL */}
-                                {adPhase === "opening" && (
-                                    <div className="absolute inset-0 z-50 flex items-center justify-center bg-[#020617]">
-                                        <div className="max-w-md w-full p-8 text-center space-y-8">
-                                            <div className="space-y-2">
-                                                <Badge className="bg-primary/20 text-primary border-primary/30 uppercase tracking-widest">Iniciando Partida</Badge>
-                                                <h3 className="text-2xl font-black uppercase tracking-tighter italic">O jogo começa em instantes...</h3>
-                                            </div>
-
-                                            {/* PLACEHOLDER FOR THE AD */}
-                                            <div className="aspect-[4/3] bg-card border border-white/5 rounded-2xl flex flex-col items-center justify-center p-6 space-y-4 shadow-2xl shadow-primary/5">
-                                                <div className="w-16 h-16 bg-white/5 rounded-full flex items-center justify-center animate-pulse">
-                                                    <Timer className="w-8 h-8 text-primary" />
-                                                </div>
-                                                <div className="space-y-2">
-                                                    <p className="text-[10px] uppercase font-bold tracking-widest text-muted-foreground">Espaço do seu Anúncio</p>
-                                                    <p className="text-xs font-medium text-white/50 italic">"Insira aqui seu código HTML/Script de Publicidade"</p>
-                                                </div>
-                                            </div>
-
-                                            <div className="flex flex-col items-center gap-4">
-                                                {countdown > 0 ? (
-                                                    <p className="text-[10px] font-black uppercase tracking-[0.3em] text-primary/60">
-                                                        Aguarde {countdown}s para pular
-                                                    </p>
-                                                ) : (
-                                                    <Button
-                                                        onClick={handleSkipAd}
-                                                        className="bg-primary text-black font-black uppercase tracking-widest px-12 h-12 shadow-lg shadow-primary/20 hover:scale-105 transition-transform"
-                                                    >
-                                                        Pular e Jogar <Play className="w-4 h-4 ml-2 fill-current" />
-                                                    </Button>
-                                                )}
-                                            </div>
-                                        </div>
-                                    </div>
-                                )}
-
-                                {/* PHASE 2: GAMEPLAY (IFRAME) */}
-                                {adPhase === "playing" && (
-                                    <iframe
-                                        src={getGameUrl(selectedGame!.slug)}
-                                        className="w-full h-full border-none"
-                                        title={selectedGame.name}
-                                        allow="autoplay; fullscreen; clipboard-write; encrypted-media; picture-in-picture"
-                                    />
-                                )}
-
-                                {/* PHASE 3: CLOSING AD / SUMMARY */}
-                                {adPhase === "closing" && (
-                                    <div className="absolute inset-0 z-50 flex items-center justify-center bg-[#020617]/95 backdrop-blur-md">
-                                        <div className="max-w-2xl w-full p-8 space-y-10">
-                                            <div className="flex items-center gap-6 justify-center">
-                                                <div className="w-24 h-24 rounded-3xl overflow-hidden border-2 border-primary shadow-2xl shadow-primary/20">
-                                                    <img src={selectedGame.image} className="w-full h-full object-cover" />
-                                                </div>
-                                                <div className="text-left">
-                                                    <h3 className="text-4xl font-black uppercase italic tracking-tighter text-glow">Partida Encerrada</h3>
-                                                    <p className="text-muted-foreground uppercase font-bold tracking-widest text-xs">Obrigado por jogar no SPG Arcade</p>
-                                                </div>
-                                            </div>
-
-                                            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                                                {/* Left: Summary/Points */}
-                                                <Card className="bg-card/40 border-white/5 p-6 rounded-[2rem] space-y-4">
-                                                    <Award className="w-10 h-10 text-primary" />
-                                                    <h4 className="text-lg font-black uppercase tracking-widest">Bônus Recebido</h4>
-                                                    <p className="text-xs text-muted-foreground uppercase font-bold tracking-widest">+10 Pontos de Glória em breve!</p>
-                                                </Card>
-
-                                                {/* Right: AD SPOT */}
-                                                <Card className="bg-primary/5 border-primary/20 p-6 rounded-[2rem] flex flex-col items-center justify-center text-center space-y-2 group hover:bg-primary/10 transition-colors">
-                                                    <div className="text-[10px] font-black uppercase tracking-widest text-primary/60">Sponsor Ad</div>
-                                                    <div className="text-xs font-bold uppercase tracking-widest text-white/50">Confira nossas ofertas exclusivas</div>
-                                                    <div className="mt-4 w-full h-1 bg-white/10 rounded-full overflow-hidden">
-                                                        <div className="w-1/2 h-full bg-primary" />
-                                                    </div>
-                                                </Card>
-                                            </div>
-
-                                            <div className="flex flex-wrap justify-center gap-4 pt-4">
-                                                <Button size="lg" onClick={() => setAdPhase("playing")} className="bg-white/10 hover:bg-white/20 text-white font-black uppercase tracking-widest h-14 px-8 border border-white/10 rounded-2xl">
-                                                    <Play className="w-4 h-4 mr-3" /> Jogar Novamente
-                                                </Button>
-                                                <Button size="lg" onClick={() => { setAdPhase("none"); setSelectedGame(null); }} className="bg-primary text-black font-black uppercase tracking-widest h-14 px-10 shadow-xl shadow-primary/20 rounded-2xl">
-                                                    Voltar ao Lobby
-                                                </Button>
-                                                <Button variant="ghost" size="lg" className="w-full md:w-auto h-14 text-muted-foreground font-black uppercase tracking-widest hover:text-white">
-                                                    <Share2 className="w-4 h-4 mr-3" /> Compartilhar
-                                                </Button>
-                                            </div>
-                                        </div>
-                                    </div>
-                                )}
-                            </div>
-
-                            {/* Player Footer (Mini) */}
-                            <div className="bg-card/50 px-6 py-2 flex items-center justify-center">
-                                <p className="text-[8px] text-muted-foreground uppercase font-bold tracking-[0.3em]">
-                                    Powered by <span className="text-primary">Game Distribution</span> • Integrated with SPG Ads
-                                </p>
-                            </div>
-                        </motion.div>
+                            <p className="text-[9px] text-muted-foreground uppercase font-black tracking-widest opacity-40">
+                                Powered by Gamezop • SPG Arcade Alliance
+                            </p>
+                        </div>
                     </motion.div>
                 )}
             </AnimatePresence>
