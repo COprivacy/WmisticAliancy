@@ -25,22 +25,23 @@ type Game = {
     desc: string;
 };
 
+// Configuration for Gamezop
+const GAMEZOP_PROPERTY_ID = "S1Pr96p_r"; // ID de Publicador SPG
+
 const ARCADE_GAMES: Game[] = [
-    { id: "1", name: "Moto X3M Pool Party", slug: "f804d079d19f44d3b951ead4588e974a", image: "https://img.gamedistribution.com/f804d079d19f44d3b951ead4588e974a-512x512.jpg", category: "Corrida", desc: "Desafie a gravidade em pistas aquáticas insanas." },
-    { id: "2", name: "Basketball Stars", slug: "69d78d071f704fa183d75b4114ae40ec", image: "https://img.gamedistribution.com/69d78d071f704fa183d75b4114ae40ec-512x512.jpg", category: "Esportes", desc: "Arremesse como um profissional neste simulador 3D." },
-    { id: "3", name: "Penalty Challenge", slug: "14b5bd0218824dd3965eed3b186d936f", image: "https://img.gamedistribution.com/14b5bd0218824dd3965eed3b186d936f-512x512.jpg", category: "Esportes", desc: "O destino da taça está nos seus pés." },
-    { id: "4", name: "Slither.io World", slug: "24c7905f9e6b4b00bb7f1b7b1751b657", image: "https://img.gamedistribution.com/24c7905f9e6b4b00bb7f1b7b1751b657-512x512.jpg", category: "Ação", desc: "Cresça e domine o mapa neste clássico viciante." },
-    { id: "5", name: "Drift Cup Racing", slug: "90da57f920214690838612741d448375", image: "https://img.gamedistribution.com/90da57f920214690838612741d448375-512x512.jpg", category: "Corrida", desc: "Queime pneus nas curvas mais fechadas." },
-    { id: "6", name: "Table Tennis World", slug: "fd040a44274c4a45a30e7c5b65103417", image: "https://img.gamedistribution.com/fd040a44274c4a45a30e7c5b65103417-512x512.jpg", category: "Esportes", desc: "Torne-se o mestre da raquete em escala mundial." },
-    { id: "7", name: "Fireboy & Watergirl 1", slug: "a55c9cc9c21e4fc683c8c6857f3d0c75", image: "https://img.gamedistribution.com/a55c9cc9c21e4fc683c8c6857f3d0c75-512x512.jpg", category: "Puzzle", desc: "Explore o Templo da Floresta com os elementais." },
-    { id: "8", name: "8 Ball Pool", slug: "d02120780e594158ab61869028223cf1", image: "https://img.gamedistribution.com/d02120780e594158ab61869028223cf1-512x512.jpg", category: "Esportes", desc: "O clássico bilhar online contra jogadores reais." },
-    { id: "9", name: "Moto X3M 4 Winter", slug: "bcacf81441bd4c7799a622171116ea9d", image: "https://img.gamedistribution.com/bcacf81441bd4c7799a622171116ea9d-512x512.jpg", category: "Corrida", desc: "Acrobacias na neve em pistas geladas mortais." },
-    { id: "10", name: "Bob the Robber 4 Japan", slug: "8c16e991b9bf4dfab0942772d77483f7", image: "https://img.gamedistribution.com/8c16e991b9bf4dfab0942772d77483f7-512x512.jpg", category: "Aventura", desc: "Seja o ladrão mais furtivo do mundo nesta nova missão." },
-    { id: "11", name: "Snail Bob 7", slug: "40d04588e974a81419c0de9b47e8bd63", image: "https://img.gamedistribution.com/40d04588e974a81419c0de9b47e8bd63-512x512.jpg", category: "Aventura", desc: "Ajude Bob a enfrentar monstros no mundo da fantasia." },
-    { id: "12", name: "Troll Face Quest", slug: "1894a81419c0de9b47e8bd63ad6e053d", image: "https://img.gamedistribution.com/1894a81419c0de9b47e8bd63ad6e053d-512x512.jpg", category: "Puzzle", desc: "Resolva os quebra-cabeças mais insanos e engraçados." },
+    { id: "1", name: "Campeões do Basquete", slug: "S1_V6GyP5ym", image: "https://static.gamezop.com/S1_V6GyP5ym/square.png", category: "Esportes", desc: "Arremesse e enterre para se tornar o rei das quadras." },
+    { id: "2", name: "Mestre do Bilhar", slug: "hgempP8Sc", image: "https://static.gamezop.com/hgempP8Sc/square.png", category: "Esportes", desc: "Domine a mesa de sinuca nesta simulação realista de 8-ball." },
+    { id: "3", name: "Aventura de Blocos Selva", slug: "UCS62KJ8c", image: "https://static.gamezop.com/UCS62KJ8c/square.png", category: "Puzzle", desc: "Combine as peças neste puzzle viciante nas profundezas da selva." },
+    { id: "4", name: "Bubble Shooter Clássico", slug: "yVywAGBQ6", image: "https://static.gamezop.com/yVywAGBQ6/square.png", category: "Puzzle", desc: "Estoure todas as bolhas antes que elas alcancem o chão." },
+    { id: "5", name: "Explosão de Rochas", slug: "HkTQJhTXqRS", image: "https://static.gamezop.com/HkTQJhTXqRS/square.png", category: "Ação", desc: "Proteja-se e destrua as rochas espaciais nesta jornada arcade." },
+    { id: "6", name: "Tiro na Garrafa", slug: "B1fSpMkP51m", image: "https://static.gamezop.com/B1fSpMkP51m/square.png", category: "Ação", desc: "Teste sua precisão atirando em garrafas em movimento." },
+    { id: "7", name: "Assalto ao Saloon", slug: "SJ8X6zyPcyX", image: "https://static.gamezop.com/SJ8X6zyPcyX/square.png", category: "Ação", desc: "Seja o gatilho mais rápido do Velho Oeste nesta perseguição." },
+    { id: "8", name: "Cavaleiro Ardente", slug: "yr4TqJhLr", image: "https://static.gamezop.com/yr4TqJhLr/square.png", category: "Corrida", desc: "Pise fundo e evite os obstáculos em alta velocidade." },
+    { id: "9", name: "Estrelas do Boliche", slug: "BkdJhTX50B", image: "https://static.gamezop.com/BkdJhTX50B/square.png", category: "Esportes", desc: "Faça o strike perfeito e conquiste os troféus das ligas." },
+    { id: "10", name: "Cyberfusion", slug: "HJXei0j", image: "https://static.gamezop.com/HJXei0j/square.png", category: "Puzzle", desc: "Fundir peças tecnológicas para criar o circuito definitivo." },
 ];
 
-const CATEGORIES = ["Todos", "Corrida", "Esportes", "Ação", "Puzzle", "Aventura"];
+const CATEGORIES = ["Todos", "Ação", "Esportes", "Puzzle", "Corrida"];
 
 export default function Arcade() {
     const { user } = useAuth();
@@ -51,9 +52,9 @@ export default function Arcade() {
     const [searchTerm, setSearchTerm] = useState("");
     const [activeCategory, setActiveCategory] = useState("Todos");
 
-    // Dynamic GameDistribution URL - Using the direct embed format which is more reliable
+    // Gamezop Integration - Launching games directly with Property ID
     const getGameUrl = (slug: string) => {
-        return `https://html5.gamedistribution.com/${slug}/?gd_sdk_referrer_url=${encodeURIComponent(window.location.origin)}`;
+        return `https://www.gamezop.com/g/${slug}?id=${GAMEZOP_PROPERTY_ID}`;
     };
 
     const handlePlayGame = (game: Game) => {
