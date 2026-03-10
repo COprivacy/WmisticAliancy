@@ -19,6 +19,7 @@ import Chat from "@/pages/chat";
 import PrivateChat from "@/pages/private-chat";
 import Guide from "@/pages/guide";
 import Arcade from "@/pages/arcade";
+import Legal from "@/pages/legal";
 import Layout from "@/components/layout";
 import { PwaInstallPrompt } from "@/components/pwa-install-prompt";
 import { PwaUpdateNotify } from "@/components/pwa-update-notify";
@@ -100,9 +101,9 @@ function Router() {
         </Layout>
       </Route>
 
-      <Route path="/guide">
+      <Route path="/legal">
         <Layout>
-          <Guide />
+          <Legal />
         </Layout>
       </Route>
 

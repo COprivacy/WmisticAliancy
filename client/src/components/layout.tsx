@@ -132,6 +132,58 @@ export default function Layout({ children }: { children: ReactNode }) {
       <main className="flex-1 container mx-auto px-4 py-8 relative z-10">
         {children}
       </main>
+
+      <footer className="border-t border-border/50 bg-card/30 backdrop-blur-xl py-12 px-4 relative z-10">
+        <div className="container mx-auto grid grid-cols-1 md:grid-cols-4 gap-12 sm:gap-8">
+          <div className="space-y-6">
+            <div className="flex items-center gap-3">
+              <img src="/logo.png" className="w-10 h-10 object-contain" alt="SPG Logo" />
+              <div className="flex flex-col">
+                <span className="text-xl font-black text-white tracking-widest font-serif">SPG <span className="text-primary italic">PORTAL</span></span>
+                <span className="text-[10px] text-muted-foreground uppercase font-black tracking-widest">Sua Partida Gamer © 2026</span>
+              </div>
+            </div>
+            <p className="text-xs text-muted-foreground uppercase font-bold tracking-widest leading-loose opacity-60">
+              O maior ecossistema de ranking 1v1 oficial do Mobile Legends no Brasil. Competitividade levada a sério.
+            </p>
+          </div>
+
+          <div className="space-y-6">
+            <h4 className="text-sm font-black uppercase tracking-widest text-primary italic">Plataforma</h4>
+            <nav className="flex flex-col gap-3">
+              <Link href="/rankings" className="text-xs text-muted-foreground hover:text-white uppercase font-black tracking-widest transition-colors">Arena de Luta</Link>
+              <Link href="/arcade" className="text-xs text-muted-foreground hover:text-white uppercase font-black tracking-widest transition-colors">Game Center (Arcade)</Link>
+              <Link href="/rules" className="text-xs text-muted-foreground hover:text-white uppercase font-black tracking-widest transition-colors">Regras Oficiais</Link>
+              <Link href="/chat" className="text-xs text-muted-foreground hover:text-white uppercase font-black tracking-widest transition-colors">Comunidade</Link>
+            </nav>
+          </div>
+
+          <div className="space-y-6">
+            <h4 className="text-sm font-black uppercase tracking-widest text-primary italic">Suporte & Legal</h4>
+            <nav className="flex flex-col gap-3">
+              <Link href="/guide" className="text-xs text-muted-foreground hover:text-white uppercase font-black tracking-widest transition-colors">Guia do Jogador</Link>
+              <Link href="/legal" className="text-xs text-muted-foreground hover:text-white uppercase font-black tracking-widest transition-colors">Política de Privacidade</Link>
+              <Link href="/legal" className="text-xs text-muted-foreground hover:text-white uppercase font-black tracking-widest transition-colors">Termos de Uso</Link>
+              <a href="mailto:contato@suapartidagamer.com.br" className="text-xs text-muted-foreground hover:text-white uppercase font-black tracking-widest transition-colors">Fale Conosco</a>
+            </nav>
+          </div>
+
+          <div className="space-y-6">
+            <h4 className="text-sm font-black uppercase tracking-widest text-primary italic">Siga-nos</h4>
+            <div className="flex gap-4">
+              <a href="https://instagram.com/suapartidagamer" target="_blank" className="w-10 h-10 bg-white/5 border border-white/10 rounded-xl flex items-center justify-center hover:bg-primary/20 hover:border-primary/50 transition-all text-muted-foreground hover:text-primary">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="w-5 h-5"><rect width="20" height="20" x="2" y="2" rx="5" ry="5"></rect><path d="M16 11.37A4 4 0 1 1 12.63 8 4 4 0 0 1 16 11.37z"></path><line x1="17.5" x2="17.51" y1="6.5" y2="6.5"></line></svg>
+              </a>
+              <a href="https://youtube.com/@suapartidagamer" target="_blank" className="w-10 h-10 bg-white/5 border border-white/10 rounded-xl flex items-center justify-center hover:bg-primary/20 hover:border-primary/50 transition-all text-muted-foreground hover:text-primary">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="w-5 h-5"><path d="M22.54 6.42a2.78 2.78 0 0 0-1.94-2C18.88 4 12 4 12 4s-6.88 0-8.6.42a2.78 2.78 0 0 0-1.94 2C1 8.14 1 12 1 12s0 3.86.42 5.58a2.78 2.78 0 0 0 1.94 2C5.12 20 12 20 12 20s6.88 0 8.6-.42a2.78 2.78 0 0 0 1.94-2C23 15.86 23 12 23 12s0-3.86-.42-5.58z"></path><polygon points="9.75 15.02 15.5 12 9.75 8.98 9.75 15.02"></polygon></svg>
+              </a>
+            </div>
+            <div className="pt-4 border-t border-white/5">
+                <p className="text-[9px] text-muted-foreground uppercase font-black tracking-widest">Powered by <span className="text-white">SPG Core Engine</span></p>
+            </div>
+          </div>
+        </div>
+      </footer>
     </div>
   );
 }
