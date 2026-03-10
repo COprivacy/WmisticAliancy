@@ -41,8 +41,11 @@ export default function Arcade() {
     const [isFullscreen, setIsFullscreen] = useState(false);
     const [countdown, setCountdown] = useState(5);
 
-    // GameDistribution Base URL
-    const getGameUrl = (slug: string) => `https://html5.gamedistribution.com/${slug}/?pub=pub-12345`; // Adicione seu ID de Publisher aqui
+    // GameDistribution Base URL - Using the official embed format for better reliability
+    const getGameUrl = (slug: string) => {
+        const baseUrl = `https://html5.gamedistribution.com/${slug}/`;
+        return `https://embed.gamedistribution.com/?url=${encodeURIComponent(baseUrl)}&gd_sdk_referrer_url=${encodeURIComponent(window.location.origin)}`;
+    };
 
     const handlePlayGame = (game: Game) => {
         setSelectedGame(game);
@@ -74,7 +77,8 @@ export default function Arcade() {
             const timer = setTimeout(() => setCountdown(countdown - 1), 1000);
             return () => clearTimeout(timer);
         } else if (adPhase === "opening" && countdown === 0) {
-            // Optional: Auto-start or wait for user to skip
+            // Auto-start the game when countdown ends
+            setAdPhase("playing");
         }
     }, [adPhase, countdown]);
 
@@ -106,13 +110,13 @@ export default function Arcade() {
                     <div className="flex-1 space-y-6 text-center md:text-left">
                         <Badge className="bg-primary/20 text-primary border-primary/30 px-4 py-1 uppercase tracking-widest font-black text-[10px]">
                             <Sparkles className="w-3 h-3 mr-2 inline" />
-                            Parceria Gamezop • Em Breve
+                            Catálogo Premium Ativado
                         </Badge>
                         <h1 className="text-5xl md:text-7xl font-serif font-black uppercase tracking-tighter text-glow leading-none">
                             SPG <span className="text-transparent bg-clip-text bg-gradient-to-r from-yellow-400 via-primary to-orange-500">ARCADE</span>
                         </h1>
                         <p className="text-muted-foreground text-sm md:text-base max-w-xl font-medium leading-relaxed uppercase tracking-wide opacity-80">
-                            A diversão não para quando o rank termina. Em parceria com a Gamezop, traremos +250 jogos instantâneos para você dominar.
+                            A diversão não para quando o rank termina. Explore centenas de jogos instantâneos para você dominar e relaxar entre as partidas.
                         </p>
                         <div className="flex flex-wrap justify-center md:justify-start gap-4">
                             <Button size="lg" onClick={() => handlePlayGame(ARCADE_GAMES[0])} className="bg-primary text-primary-foreground font-black uppercase tracking-widest h-14 px-10 shadow-lg shadow-primary/20 hover:scale-105 transition-transform">
