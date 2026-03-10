@@ -1,5 +1,6 @@
-import { motion } from "framer-motion";
-import { Gamepad2, Trophy, Sparkles, Zap, Play, Info, ExternalLink, Dices, Flame, Star } from "lucide-react";
+import { motion, AnimatePresence } from "framer-motion";
+import { Gamepad2, Trophy, Sparkles, Zap, Play, Info, ExternalLink, Dices, Flame, Star, X, Maximize2, Minimize2 } from "lucide-react";
+import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -17,9 +18,12 @@ const stagger = {
 
 export default function Arcade() {
     const { user } = useAuth();
+    const [isPlaying, setIsPlaying] = useState(false);
+    const [isFullscreen, setIsFullscreen] = useState(false);
 
     // Placeholder for Gamezop Link - User will replace this with their unique ID
-    const gamezopUrl = "https://www.gamezop.com/g/placeholder";
+    // Important: Use ?is_embed=true for integrated experience
+    const gamezopUrl = "https://www.gamezop.com/g/placeholder?is_embed=true";
 
     const featuredGames = [
         { id: "action", name: "Ação & Aventura", icon: Zap, color: "text-orange-400", bg: "bg-orange-500/10", desc: "Desafie seus reflexos em jogos intensos." },
@@ -29,9 +33,22 @@ export default function Arcade() {
     ];
 
     const handlePlayNow = () => {
-        // Here we could open the Gamezop portal
-        window.open(gamezopUrl, "_blank");
+        setIsPlaying(true);
     };
+
+    const toggleFullscreen = () => {
+        setIsFullscreen(!isFullscreen);
+    };
+
+    // Prevent scrolling when playing in "fullscreen" mode within the site
+    useEffect(() => {
+        if (isFullscreen) {
+            document.body.style.overflow = 'hidden';
+        } else {
+            document.body.style.overflow = 'auto';
+        }
+        return () => { document.body.style.overflow = 'auto'; };
+    }, [isFullscreen]);
 
     return (
         <div className="max-w-6xl mx-auto space-y-12 py-6">
@@ -174,6 +191,65 @@ export default function Arcade() {
                 </Button>
             </motion.section>
 
+            {/* INTEGRATED GAME PLAYER (IFRAME) */}
+            <AnimatePresence>
+                {isPlaying && (
+                    <motion.div
+                        initial={{ opacity: 0, scale: 0.95 }}
+                        animate={{ opacity: 1, scale: 1 }}
+                        exit={{ opacity: 0, scale: 0.95 }}
+                        className={`fixed inset-4 z-[100] bg-background border border-border/50 rounded-3xl overflow-hidden shadow-2xl flex flex-col transition-all duration-300 ${isFullscreen ? 'inset-0 rounded-none' : 'inset-4 md:inset-10'}`}
+                    >
+                        {/* Player Header */}
+                        <div className="bg-card/80 backdrop-blur-md border-b border-white/5 p-4 flex items-center justify-between">
+                            <div className="flex items-center gap-4">
+                                <div className="w-10 h-10 bg-primary/20 rounded-xl flex items-center justify-center">
+                                    <Gamepad2 className="w-6 h-6 text-primary" />
+                                </div>
+                                <div>
+                                    <h4 className="text-sm font-black uppercase tracking-widest">SPG Arcade Player</h4>
+                                    <p className="text-[10px] text-muted-foreground uppercase font-bold tracking-widest">Sua diversão, em um só lugar</p>
+                                </div>
+                            </div>
+                            <div className="flex items-center gap-2">
+                                <Button 
+                                    variant="ghost" 
+                                    size="icon" 
+                                    onClick={toggleFullscreen}
+                                    className="hover:bg-white/5 text-muted-foreground hover:text-white"
+                                >
+                                    {isFullscreen ? <Minimize2 className="w-5 h-5" /> : <Maximize2 className="w-5 h-5" />}
+                                </Button>
+                                <Button 
+                                    variant="ghost" 
+                                    size="icon" 
+                                    onClick={() => setIsPlaying(false)}
+                                    className="hover:bg-rose-500/20 text-muted-foreground hover:text-rose-500"
+                                >
+                                    <X className="w-5 h-5" />
+                                </Button>
+                            </div>
+                        </div>
+
+                        {/* Game Iframe */}
+                        <div className="flex-1 bg-[#0a101f] relative">
+                            <iframe
+                                src={gamezopUrl}
+                                className="w-full h-full border-none"
+                                title="Gamezop Arcade"
+                                allow="autoplay; fullscreen; clipboard-write; encrypted-media; picture-in-picture"
+                            />
+                        </div>
+
+                        {/* Player Footer (Mini) */}
+                        <div className="bg-card/50 px-6 py-2 flex items-center justify-center">
+                            <p className="text-[8px] text-muted-foreground uppercase font-bold tracking-[0.3em]">
+                                Parceria Oficial <span className="text-primary">Gamezop</span> & SPG
+                            </p>
+                        </div>
+                    </motion.div>
+                )}
+            </AnimatePresence>
         </div>
     );
 }
