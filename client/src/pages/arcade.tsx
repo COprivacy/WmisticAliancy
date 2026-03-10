@@ -1,5 +1,5 @@
 import { motion, AnimatePresence } from "framer-motion";
-import { Gamepad2, Trophy, Sparkles, Zap, Play, Info, ExternalLink, Dices, Flame, Star, X, Maximize2, Minimize2 } from "lucide-react";
+import { Gamepad2, Trophy, Sparkles, Zap, Play, Info, ExternalLink, Dices, Flame, Star, X, Maximize2, Minimize2, Timer, Award, Share2 } from "lucide-react";
 import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
@@ -16,39 +16,77 @@ const stagger = {
     animate: { transition: { staggerChildren: 0.1 } }
 };
 
+type Game = {
+    id: string;
+    name: string;
+    slug: string;
+    image: string;
+    category: string;
+    desc: string;
+};
+
+const ARCADE_GAMES: Game[] = [
+    { id: "1", name: "Moto X3M Pool Party", slug: "f74360e7db1241169e06175e1f0e241e", image: "https://img.gamedistribution.com/f74360e7db1241169e06175e1f0e241e-512x512.jpeg", category: "Corrida", desc: "Desafie a gravidade em pistas aquáticas insanas." },
+    { id: "2", name: "Basketball Stars", slug: "69d70d74488f4c288f615f790c58e874", image: "https://img.gamedistribution.com/69d70d74488f4c288f615f790c58e874-512x512.jpeg", category: "Esportes", desc: "Arremesse como um profissional neste simulador 3D." },
+    { id: "3", name: "Penalty Challenge", slug: "4199c0d9526e4592a3489e5fc8b76c8c", image: "https://img.gamedistribution.com/4199c0d9526e4592a3489e5fc8b76c8c-512x512.jpeg", category: "Esportes", desc: "O destino da taça está nos seus pés." },
+    { id: "4", name: "Slither.io World", slug: "87c569f6eeb342e185c88691f37e199f", image: "https://img.gamedistribution.com/87c569f6eeb342e185c88691f37e199f-512x512.jpeg", category: "Ação", desc: "Cresça e domine o mapa neste clássico viciante." },
+    { id: "5", name: "Drift Cup Racing", slug: "90da57f920214690838612741d448375", image: "https://img.gamedistribution.com/90da57f920214690838612741d448375-512x512.jpeg", category: "Corrida", desc: "Queime pneus nas curvas mais fechadas." },
+    { id: "6", name: "Table Tennis World", slug: "96f497ec958541c888e2354746ec177b", image: "https://img.gamedistribution.com/96f497ec958541c888e2354746ec177b-512x512.jpeg", category: "Esportes", desc: "Torne-se o mestre da raquete em escala mundial." },
+];
+
 export default function Arcade() {
     const { user } = useAuth();
-    const [isPlaying, setIsPlaying] = useState(false);
+    const [selectedGame, setSelectedGame] = useState<Game | null>(null);
+    const [adPhase, setAdPhase] = useState<"none" | "opening" | "playing" | "closing">("none");
     const [isFullscreen, setIsFullscreen] = useState(false);
+    const [countdown, setCountdown] = useState(5);
 
-    // Placeholder for Gamezop Link - User will replace this with their unique ID
-    // Important: Use ?is_embed=true for integrated experience
-    const gamezopUrl = "https://www.gamezop.com/g/placeholder?is_embed=true";
+    // GameDistribution Base URL
+    const getGameUrl = (slug: string) => `https://html5.gamedistribution.com/${slug}/?pub=pub-12345`; // Adicione seu ID de Publisher aqui
 
-    const featuredGames = [
-        { id: "action", name: "Ação & Aventura", icon: Zap, color: "text-orange-400", bg: "bg-orange-500/10", desc: "Desafie seus reflexos em jogos intensos." },
-        { id: "puzzle", name: "Estratégia & Puzzle", icon: Brain, color: "text-blue-400", bg: "bg-blue-500/10", desc: "Mantenha a mente afiada entre um rank e outro." },
-        { id: "sports", name: "Esportes & Corrida", icon: Trophy, color: "text-emerald-400", bg: "bg-emerald-500/10", desc: "Velocidade e precisão no seu navegador." },
-        { id: "classic", name: "Clássicos Arcade", icon: Gamepad2, color: "text-primary", bg: "bg-primary/10", desc: "Os favoritos de todos os tempos." },
-    ];
-
-    const handlePlayNow = () => {
-        setIsPlaying(true);
+    const handlePlayGame = (game: Game) => {
+        setSelectedGame(game);
+        setAdPhase("opening");
+        setCountdown(5);
     };
 
     const toggleFullscreen = () => {
         setIsFullscreen(!isFullscreen);
     };
 
+    const handleSkipAd = () => {
+        setAdPhase("playing");
+    };
+
+    const handleClosePlayer = () => {
+        if (adPhase === "playing") {
+            setAdPhase("closing");
+        } else {
+            setAdPhase("none");
+            setSelectedGame(null);
+            setIsFullscreen(false);
+        }
+    };
+
+    // Countdown logic for the opening ad
+    useEffect(() => {
+        if (adPhase === "opening" && countdown > 0) {
+            const timer = setTimeout(() => setCountdown(countdown - 1), 1000);
+            return () => clearTimeout(timer);
+        } else if (adPhase === "opening" && countdown === 0) {
+            // Optional: Auto-start or wait for user to skip
+        }
+    }, [adPhase, countdown]);
+
     // Prevent scrolling when playing in "fullscreen" mode within the site
     useEffect(() => {
-        if (isFullscreen) {
+        if (isFullscreen || adPhase !== "none") {
             document.body.style.overflow = 'hidden';
         } else {
             document.body.style.overflow = 'auto';
         }
         return () => { document.body.style.overflow = 'auto'; };
-    }, [isFullscreen]);
+    }, [isFullscreen, adPhase]);
 
     return (
         <div className="max-w-6xl mx-auto space-y-12 py-6">
@@ -77,7 +115,7 @@ export default function Arcade() {
                             A diversão não para quando o rank termina. Em parceria com a Gamezop, traremos +250 jogos instantâneos para você dominar.
                         </p>
                         <div className="flex flex-wrap justify-center md:justify-start gap-4">
-                            <Button size="lg" onClick={handlePlayNow} className="bg-primary text-primary-foreground font-black uppercase tracking-widest h-14 px-10 shadow-lg shadow-primary/20 hover:scale-105 transition-transform">
+                            <Button size="lg" onClick={() => handlePlayGame(ARCADE_GAMES[0])} className="bg-primary text-primary-foreground font-black uppercase tracking-widest h-14 px-10 shadow-lg shadow-primary/20 hover:scale-105 transition-transform">
                                 <Play className="w-5 h-5 mr-3 fill-current" />
                                 Abrir Game Center
                             </Button>
@@ -138,34 +176,44 @@ export default function Arcade() {
                 </Card>
             </motion.div>
 
-            {/* GAME CATEGORIES */}
+            {/* GAME CATEGORIES / GRID */}
             <motion.section variants={stagger} initial="initial" animate="animate" className="space-y-8">
                 <div className="flex items-center justify-between border-b border-white/5 pb-6">
                     <div>
-                        <h2 className="text-3xl font-serif font-black uppercase tracking-widest italic">Categorias de Elite</h2>
-                        <p className="text-xs text-muted-foreground uppercase font-bold tracking-[0.2em] mt-1 opacity-60">O melhor da Gamezop selecionado para você</p>
+                        <h2 className="text-3xl font-serif font-black uppercase tracking-widest italic">Jogos Recomendados</h2>
+                        <p className="text-xs text-muted-foreground uppercase font-bold tracking-[0.2em] mt-1 opacity-60">Seleção SPG para você</p>
                     </div>
-                    <Button variant="ghost" onClick={handlePlayNow} className="text-xs font-black uppercase tracking-widest hover:text-primary group">
-                        Ver Mais <ExternalLink className="w-3 h-3 ml-2 group-hover:translate-x-1 transition-transform" />
+                    <Button variant="ghost" className="text-xs font-black uppercase tracking-widest hover:text-primary group">
+                        Ver Todos <ExternalLink className="w-3 h-3 ml-2 group-hover:translate-x-1 transition-transform" />
                     </Button>
                 </div>
 
-                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
-                    {featuredGames.map((game) => (
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-8">
+                    {ARCADE_GAMES.map((game) => (
                         <motion.div key={game.id} variants={fadeInUp}>
-                            <Card className="bg-[#0a101f] border-white/5 hover:border-white/20 transition-all rounded-[2rem] overflow-hidden group hover:-translate-y-2">
-                                <CardContent className="p-8 space-y-4 relative">
-                                    <div className="absolute top-0 right-0 w-24 h-24 bg-white/[0.02] rounded-bl-[4rem] group-hover:bg-primary/5 transition-colors" />
-                                    <div className={`w-14 h-14 rounded-2xl flex items-center justify-center ${game.bg} border border-white/5`}>
-                                        <game.icon className={`w-7 h-7 ${game.color}`} />
+                            <Card className="bg-[#0a101f] border-white/5 hover:border-primary/30 transition-all rounded-[2rem] overflow-hidden group hover:-translate-y-2 cursor-pointer shadow-xl shadow-black/40" onClick={() => handlePlayGame(game)}>
+                                <div className="relative aspect-video overflow-hidden">
+                                    <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-transparent to-transparent z-10" />
+                                    <img 
+                                        src={game.image} 
+                                        alt={game.name}
+                                        className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-700"
+                                    />
+                                    <Badge className="absolute top-4 right-4 z-20 bg-primary/20 text-primary border-primary/30 text-[10px] uppercase font-black">
+                                        {game.category}
+                                    </Badge>
+                                    <div className="absolute bottom-4 left-4 z-20 flex items-center gap-2 opacity-0 group-hover:opacity-100 translate-y-2 group-hover:translate-y-0 transition-all duration-300">
+                                        <div className="w-8 h-8 rounded-full bg-primary flex items-center justify-center">
+                                            <Play className="w-4 h-4 text-black fill-current" />
+                                        </div>
+                                        <span className="text-[10px] font-black uppercase tracking-widest text-white drop-shadow-md">Jogar Agora</span>
                                     </div>
-                                    <h3 className="text-lg font-black uppercase tracking-widest">{game.name}</h3>
-                                    <p className="text-[10px] text-muted-foreground font-medium uppercase tracking-wider leading-relaxed">
+                                </div>
+                                <CardContent className="p-6 space-y-2">
+                                    <h3 className="text-lg font-black uppercase tracking-widest group-hover:text-primary transition-colors">{game.name}</h3>
+                                    <p className="text-[10px] text-muted-foreground font-medium uppercase tracking-wider leading-relaxed line-clamp-2">
                                         {game.desc}
                                     </p>
-                                    <Button onClick={handlePlayNow} variant="ghost" className="w-full text-[10px] font-black uppercase tracking-widest mt-4 bg-white/5 opacity-0 group-hover:opacity-100 transition-all">
-                                        Explorar
-                                    </Button>
                                 </CardContent>
                             </Card>
                         </motion.div>
@@ -180,73 +228,173 @@ export default function Arcade() {
             >
                 <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-white/5 border border-white/10 mb-4">
                     <Flame className="w-4 h-4 text-orange-500" />
-                    <span className="text-[10px] font-black uppercase tracking-widest text-white/70">Novo de Experiência</span>
+                    <span className="text-[10px] font-black uppercase tracking-widest text-white/70">Monetização & ADS</span>
                 </div>
-                <h2 className="text-4xl font-serif font-black uppercase tracking-[0.2em] leading-tight">Mantenha a Brasa Acesa</h2>
+                <h2 className="text-4xl font-serif font-black uppercase tracking-[0.2em] leading-tight">Espaço Publicitário</h2>
                 <p className="max-w-2xl mx-auto text-sm text-muted-foreground uppercase font-bold tracking-widest leading-loose opacity-70">
-                    Enquanto desafiamos a Gamezop para a integração final, você já pode testar o catálogo e se preparar para a nova era do entretenimento na SUA PARTIDA GAMER.
+                    Integre seus banners do AdSense ou scripts personalizados nas transições de abertura e fechamento para monetizar sua audiência de forma sutil.
                 </p>
-                <Button size="lg" onClick={handlePlayNow} className="bg-white text-black hover:bg-white/90 font-black uppercase tracking-[0.2em] h-14 px-12 rounded-2xl shadow-xl active:scale-95 transition-all">
-                    Iniciar Experiência
+                <Button size="lg" className="bg-white text-black hover:bg-white/90 font-black uppercase tracking-[0.2em] h-14 px-12 rounded-2xl shadow-xl active:scale-95 transition-all">
+                    Configurar Anúncios
                 </Button>
             </motion.section>
 
-            {/* INTEGRATED GAME PLAYER (IFRAME) */}
+            {/* INTEGRATED GAME PLAYER (IFRAME) + AD SYSTEM */}
             <AnimatePresence>
-                {isPlaying && (
+                {adPhase !== "none" && selectedGame && (
                     <motion.div
-                        initial={{ opacity: 0, scale: 0.95 }}
-                        animate={{ opacity: 1, scale: 1 }}
-                        exit={{ opacity: 0, scale: 0.95 }}
-                        className={`fixed inset-4 z-[100] bg-background border border-border/50 rounded-3xl overflow-hidden shadow-2xl flex flex-col transition-all duration-300 ${isFullscreen ? 'inset-0 rounded-none' : 'inset-4 md:inset-10'}`}
+                        initial={{ opacity: 0 }}
+                        animate={{ opacity: 1 }}
+                        exit={{ opacity: 0 }}
+                        className="fixed inset-0 z-[100] flex items-center justify-center p-4 md:p-10"
                     >
-                        {/* Player Header */}
-                        <div className="bg-card/80 backdrop-blur-md border-b border-white/5 p-4 flex items-center justify-between">
-                            <div className="flex items-center gap-4">
-                                <div className="w-10 h-10 bg-primary/20 rounded-xl flex items-center justify-center">
-                                    <Gamepad2 className="w-6 h-6 text-primary" />
+                        {/* Backdrop Blur */}
+                        <div className="absolute inset-0 bg-black/90 backdrop-blur-xl" />
+
+                        <motion.div
+                            initial={{ scale: 0.9, y: 20 }}
+                            animate={{ scale: 1, y: 0 }}
+                            exit={{ scale: 0.9, y: 20 }}
+                            className={`relative w-full h-full bg-background border border-white/10 overflow-hidden shadow-2xl flex flex-col transition-all duration-300 ${isFullscreen ? 'rounded-none' : 'rounded-3xl'}`}
+                        >
+                            
+                            {/* Player Header */}
+                            <div className="bg-card/80 backdrop-blur-md border-b border-white/5 p-4 flex items-center justify-between">
+                                <div className="flex items-center gap-4">
+                                    <div className="w-10 h-10 bg-primary/20 rounded-xl flex items-center justify-center">
+                                        <Gamepad2 className="w-6 h-6 text-primary" />
+                                    </div>
+                                    <div>
+                                        <h4 className="text-sm font-black uppercase tracking-widest">{selectedGame.name}</h4>
+                                        <p className="text-[10px] text-muted-foreground uppercase font-bold tracking-widest">Sua Partida Gamer • Arcade</p>
+                                    </div>
                                 </div>
-                                <div>
-                                    <h4 className="text-sm font-black uppercase tracking-widest">SPG Arcade Player</h4>
-                                    <p className="text-[10px] text-muted-foreground uppercase font-bold tracking-widest">Sua diversão, em um só lugar</p>
+                                <div className="flex items-center gap-2">
+                                    {adPhase === "playing" && (
+                                        <Button 
+                                            variant="ghost" 
+                                            size="icon" 
+                                            onClick={toggleFullscreen}
+                                            className="hover:bg-white/5 text-muted-foreground hover:text-white"
+                                        >
+                                            {isFullscreen ? <Minimize2 className="w-5 h-5" /> : <Maximize2 className="w-5 h-5" />}
+                                        </Button>
+                                    )}
+                                    <Button 
+                                        variant="ghost" 
+                                        size="icon" 
+                                        onClick={handleClosePlayer}
+                                        className="hover:bg-rose-500/20 text-muted-foreground hover:text-rose-500"
+                                    >
+                                        <X className="w-5 h-5" />
+                                    </Button>
                                 </div>
                             </div>
-                            <div className="flex items-center gap-2">
-                                <Button 
-                                    variant="ghost" 
-                                    size="icon" 
-                                    onClick={toggleFullscreen}
-                                    className="hover:bg-white/5 text-muted-foreground hover:text-white"
-                                >
-                                    {isFullscreen ? <Minimize2 className="w-5 h-5" /> : <Maximize2 className="w-5 h-5" />}
-                                </Button>
-                                <Button 
-                                    variant="ghost" 
-                                    size="icon" 
-                                    onClick={() => setIsPlaying(false)}
-                                    className="hover:bg-rose-500/20 text-muted-foreground hover:text-rose-500"
-                                >
-                                    <X className="w-5 h-5" />
-                                </Button>
+
+                            <div className="flex-1 relative overflow-hidden flex flex-col">
+                                {/* PHASE 1: OPENING AD INTERSTITIAL */}
+                                {adPhase === "opening" && (
+                                    <div className="absolute inset-0 z-50 flex items-center justify-center bg-[#020617]">
+                                        <div className="max-w-md w-full p-8 text-center space-y-8">
+                                            <div className="space-y-2">
+                                                <Badge className="bg-primary/20 text-primary border-primary/30 uppercase tracking-widest">Iniciando Partida</Badge>
+                                                <h3 className="text-2xl font-black uppercase tracking-tighter italic">O jogo começa em instantes...</h3>
+                                            </div>
+
+                                            {/* PLACEHOLDER FOR THE AD */}
+                                            <div className="aspect-[4/3] bg-card border border-white/5 rounded-2xl flex flex-col items-center justify-center p-6 space-y-4 shadow-2xl shadow-primary/5">
+                                                <div className="w-16 h-16 bg-white/5 rounded-full flex items-center justify-center animate-pulse">
+                                                    <Timer className="w-8 h-8 text-primary" />
+                                                </div>
+                                                <div className="space-y-2">
+                                                    <p className="text-[10px] uppercase font-bold tracking-widest text-muted-foreground">Espaço do seu Anúncio</p>
+                                                    <p className="text-xs font-medium text-white/50 italic">"Insira aqui seu código HTML/Script de Publicidade"</p>
+                                                </div>
+                                            </div>
+
+                                            <div className="flex flex-col items-center gap-4">
+                                                {countdown > 0 ? (
+                                                    <p className="text-[10px] font-black uppercase tracking-[0.3em] text-primary/60">
+                                                        Aguarde {countdown}s para pular
+                                                    </p>
+                                                ) : (
+                                                    <Button 
+                                                        onClick={handleSkipAd}
+                                                        className="bg-primary text-black font-black uppercase tracking-widest px-12 h-12 shadow-lg shadow-primary/20 hover:scale-105 transition-transform"
+                                                    >
+                                                        Pular e Jogar <Play className="w-4 h-4 ml-2 fill-current" />
+                                                    </Button>
+                                                )}
+                                            </div>
+                                        </div>
+                                    </div>
+                                )}
+
+                                {/* PHASE 2: GAMEPLAY (IFRAME) */}
+                                {adPhase === "playing" && (
+                                    <iframe
+                                        src={getGameUrl(selectedGame!.slug)}
+                                        className="w-full h-full border-none"
+                                        title={selectedGame.name}
+                                        allow="autoplay; fullscreen; clipboard-write; encrypted-media; picture-in-picture"
+                                    />
+                                )}
+
+                                {/* PHASE 3: CLOSING AD / SUMMARY */}
+                                {adPhase === "closing" && (
+                                    <div className="absolute inset-0 z-50 flex items-center justify-center bg-[#020617]/95 backdrop-blur-md">
+                                        <div className="max-w-2xl w-full p-8 space-y-10">
+                                            <div className="flex items-center gap-6 justify-center">
+                                                <div className="w-24 h-24 rounded-3xl overflow-hidden border-2 border-primary shadow-2xl shadow-primary/20">
+                                                    <img src={selectedGame.image} className="w-full h-full object-cover" />
+                                                </div>
+                                                <div className="text-left">
+                                                    <h3 className="text-4xl font-black uppercase italic tracking-tighter text-glow">Partida Encerrada</h3>
+                                                    <p className="text-muted-foreground uppercase font-bold tracking-widest text-xs">Obrigado por jogar no SPG Arcade</p>
+                                                </div>
+                                            </div>
+
+                                            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                                                {/* Left: Summary/Points */}
+                                                <Card className="bg-card/40 border-white/5 p-6 rounded-[2rem] space-y-4">
+                                                    <Award className="w-10 h-10 text-primary" />
+                                                    <h4 className="text-lg font-black uppercase tracking-widest">Bônus Recebido</h4>
+                                                    <p className="text-xs text-muted-foreground uppercase font-bold tracking-widest">+10 Pontos de Glória em breve!</p>
+                                                </Card>
+
+                                                {/* Right: AD SPOT */}
+                                                <Card className="bg-primary/5 border-primary/20 p-6 rounded-[2rem] flex flex-col items-center justify-center text-center space-y-2 group hover:bg-primary/10 transition-colors">
+                                                    <div className="text-[10px] font-black uppercase tracking-widest text-primary/60">Sponsor Ad</div>
+                                                    <div className="text-xs font-bold uppercase tracking-widest text-white/50">Confira nossas ofertas exclusivas</div>
+                                                    <div className="mt-4 w-full h-1 bg-white/10 rounded-full overflow-hidden">
+                                                        <div className="w-1/2 h-full bg-primary" />
+                                                    </div>
+                                                </Card>
+                                            </div>
+
+                                            <div className="flex flex-wrap justify-center gap-4 pt-4">
+                                                <Button size="lg" onClick={() => setAdPhase("playing")} className="bg-white/10 hover:bg-white/20 text-white font-black uppercase tracking-widest h-14 px-8 border border-white/10 rounded-2xl">
+                                                    <Play className="w-4 h-4 mr-3" /> Jogar Novamente
+                                                </Button>
+                                                <Button size="lg" onClick={() => { setAdPhase("none"); setSelectedGame(null); }} className="bg-primary text-black font-black uppercase tracking-widest h-14 px-10 shadow-xl shadow-primary/20 rounded-2xl">
+                                                    Voltar ao Lobby
+                                                </Button>
+                                                <Button variant="ghost" size="lg" className="w-full md:w-auto h-14 text-muted-foreground font-black uppercase tracking-widest hover:text-white">
+                                                    <Share2 className="w-4 h-4 mr-3" /> Compartilhar
+                                                </Button>
+                                            </div>
+                                        </div>
+                                    </div>
+                                )}
                             </div>
-                        </div>
 
-                        {/* Game Iframe */}
-                        <div className="flex-1 bg-[#0a101f] relative">
-                            <iframe
-                                src={gamezopUrl}
-                                className="w-full h-full border-none"
-                                title="Gamezop Arcade"
-                                allow="autoplay; fullscreen; clipboard-write; encrypted-media; picture-in-picture"
-                            />
-                        </div>
-
-                        {/* Player Footer (Mini) */}
-                        <div className="bg-card/50 px-6 py-2 flex items-center justify-center">
-                            <p className="text-[8px] text-muted-foreground uppercase font-bold tracking-[0.3em]">
-                                Parceria Oficial <span className="text-primary">Gamezop</span> & SPG
-                            </p>
-                        </div>
+                            {/* Player Footer (Mini) */}
+                            <div className="bg-card/50 px-6 py-2 flex items-center justify-center">
+                                <p className="text-[8px] text-muted-foreground uppercase font-bold tracking-[0.3em]">
+                                    Powered by <span className="text-primary">Game Distribution</span> • Integrated with SPG Ads
+                                </p>
+                            </div>
+                        </motion.div>
                     </motion.div>
                 )}
             </AnimatePresence>
