@@ -1,6 +1,6 @@
 import { motion, AnimatePresence } from "framer-motion";
 import { Gamepad2, Trophy, Sparkles, Zap, Play, Info, ExternalLink, Dices, Flame, Star, X, Maximize2, Minimize2, Timer, Award, Share2 } from "lucide-react";
-import { useState, useEffect } from "react";
+import React, { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -26,13 +26,21 @@ type Game = {
 };
 
 const ARCADE_GAMES: Game[] = [
-    { id: "1", name: "Moto X3M Pool Party", slug: "f74360e7db1241169e06175e1f0e241e", image: "https://img.gamedistribution.com/f74360e7db1241169e06175e1f0e241e-512x512.jpeg", category: "Corrida", desc: "Desafie a gravidade em pistas aquáticas insanas." },
-    { id: "2", name: "Basketball Stars", slug: "69d70d74488f4c288f615f790c58e874", image: "https://img.gamedistribution.com/69d70d74488f4c288f615f790c58e874-512x512.jpeg", category: "Esportes", desc: "Arremesse como um profissional neste simulador 3D." },
-    { id: "3", name: "Penalty Challenge", slug: "4199c0d9526e4592a3489e5fc8b76c8c", image: "https://img.gamedistribution.com/4199c0d9526e4592a3489e5fc8b76c8c-512x512.jpeg", category: "Esportes", desc: "O destino da taça está nos seus pés." },
-    { id: "4", name: "Slither.io World", slug: "87c569f6eeb342e185c88691f37e199f", image: "https://img.gamedistribution.com/87c569f6eeb342e185c88691f37e199f-512x512.jpeg", category: "Ação", desc: "Cresça e domine o mapa neste clássico viciante." },
-    { id: "5", name: "Drift Cup Racing", slug: "90da57f920214690838612741d448375", image: "https://img.gamedistribution.com/90da57f920214690838612741d448375-512x512.jpeg", category: "Corrida", desc: "Queime pneus nas curvas mais fechadas." },
-    { id: "6", name: "Table Tennis World", slug: "96f497ec958541c888e2354746ec177b", image: "https://img.gamedistribution.com/96f497ec958541c888e2354746ec177b-512x512.jpeg", category: "Esportes", desc: "Torne-se o mestre da raquete em escala mundial." },
+    { id: "1", name: "Moto X3M Pool Party", slug: "f804d079d19f44d3b951ead4588e974a", image: "https://img.gamedistribution.com/f804d079d19f44d3b951ead4588e974a-512x512.jpg", category: "Corrida", desc: "Desafie a gravidade em pistas aquáticas insanas." },
+    { id: "2", name: "Basketball Stars", slug: "69d78d071f704fa183d75b4114ae40ec", image: "https://img.gamedistribution.com/69d78d071f704fa183d75b4114ae40ec-512x512.jpg", category: "Esportes", desc: "Arremesse como um profissional neste simulador 3D." },
+    { id: "3", name: "Penalty Challenge", slug: "14b5bd0218824dd3965eed3b186d936f", image: "https://img.gamedistribution.com/14b5bd0218824dd3965eed3b186d936f-512x512.jpg", category: "Esportes", desc: "O destino da taça está nos seus pés." },
+    { id: "4", name: "Slither.io World", slug: "24c7905f9e6b4b00bb7f1b7b1751b657", image: "https://img.gamedistribution.com/24c7905f9e6b4b00bb7f1b7b1751b657-512x512.jpg", category: "Ação", desc: "Cresça e domine o mapa neste clássico viciante." },
+    { id: "5", name: "Drift Cup Racing", slug: "90da57f920214690838612741d448375", image: "https://img.gamedistribution.com/90da57f920214690838612741d448375-512x512.jpg", category: "Corrida", desc: "Queime pneus nas curvas mais fechadas." },
+    { id: "6", name: "Table Tennis World", slug: "fd040a44274c4a45a30e7c5b65103417", image: "https://img.gamedistribution.com/fd040a44274c4a45a30e7c5b65103417-512x512.jpg", category: "Esportes", desc: "Torne-se o mestre da raquete em escala mundial." },
+    { id: "7", name: "Fireboy & Watergirl 1", slug: "a55c9cc9c21e4fc683c8c6857f3d0c75", image: "https://img.gamedistribution.com/a55c9cc9c21e4fc683c8c6857f3d0c75-512x512.jpg", category: "Puzzle", desc: "Explore o Templo da Floresta com os elementais." },
+    { id: "8", name: "8 Ball Pool", slug: "d02120780e594158ab61869028223cf1", image: "https://img.gamedistribution.com/d02120780e594158ab61869028223cf1-512x512.jpg", category: "Esportes", desc: "O clássico bilhar online contra jogadores reais." },
+    { id: "9", name: "Moto X3M 4 Winter", slug: "bcacf81441bd4c7799a622171116ea9d", image: "https://img.gamedistribution.com/bcacf81441bd4c7799a622171116ea9d-512x512.jpg", category: "Corrida", desc: "Acrobacias na neve em pistas geladas mortais." },
+    { id: "10", name: "Bob the Robber 4 Japan", slug: "8c16e991b9bf4dfab0942772d77483f7", image: "https://img.gamedistribution.com/8c16e991b9bf4dfab0942772d77483f7-512x512.jpg", category: "Aventura", desc: "Seja o ladrão mais furtivo do mundo nesta nova missão." },
+    { id: "11", name: "Snail Bob 7", slug: "40d04588e974a81419c0de9b47e8bd63", image: "https://img.gamedistribution.com/40d04588e974a81419c0de9b47e8bd63-512x512.jpg", category: "Aventura", desc: "Ajude Bob a enfrentar monstros no mundo da fantasia." },
+    { id: "12", name: "Troll Face Quest", slug: "1894a81419c0de9b47e8bd63ad6e053d", image: "https://img.gamedistribution.com/1894a81419c0de9b47e8bd63ad6e053d-512x512.jpg", category: "Puzzle", desc: "Resolva os quebra-cabeças mais insanos e engraçados." },
 ];
+
+const CATEGORIES = ["Todos", "Corrida", "Esportes", "Ação", "Puzzle", "Aventura"];
 
 export default function Arcade() {
     const { user } = useAuth();
@@ -40,11 +48,12 @@ export default function Arcade() {
     const [adPhase, setAdPhase] = useState<"none" | "opening" | "playing" | "closing">("none");
     const [isFullscreen, setIsFullscreen] = useState(false);
     const [countdown, setCountdown] = useState(5);
+    const [searchTerm, setSearchTerm] = useState("");
+    const [activeCategory, setActiveCategory] = useState("Todos");
 
-    // GameDistribution Base URL - Using the official embed format for better reliability
+    // Dynamic GameDistribution URL - Using the direct embed format which is more reliable
     const getGameUrl = (slug: string) => {
-        const baseUrl = `https://html5.gamedistribution.com/${slug}/`;
-        return `https://embed.gamedistribution.com/?url=${encodeURIComponent(baseUrl)}&gd_sdk_referrer_url=${encodeURIComponent(window.location.origin)}`;
+        return `https://html5.gamedistribution.com/${slug}/?gd_sdk_referrer_url=${encodeURIComponent(window.location.origin)}`;
     };
 
     const handlePlayGame = (game: Game) => {
@@ -92,6 +101,13 @@ export default function Arcade() {
         return () => { document.body.style.overflow = 'auto'; };
     }, [isFullscreen, adPhase]);
 
+    const filteredGames = ARCADE_GAMES.filter(game => {
+        const matchesSearch = game.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+            game.desc.toLowerCase().includes(searchTerm.toLowerCase());
+        const matchesCategory = activeCategory === "Todos" || game.category === activeCategory;
+        return matchesSearch && matchesCategory;
+    });
+
     return (
         <div className="max-w-6xl mx-auto space-y-12 py-6">
 
@@ -119,7 +135,10 @@ export default function Arcade() {
                             A diversão não para quando o rank termina. Explore centenas de jogos instantâneos para você dominar e relaxar entre as partidas.
                         </p>
                         <div className="flex flex-wrap justify-center md:justify-start gap-4">
-                            <Button size="lg" onClick={() => handlePlayGame(ARCADE_GAMES[0])} className="bg-primary text-primary-foreground font-black uppercase tracking-widest h-14 px-10 shadow-lg shadow-primary/20 hover:scale-105 transition-transform">
+                            <Button size="lg" onClick={() => {
+                                const el = document.getElementById("game-catalog");
+                                el?.scrollIntoView({ behavior: 'smooth' });
+                            }} className="bg-primary text-primary-foreground font-black uppercase tracking-widest h-14 px-10 shadow-lg shadow-primary/20 hover:scale-105 transition-transform">
                                 <Play className="w-5 h-5 mr-3 fill-current" />
                                 Abrir Game Center
                             </Button>
@@ -181,48 +200,85 @@ export default function Arcade() {
             </motion.div>
 
             {/* GAME CATEGORIES / GRID */}
-            <motion.section variants={stagger} initial="initial" animate="animate" className="space-y-8">
-                <div className="flex items-center justify-between border-b border-white/5 pb-6">
-                    <div>
-                        <h2 className="text-3xl font-serif font-black uppercase tracking-widest italic">Jogos Recomendados</h2>
-                        <p className="text-xs text-muted-foreground uppercase font-bold tracking-[0.2em] mt-1 opacity-60">Seleção SPG para você</p>
+            <motion.section id="game-catalog" variants={stagger} initial="initial" animate="animate" className="space-y-8 scroll-mt-24">
+                <div className="flex flex-col md:flex-row md:items-end justify-between gap-6 border-b border-white/5 pb-8">
+                    <div className="space-y-4">
+                        <div>
+                            <h2 className="text-3xl font-serif font-black uppercase tracking-widest italic leading-tight">Catálogo de Jogos</h2>
+                            <p className="text-xs text-muted-foreground uppercase font-bold tracking-[0.2em] mt-1 opacity-60">Escolha sua próxima aventura</p>
+                        </div>
+
+                        {/* Search Bar */}
+                        <div className="relative max-w-md group">
+                            <Dices className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground group-focus-within:text-primary transition-colors" />
+                            <input
+                                type="text"
+                                placeholder="PROCURAR JOGO..."
+                                value={searchTerm}
+                                onChange={(e: React.ChangeEvent<HTMLInputElement>) => setSearchTerm(e.target.value)}
+                                className="w-full bg-white/5 border border-white/10 rounded-2xl py-3 pl-12 pr-4 text-xs font-black uppercase tracking-widest focus:outline-none focus:border-primary/50 transition-all"
+                            />
+                        </div>
                     </div>
-                    <Button variant="ghost" className="text-xs font-black uppercase tracking-widest hover:text-primary group">
-                        Ver Todos <ExternalLink className="w-3 h-3 ml-2 group-hover:translate-x-1 transition-transform" />
-                    </Button>
+
+                    {/* Category Tabs */}
+                    <div className="flex flex-wrap gap-2">
+                        {CATEGORIES.map(cat => (
+                            <button
+                                key={cat}
+                                onClick={() => setActiveCategory(cat)}
+                                className={`px-4 py-2 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all ${activeCategory === cat
+                                    ? "bg-primary text-black shadow-lg shadow-primary/20"
+                                    : "bg-white/5 text-muted-foreground hover:bg-white/10 border border-white/5"
+                                    }`}
+                            >
+                                {cat}
+                            </button>
+                        ))}
+                    </div>
                 </div>
 
-                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-8">
-                    {ARCADE_GAMES.map((game) => (
-                        <motion.div key={game.id} variants={fadeInUp}>
-                            <Card className="bg-[#0a101f] border-white/5 hover:border-primary/30 transition-all rounded-[2rem] overflow-hidden group hover:-translate-y-2 cursor-pointer shadow-xl shadow-black/40" onClick={() => handlePlayGame(game)}>
-                                <div className="relative aspect-video overflow-hidden">
-                                    <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-transparent to-transparent z-10" />
-                                    <img 
-                                        src={game.image} 
-                                        alt={game.name}
-                                        className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-700"
-                                    />
-                                    <Badge className="absolute top-4 right-4 z-20 bg-primary/20 text-primary border-primary/30 text-[10px] uppercase font-black">
-                                        {game.category}
-                                    </Badge>
-                                    <div className="absolute bottom-4 left-4 z-20 flex items-center gap-2 opacity-0 group-hover:opacity-100 translate-y-2 group-hover:translate-y-0 transition-all duration-300">
-                                        <div className="w-8 h-8 rounded-full bg-primary flex items-center justify-center">
-                                            <Play className="w-4 h-4 text-black fill-current" />
+                {filteredGames.length > 0 ? (
+                    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+                        {filteredGames.map((game) => (
+                            <motion.div key={game.id} variants={fadeInUp}>
+                                <Card className="bg-[#0a101f] border-white/5 hover:border-primary/30 transition-all rounded-[2rem] overflow-hidden group hover:-translate-y-2 cursor-pointer shadow-xl shadow-black/40" onClick={() => handlePlayGame(game)}>
+                                    <div className="relative aspect-video overflow-hidden">
+                                        <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-transparent to-transparent z-10" />
+                                        <img
+                                            src={game.image}
+                                            alt={game.name}
+                                            className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-700"
+                                        />
+                                        <Badge className="absolute top-4 right-4 z-20 bg-primary/20 text-primary border-primary/30 text-[10px] uppercase font-black">
+                                            {game.category}
+                                        </Badge>
+                                        <div className="absolute bottom-4 left-4 z-20 flex items-center gap-2 opacity-0 group-hover:opacity-100 translate-y-2 group-hover:translate-y-0 transition-all duration-300">
+                                            <div className="w-8 h-8 rounded-full bg-primary flex items-center justify-center">
+                                                <Play className="w-4 h-4 text-black fill-current" />
+                                            </div>
+                                            <span className="text-[10px] font-black uppercase tracking-widest text-white drop-shadow-md">Jogar Agora</span>
                                         </div>
-                                        <span className="text-[10px] font-black uppercase tracking-widest text-white drop-shadow-md">Jogar Agora</span>
                                     </div>
-                                </div>
-                                <CardContent className="p-6 space-y-2">
-                                    <h3 className="text-lg font-black uppercase tracking-widest group-hover:text-primary transition-colors">{game.name}</h3>
-                                    <p className="text-[10px] text-muted-foreground font-medium uppercase tracking-wider leading-relaxed line-clamp-2">
-                                        {game.desc}
-                                    </p>
-                                </CardContent>
-                            </Card>
-                        </motion.div>
-                    ))}
-                </div>
+                                    <CardContent className="p-5 space-y-2">
+                                        <h3 className="text-base font-black uppercase tracking-widest group-hover:text-primary transition-colors truncate">{game.name}</h3>
+                                        <p className="text-[9px] text-muted-foreground font-medium uppercase tracking-wider leading-relaxed line-clamp-2">
+                                            {game.desc}
+                                        </p>
+                                    </CardContent>
+                                </Card>
+                            </motion.div>
+                        ))}
+                    </div>
+                ) : (
+                    <div className="py-20 text-center space-y-4">
+                        <div className="w-16 h-16 bg-white/5 rounded-full flex items-center justify-center mx-auto opacity-20">
+                            <Gamepad2 className="w-8 h-8" />
+                        </div>
+                        <p className="text-sm font-black uppercase tracking-widest text-muted-foreground">Nenhum jogo encontrado com esses critérios.</p>
+                        <Button variant="link" onClick={() => { setSearchTerm(""); setActiveCategory("Todos"); }} className="text-primary uppercase tracking-widest text-xs font-black">Limpar Filtros</Button>
+                    </div>
+                )}
             </motion.section>
 
             {/* CALL TO ACTION */}
@@ -261,7 +317,7 @@ export default function Arcade() {
                             exit={{ scale: 0.9, y: 20 }}
                             className={`relative w-full h-full bg-background border border-white/10 overflow-hidden shadow-2xl flex flex-col transition-all duration-300 ${isFullscreen ? 'rounded-none' : 'rounded-3xl'}`}
                         >
-                            
+
                             {/* Player Header */}
                             <div className="bg-card/80 backdrop-blur-md border-b border-white/5 p-4 flex items-center justify-between">
                                 <div className="flex items-center gap-4">
@@ -275,18 +331,18 @@ export default function Arcade() {
                                 </div>
                                 <div className="flex items-center gap-2">
                                     {adPhase === "playing" && (
-                                        <Button 
-                                            variant="ghost" 
-                                            size="icon" 
+                                        <Button
+                                            variant="ghost"
+                                            size="icon"
                                             onClick={toggleFullscreen}
                                             className="hover:bg-white/5 text-muted-foreground hover:text-white"
                                         >
                                             {isFullscreen ? <Minimize2 className="w-5 h-5" /> : <Maximize2 className="w-5 h-5" />}
                                         </Button>
                                     )}
-                                    <Button 
-                                        variant="ghost" 
-                                        size="icon" 
+                                    <Button
+                                        variant="ghost"
+                                        size="icon"
                                         onClick={handleClosePlayer}
                                         className="hover:bg-rose-500/20 text-muted-foreground hover:text-rose-500"
                                     >
@@ -322,7 +378,7 @@ export default function Arcade() {
                                                         Aguarde {countdown}s para pular
                                                     </p>
                                                 ) : (
-                                                    <Button 
+                                                    <Button
                                                         onClick={handleSkipAd}
                                                         className="bg-primary text-black font-black uppercase tracking-widest px-12 h-12 shadow-lg shadow-primary/20 hover:scale-105 transition-transform"
                                                     >
