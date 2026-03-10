@@ -107,6 +107,12 @@ function Router() {
         </Layout>
       </Route>
 
+      <Route path="/guide">
+        <Layout>
+          <Guide />
+        </Layout>
+      </Route>
+
       <Route component={NotFound} />
     </Switch>
   );
