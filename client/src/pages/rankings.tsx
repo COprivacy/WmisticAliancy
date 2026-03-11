@@ -1043,19 +1043,19 @@ export default function Rankings() {
                       </DialogDescription>
                     </div>
                     {myPlayer && (
-                      <div className="flex gap-2 sm:gap-4">
-                        <div className="flex-1 sm:flex-none bg-primary/10 border border-primary/20 rounded-xl sm:rounded-2xl px-3 sm:px-6 py-2 sm:py-3 flex flex-col items-center sm:items-end">
-                          <span className="text-[8px] sm:text-[10px] font-black uppercase tracking-widest text-primary/60">Tickets:</span>
-                          <div className="flex items-center gap-1 sm:gap-2 text-white">
-                            <span className="text-lg sm:text-2xl font-serif font-black">{myPlayer.arenaTickets ?? 5}</span>
-                            <span className="text-sm sm:text-lg">🎫</span>
+                      <div className="flex gap-3">
+                        <div className="flex-1 sm:flex-none bg-gradient-to-br from-primary/20 to-transparent border border-primary/20 rounded-2xl px-4 py-2 flex flex-col items-center sm:items-end shadow-lg shadow-black/20">
+                          <span className="text-[9px] font-black uppercase tracking-[0.2em] text-primary/60">Tickets</span>
+                          <div className="flex items-center gap-2">
+                            <span className="text-xl font-serif font-black text-white">{myPlayer.arenaTickets ?? 5}</span>
+                            <Ticket className="w-4 h-4 text-primary" />
                           </div>
                         </div>
-                        <div className="flex-1 sm:flex-none bg-primary/10 border border-primary/20 rounded-xl sm:rounded-2xl px-3 sm:px-6 py-2 sm:py-3 flex flex-col items-center sm:items-end">
-                          <span className="text-[8px] sm:text-[10px] font-black uppercase tracking-widest text-primary/60">Saldo:</span>
-                          <div className="flex items-center gap-1 sm:gap-2">
-                            <span className="text-lg sm:text-2xl font-serif font-black text-white">{myPlayer.gloryPoints}</span>
-                            <Star className="w-4 h-4 sm:w-5 sm:h-5 text-primary fill-primary" />
+                        <div className="flex-1 sm:flex-none bg-gradient-to-br from-yellow-500/20 to-transparent border border-yellow-500/20 rounded-2xl px-4 py-2 flex flex-col items-center sm:items-end shadow-lg shadow-black/20">
+                          <span className="text-[9px] font-black uppercase tracking-[0.2em] text-yellow-500/60">Glória</span>
+                          <div className="flex items-center gap-2">
+                            <span className="text-xl font-serif font-black text-white">{myPlayer.gloryPoints.toLocaleString('pt-BR')}</span>
+                            <Star className="w-4 h-4 text-yellow-500 fill-yellow-500 shadow-[0_0_10px_rgba(234,179,8,0.5)]" />
                           </div>
                         </div>
                       </div>
@@ -1066,17 +1066,18 @@ export default function Rankings() {
                 <div className="mt-4 sm:mt-6">
                   <Tabs defaultValue="relics" className="w-full">
                     <TabsList className="grid w-full grid-cols-2 bg-white/5 border border-white/10 h-10 sm:h-12 p-1 rounded-xl">
-                      <TabsTrigger value="relics" className="data-[state=active]:bg-primary data-[state=active]:text-primary-foreground font-bold uppercase tracking-widest text-[10px]">
+                      <TabsTrigger value="relics" className="data-[state=active]:bg-primary data-[state=active]:text-primary-foreground font-black uppercase tracking-widest text-[10px]">
                         <Trophy className="w-3 h-3 mr-2" /> Relíquias
                       </TabsTrigger>
-                      <TabsTrigger value="topup" className="data-[state=active]:bg-primary data-[state=active]:text-primary-foreground font-bold uppercase tracking-widest text-[10px] opacity-50 cursor-not-allowed" disabled>
+                      <TabsTrigger value="topup" className="data-[state=active]:bg-primary data-[state=active]:text-primary-foreground font-black uppercase tracking-widest text-[10px] opacity-50 cursor-not-allowed" disabled>
                         <Lock className="w-3 h-3 mr-2" /> Recarregar
                       </TabsTrigger>
                     </TabsList>
 
                     <TabsContent value="relics" className="mt-4 sm:mt-6 space-y-4 sm:space-y-6">
-                      <div className="flex gap-1.5 sm:gap-2 overflow-x-auto pb-2 custom-scrollbar -mx-1 px-1">
+                      <div className="flex gap-1.5 sm:gap-2 overflow-x-auto pb-4 custom-scrollbar -mx-1 px-1">
                         {[
+                          { id: 'all', label: 'Tudo', icon: Sparkles },
                           { id: 'relic', label: 'Relíquias', icon: Trophy },
                           { id: 'frame', label: 'Molduras', icon: Shield },
                           { id: 'background', label: 'Fundos', icon: ImageIcon },
@@ -1090,7 +1091,8 @@ export default function Rankings() {
                             key={cat.id}
                             variant={storeCategory === cat.id ? "default" : "outline"}
                             size="sm"
-                            className="h-8 sm:h-9 rounded-full uppercase text-[9px] sm:text-[10px] font-black px-2.5 sm:px-4 flex-shrink-0"
+                            className={`h-8 sm:h-9 rounded-xl uppercase text-[9px] sm:text-[10px] font-black px-3 sm:px-6 flex-shrink-0 transition-all ${storeCategory === cat.id ? "shadow-lg shadow-primary/20" : "bg-white/5 border-white/5 hover:bg-white/10"
+                              }`}
                             onClick={() => setStoreCategory(cat.id)}
                           >
                             <cat.icon className="w-3 h-3 mr-1 sm:mr-2" />
@@ -1099,40 +1101,60 @@ export default function Rankings() {
                         ))}
                       </div>
 
-                      <div className="grid grid-cols-1 gap-3 sm:gap-4">
-                        {allRewards.filter(r => r.isAvailableInStore && (r.type || 'relic') === storeCategory).map((reward) => {
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-4 auto-rows-fr">
+                        {allRewards.filter(r => (storeCategory === 'all' || (r.type || 'relic') === storeCategory) && r.isAvailableInStore).map((reward, idx) => {
                           const isAffordable = myPlayer ? myPlayer.gloryPoints >= reward.price : false;
                           const alreadyHas = reward.type !== 'ticket' && myPlayer?.rewards?.some(r => r.id === reward.id);
 
+                          const getRarityUI = (rarity: string) => {
+                            switch (rarity) {
+                              case 'mythic': return { color: 'text-purple-400', border: 'border-purple-500/30', bg: 'bg-purple-500/10' };
+                              case 'legendary': return { color: 'text-yellow-400', border: 'border-yellow-500/30', bg: 'bg-yellow-500/10' };
+                              case 'epic': return { color: 'text-orange-400', border: 'border-orange-500/30', bg: 'bg-orange-500/10' };
+                              default: return { color: 'text-blue-400', border: 'border-blue-500/30', bg: 'bg-blue-500/10' };
+                            }
+                          };
+
+                          const rUI = getRarityUI(reward.rarity || 'common');
+
                           return (
-                            <div key={reward.id} className={`relative group p-3 sm:p-4 rounded-xl sm:rounded-2xl border transition-all ${alreadyHas ? 'bg-white/5 border-white/5 opacity-80' : 'bg-primary/5 border-primary/10 hover:border-primary/30'}`}>
-                              <div className="flex gap-3 sm:gap-4">
-                                <div className={`w-14 h-14 sm:w-20 sm:h-20 rounded-lg sm:rounded-xl overflow-hidden border-2 bg-black/40 flex-shrink-0 relative ${reward.rarity === 'mythic' ? 'border-purple-500/40' : 'border-primary/20'}`}>
-                                  {/* Item Visual (Icon or Video) */}
+                            <motion.div
+                              key={reward.id}
+                              initial={{ opacity: 0, y: 10 }}
+                              animate={{ opacity: 1, y: 0 }}
+                              transition={{ delay: idx * 0.05 }}
+                              className={`relative group p-4 rounded-2xl border backdrop-blur-sm transition-all duration-300 flex flex-col justify-between ${alreadyHas
+                                ? 'bg-white/[0.02] border-white/5 opacity-60'
+                                : 'bg-white/[0.03] border-white/10 hover:border-primary/40 hover:bg-white/[0.05] hover:shadow-2xl hover:shadow-primary/5'
+                                }`}
+                            >
+                              <div className="flex gap-4">
+                                <div className={`w-20 h-20 sm:w-24 sm:h-24 rounded-2xl overflow-hidden border-2 bg-black/60 flex-shrink-0 relative transition-transform duration-500 group-hover:scale-105 ${rUI.border}`}>
+                                  {/* Item Visual */}
                                   {reward.effect && reward.effect.match(/\.(mp4|webm)(\?.*)?$/i) ? (
                                     <video
                                       src={reward.effect}
-                                      className="w-full h-full object-cover group-hover:scale-110 transition-transform"
+                                      className="w-full h-full object-cover"
                                       autoPlay
                                       muted
                                       loop
                                       playsInline
                                     />
                                   ) : (
-                                    <img src={reward.icon} className="w-full h-full object-cover group-hover:scale-110 transition-transform" alt={reward.name} />
+                                    <img src={reward.icon} className="w-full h-full object-cover" alt={reward.name} />
                                   )}
 
-                                  {/* Dynamic Preview for Name Styles */}
+                                  {/* Overlay for Name Styles */}
                                   {['name_color', 'name_effect', 'name_font'].includes(reward.type || '') && (
                                     <div className="absolute inset-0 flex items-center justify-center bg-black/60 backdrop-blur-[2px]">
                                       <span
-                                        className={`text-[10px] font-black uppercase text-center leading-tight ${reward.type === 'name_effect' ? reward.effect : ''}`}
+                                        className={`text-[9px] font-black uppercase text-center leading-tight ${reward.type === 'name_effect' ? reward.effect : ''}`}
                                         style={{
                                           color: reward.type === 'name_color' ? (reward.effect || undefined) : undefined,
                                           fontFamily: reward.type === 'name_font' ? (reward.effect || undefined) : undefined
                                         }}
                                       >
-                                        Nome<br />Preview
+                                        Nome<br />Style
                                       </span>
                                     </div>
                                   )}
@@ -1149,29 +1171,44 @@ export default function Rankings() {
                                       </Button>
                                     </div>
                                   )}
-                                </div>
-                                <div className="flex-1 min-w-0 space-y-0.5 sm:space-y-1">
-                                  <span className={`text-[9px] sm:text-[10px] font-black uppercase tracking-widest ${reward.rarity === 'mythic' ? 'text-purple-400' : 'text-primary'}`}>{reward.rarity}</span>
-                                  <h4 className="font-serif font-black uppercase tracking-wider sm:tracking-widest text-white leading-tight text-xs sm:text-sm truncate">{reward.name}</h4>
-                                  <p className="text-[10px] sm:text-xs text-muted-foreground line-clamp-1 sm:line-clamp-2">{reward.description}</p>
 
-                                  <div className="flex items-center justify-between pt-1.5 sm:pt-2">
-                                    <div className="flex items-center gap-1">
-                                      <span className={`text-xs sm:text-sm font-black italic ${isAffordable ? 'text-white' : 'text-red-400'}`}>{reward.price}</span>
-                                      <Star className={`w-3 h-3 ${isAffordable ? 'text-primary fill-primary' : 'text-red-400'}`} />
-                                    </div>
-                                    <Button
-                                      size="sm"
-                                      disabled={!isAffordable || alreadyHas || purchaseMutation.isPending}
-                                      onClick={() => purchaseMutation.mutate(reward.id)}
-                                      className={`h-7 sm:h-8 uppercase text-[9px] sm:text-[10px] font-black tracking-wider sm:tracking-widest px-3 sm:px-4 ${alreadyHas ? 'bg-emerald-500/20 text-emerald-400' : ''}`}
-                                    >
-                                      {alreadyHas ? "ADQUIRIDO" : purchaseMutation.isPending ? "..." : "ADQUIRIR"}
-                                    </Button>
+                                  <div className={`absolute top-1 right-1 px-1.5 py-0.5 rounded-md text-[7px] font-black uppercase tracking-widest ${rUI.bg} ${rUI.color}`}>
+                                    {reward.rarity}
                                   </div>
                                 </div>
+
+                                <div className="flex-1 min-w-0 space-y-1">
+                                  <h4 className="font-serif font-black uppercase tracking-wider text-white leading-tight text-sm sm:text-base truncate group-hover:text-primary transition-colors">
+                                    {reward.name}
+                                  </h4>
+                                  <p className="text-[10px] sm:text-xs text-muted-foreground/70 font-medium leading-relaxed line-clamp-3">
+                                    {reward.description}
+                                  </p>
+                                </div>
                               </div>
-                            </div>
+
+                              <div className="mt-4 pt-4 border-t border-white/5 flex items-center justify-between">
+                                <div className="flex items-center gap-1.5">
+                                  <div className={`flex items-center justify-center w-6 h-6 rounded-full bg-primary/10 border border-primary/20`}>
+                                    <Star className={`w-3 h-3 ${isAffordable ? 'text-primary' : 'text-red-400'} fill-current`} />
+                                  </div>
+                                  <span className={`text-sm font-black italic tracking-tighter ${isAffordable ? 'text-white' : 'text-red-400'}`}>
+                                    {reward.price.toLocaleString('pt-BR')}
+                                  </span>
+                                </div>
+                                <Button
+                                  size="sm"
+                                  disabled={!isAffordable || alreadyHas || purchaseMutation.isPending}
+                                  onClick={() => purchaseMutation.mutate(reward.id)}
+                                  className={`h-9 sm:h-10 uppercase text-[10px] font-black tracking-widest px-6 rounded-xl transition-all shadow-lg active:scale-95 ${alreadyHas
+                                    ? 'bg-emerald-500/10 text-emerald-500 border border-emerald-500/20 cursor-default hover:bg-emerald-500/10'
+                                    : 'bg-primary text-primary-foreground hover:bg-white hover:text-primary shadow-primary/10'
+                                    }`}
+                                >
+                                  {alreadyHas ? "OBTIDO" : purchaseMutation.isPending ? <Loader2 className="w-3 h-3 animate-spin" /> : "ADQUIRIR"}
+                                </Button>
+                              </div>
+                            </motion.div>
                           );
                         })}
                       </div>
