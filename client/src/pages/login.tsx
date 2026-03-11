@@ -383,6 +383,21 @@ export default function Login() {
                     Voltar / Trocar ID
                   </Button>
                 )}
+
+                <div className="relative py-2 flex items-center justify-center">
+                  <div className="absolute inset-x-0 h-px bg-white/5" />
+                  <span className="relative bg-card/40 px-3 text-[10px] uppercase tracking-widest text-muted-foreground font-black">OU</span>
+                </div>
+
+                <Button
+                  type="button"
+                  onClick={() => setLocation("/arcade")}
+                  className="w-full h-14 text-xs font-black uppercase tracking-widest bg-white/5 border border-white/10 text-white hover:bg-white/10 hover:border-primary/30 transition-all active:scale-95 group relative overflow-hidden"
+                >
+                  <div className="absolute inset-0 bg-gradient-to-r from-primary/0 via-primary/10 to-primary/0 translate-x-[-100%] group-hover:translate-x-[100%] transition-transform duration-1000" />
+                  <Trophy className="w-4 h-4 mr-2 text-yellow-500 group-hover:scale-110 transition-transform" />
+                  Jogar no Arcade Livre
+                </Button>
               </div>
             </form>
           </CardContent>

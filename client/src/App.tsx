@@ -3,7 +3,7 @@ import { queryClient } from "./lib/queryClient";
 import { QueryClientProvider } from "@tanstack/react-query";
 import { Toaster } from "@/components/ui/toaster";
 import { TooltipProvider } from "@/components/ui/tooltip";
-import { AuthProvider } from "./lib/auth";
+import { AuthProvider, useAuth } from "./lib/auth";
 import NotFound from "@/pages/not-found";
 
 import Login from "@/pages/login";
@@ -25,6 +25,8 @@ import { PwaInstallPrompt } from "@/components/pwa-install-prompt";
 import { PwaUpdateNotify } from "@/components/pwa-update-notify";
 
 function Router() {
+  const { user } = useAuth();
+
   return (
     <Switch>
       <Route path="/" component={Login} />
@@ -36,9 +38,15 @@ function Router() {
       </Route>
 
       <Route path="/arcade">
-        <Layout>
-          <Arcade />
-        </Layout>
+        {user ? (
+          <Layout>
+            <Arcade />
+          </Layout>
+        ) : (
+          <div className="relative min-h-screen bg-[#020617]">
+            <Arcade />
+          </div>
+        )}
       </Route>
 
       <Route path="/admin">

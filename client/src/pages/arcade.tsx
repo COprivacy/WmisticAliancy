@@ -96,7 +96,21 @@ export default function Arcade() {
                 <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_50%_30%,rgba(234,179,8,0.06),transparent_60%)]" />
             </div>
 
-            <div className="max-w-6xl mx-auto space-y-12 py-6 relative z-0">
+            <div className="max-w-6xl mx-auto space-y-12 py-6 relative z-10">
+
+                {!user && (
+                    <div className="flex justify-between items-center mb-6 px-4 md:px-0">
+                        <div className="flex items-center gap-2">
+                            <img src="/logo.png" className="w-8 h-8 object-contain" alt="SPG Logo" />
+                            <h1 className="text-xl font-bold text-transparent bg-clip-text bg-gradient-to-r from-primary to-yellow-200 uppercase tracking-wider hidden sm:block">
+                                SUA PARTIDA GAMER
+                            </h1>
+                        </div>
+                        <Button variant="outline" size="sm" onClick={() => window.location.href = '/'} className="border-white/10 bg-white/5 font-black uppercase tracking-widest text-[10px] hover:bg-white/10 hover:text-primary">
+                            Entrar na Arena 1v1
+                        </Button>
+                    </div>
+                )}
 
                 {/* HERO SECTION */}
                 <motion.section
