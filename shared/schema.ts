@@ -166,6 +166,16 @@ export const userBlocks = pgTable("user_blocks", {
   createdAt: timestamp("created_at").notNull().defaultNow(),
 });
 
+export const arcadeGames = pgTable("arcade_games", {
+  id: serial("id").primaryKey(),
+  name: text("name").notNull(),
+  image: text("image").notNull(),
+  category: text("category").notNull(),
+  directUrl: text("direct_url").notNull(),
+  description: text("description"),
+  createdAt: timestamp("created_at").notNull().defaultNow(),
+});
+
 
 export const gloryTopups = pgTable("glory_topups", {
   id: serial("id").primaryKey(),
@@ -257,6 +267,10 @@ export type Quest = typeof quests.$inferSelect;
 export type PlayerQuest = typeof playerQuests.$inferSelect;
 export const insertQuestSchema = createInsertSchema(quests).omit({ id: true });
 export type InsertQuest = z.infer<typeof insertQuestSchema>;
+
+export const insertArcadeGameSchema = createInsertSchema(arcadeGames).omit({ id: true, createdAt: true });
+export type InsertArcadeGame = z.infer<typeof insertArcadeGameSchema>;
+export type ArcadeGame = typeof arcadeGames.$inferSelect;
 
 export function calculateRank(points: number): string {
   if (points >= 2000) return "Grande Mestre";

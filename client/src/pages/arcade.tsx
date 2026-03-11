@@ -1,10 +1,11 @@
 import { motion, AnimatePresence } from "framer-motion";
-import { Gamepad2, Trophy, Sparkles, Zap, Play, Info, ExternalLink, Dices, Flame, Star, X, Maximize2, Minimize2, Timer, Award, Share2, ChevronRight } from "lucide-react";
+import { Gamepad2, Trophy, Sparkles, Zap, Play, Info, Dices, Flame, Star, X, ChevronRight, Loader2 } from "lucide-react";
 import React, { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { useAuth } from "@/lib/auth";
+import { useQuery } from "@tanstack/react-query";
 
 const fadeInUp = {
     initial: { opacity: 0, y: 30 },
@@ -16,56 +17,36 @@ const stagger = {
     animate: { transition: { staggerChildren: 0.1 } }
 };
 
-type Game = {
-    id: string;
+type ArcadeGame = {
+    id: number;
     name: string;
-    slug: string;
     image: string;
     category: string;
-    desc: string;
+    directUrl: string;
+    description?: string;
+    createdAt: string;
 };
-
-// Configuration for Gamezop
-const GAMEZOP_PROPERTY_ID = "S1Pr96p_r"; // ID de Publicador SPG
-
-const ARCADE_GAMES: Game[] = [
-    { id: "1", name: "Campeões do Basquete", slug: "S1_V6GyP5ym", image: "https://static.gamezop.com/S1_V6GyP5ym/square.png", category: "Esportes", desc: "Arremesse e enterre para se tornar o rei das quadras." },
-    { id: "2", name: "Mestre do Bilhar", slug: "hgempP8Sc", image: "https://static.gamezop.com/hgempP8Sc/square.png", category: "Esportes", desc: "Domine a mesa de sinuca nesta simulação realista de 8-ball." },
-    { id: "3", name: "Aventura de Blocos Selva", slug: "UCS62KJ8c", image: "https://static.gamezop.com/UCS62KJ8c/square.png", category: "Puzzle", desc: "Combine as peças neste puzzle viciante nas profundezas da selva." },
-    { id: "4", name: "Bubble Shooter Clássico", slug: "yVywAGBQ6", image: "https://static.gamezop.com/yVywAGBQ6/square.png", category: "Puzzle", desc: "Estoure todas as bolhas antes que elas alcancem o chão." },
-    { id: "5", name: "Explosão de Rochas", slug: "HkTQJhTXqRS", image: "https://static.gamezop.com/HkTQJhTXqRS/square.png", category: "Ação", desc: "Proteja-se e destrua as rochas espaciais nesta jornada arcade." },
-    { id: "6", name: "Tiro na Garrafa", slug: "B1fSpMkP51m", image: "https://static.gamezop.com/B1fSpMkP51m/square.png", category: "Ação", desc: "Teste sua precisão atirando em garrafas em movimento." },
-    { id: "7", name: "Assalto ao Saloon", slug: "SJ8X6zyPcyX", image: "https://static.gamezop.com/SJ8X6zyPcyX/square.png", category: "Ação", desc: "Seja o gatilho mais rápido do Velho Oeste nesta perseguição." },
-    { id: "8", name: "Cavaleiro Ardente", slug: "yr4TqJhLr", image: "https://static.gamezop.com/yr4TqJhLr/square.png", category: "Corrida", desc: "Pise fundo e evite os obstáculos em alta velocidade." },
-    { id: "9", name: "Estrelas do Boliche", slug: "BkdJhTX50B", image: "https://static.gamezop.com/BkdJhTX50B/square.png", category: "Esportes", desc: "Faça o strike perfeito e conquiste os troféus das ligas." },
-    { id: "10", name: "Cyberfusion", slug: "HJXei0j", image: "https://static.gamezop.com/HJXei0j/square.png", category: "Puzzle", desc: "Fundir peças tecnológicas para criar o circuito definitivo." },
-];
-
-const CATEGORIES = ["Todos", "Ação", "Esportes", "Puzzle", "Corrida"];
 
 export default function Arcade() {
     const { user } = useAuth();
-    const [selectedGame, setSelectedGame] = useState<Game | null>(null);
+    const [selectedGame, setSelectedGame] = useState<ArcadeGame | null>(null);
     const [adPhase, setAdPhase] = useState<"none" | "opening">("none");
     const [countdown, setCountdown] = useState(5);
     const [searchTerm, setSearchTerm] = useState("");
     const [activeCategory, setActiveCategory] = useState("Todos");
 
-    // Gamezop Integration - Launching games directly with Property ID
-    const getGameUrl = (slug: string) => {
-        return `https://www.gamezop.com/g/${slug}?id=${GAMEZOP_PROPERTY_ID}`;
-    };
+    // Fetch games from the API (managed via Admin Panel)
+    const { data: games = [], isLoading } = useQuery<ArcadeGame[]>({
+        queryKey: ["/api/arcade/games"],
+    });
 
-    const handlePlayGame = (game: Game) => {
+    // Build dynamic categories from fetched games
+    const dynamicCategories = ["Todos", ...Array.from(new Set(games.map(g => g.category)))];
+
+    const handlePlayGame = (game: ArcadeGame) => {
         setSelectedGame(game);
         setAdPhase("opening");
         setCountdown(5);
-    };
-
-    const handleSkipAd = () => {
-        if (selectedGame) {
-            window.location.href = getGameUrl(selectedGame.slug);
-        }
     };
 
     const handleCloseAd = () => {
@@ -81,7 +62,8 @@ export default function Arcade() {
                 return () => clearTimeout(timer);
             } else {
                 // Auto-redirect when countdown ends
-                window.location.href = getGameUrl(selectedGame.slug);
+                window.open(selectedGame.directUrl, "_blank");
+                handleCloseAd();
             }
         }
     }, [adPhase, countdown, selectedGame]);
@@ -96,9 +78,9 @@ export default function Arcade() {
         return () => { document.body.style.overflow = 'auto'; };
     }, [adPhase]);
 
-    const filteredGames = ARCADE_GAMES.filter(game => {
+    const filteredGames = games.filter(game => {
         const matchesSearch = game.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-            game.desc.toLowerCase().includes(searchTerm.toLowerCase());
+            (game.description || "").toLowerCase().includes(searchTerm.toLowerCase());
         const matchesCategory = activeCategory === "Todos" || game.category === activeCategory;
         return matchesSearch && matchesCategory;
     });
@@ -127,7 +109,7 @@ export default function Arcade() {
                             SPG <span className="text-transparent bg-clip-text bg-gradient-to-r from-yellow-400 via-primary to-orange-500">ARCADE</span>
                         </h1>
                         <p className="text-muted-foreground text-sm md:text-base max-w-xl font-medium leading-relaxed uppercase tracking-wide opacity-80">
-                            A diversão não para quando o rank termina. Explore centenas de jogos instantâneos para você dominar e relaxar entre as partidas.
+                            A diversão não para quando o rank termina. Explore jogos instantâneos para você dominar e relaxar entre as partidas.
                         </p>
                         <div className="flex flex-wrap justify-center md:justify-start gap-4">
                             <Button size="lg" onClick={() => {
@@ -177,7 +159,7 @@ export default function Arcade() {
                         </div>
                         <h3 className="text-xl font-black uppercase tracking-widest">Sem Instalação</h3>
                         <p className="text-xs text-muted-foreground leading-relaxed uppercase font-bold tracking-widest opacity-60">
-                            Todos os jogos são em HTML5. Jogue instantaneamente no PC ou Mobile sem baixar nada.
+                            Todos os jogos abrem direto no navegador. Jogue instantaneamente no PC ou Mobile sem baixar nada.
                         </p>
                     </CardContent>
                 </Card>
@@ -218,7 +200,7 @@ export default function Arcade() {
 
                     {/* Category Tabs */}
                     <div className="flex flex-wrap gap-2">
-                        {CATEGORIES.map(cat => (
+                        {dynamicCategories.map(cat => (
                             <button
                                 key={cat}
                                 onClick={() => setActiveCategory(cat)}
@@ -233,7 +215,12 @@ export default function Arcade() {
                     </div>
                 </div>
 
-                {filteredGames.length > 0 ? (
+                {isLoading ? (
+                    <div className="flex flex-col items-center justify-center py-20 gap-4">
+                        <Loader2 className="w-10 h-10 animate-spin text-primary" />
+                        <p className="text-xs font-black uppercase tracking-widest text-muted-foreground">Carregando jogos...</p>
+                    </div>
+                ) : filteredGames.length > 0 ? (
                     <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
                         {filteredGames.map((game) => (
                             <motion.div key={game.id} variants={fadeInUp}>
@@ -258,7 +245,7 @@ export default function Arcade() {
                                     <CardContent className="p-5 space-y-2">
                                         <h3 className="text-base font-black uppercase tracking-widest group-hover:text-primary transition-colors truncate">{game.name}</h3>
                                         <p className="text-[9px] text-muted-foreground font-medium uppercase tracking-wider leading-relaxed line-clamp-2">
-                                            {game.desc}
+                                            {game.description || "Jogue agora e divirta-se!"}
                                         </p>
                                     </CardContent>
                                 </Card>
@@ -270,8 +257,12 @@ export default function Arcade() {
                         <div className="w-16 h-16 bg-white/5 rounded-full flex items-center justify-center mx-auto opacity-20">
                             <Gamepad2 className="w-8 h-8" />
                         </div>
-                        <p className="text-sm font-black uppercase tracking-widest text-muted-foreground">Nenhum jogo encontrado com esses critérios.</p>
-                        <Button variant="link" onClick={() => { setSearchTerm(""); setActiveCategory("Todos"); }} className="text-primary uppercase tracking-widest text-xs font-black">Limpar Filtros</Button>
+                        <p className="text-sm font-black uppercase tracking-widest text-muted-foreground">
+                            {games.length === 0 ? "Nenhum jogo cadastrado ainda. Aguarde o admin adicionar os jogos!" : "Nenhum jogo encontrado com esses critérios."}
+                        </p>
+                        {games.length > 0 && (
+                            <Button variant="link" onClick={() => { setSearchTerm(""); setActiveCategory("Todos"); }} className="text-primary uppercase tracking-widest text-xs font-black">Limpar Filtros</Button>
+                        )}
                     </div>
                 )}
             </motion.section>
@@ -318,7 +309,7 @@ export default function Arcade() {
                             variant="ghost"
                             size="icon"
                             className="absolute top-6 right-6 text-white/40 hover:text-white"
-                            onClick={() => { setAdPhase("none"); setSelectedGame(null); }}
+                            onClick={handleCloseAd}
                         >
                             <X className="w-8 h-8" />
                         </Button>
@@ -334,7 +325,7 @@ export default function Arcade() {
 
                             <div className="space-y-2">
                                 <Badge className="bg-primary/20 text-primary border-primary/30 font-black uppercase tracking-widest text-[10px] px-4 py-1">
-                                    Encaminhando para Arena
+                                    Encaminhando para o Jogo
                                 </Badge>
                                 <h2 className="text-4xl font-serif font-black uppercase tracking-tighter text-glow truncate px-4">
                                     {selectedGame.name}
@@ -388,13 +379,16 @@ export default function Arcade() {
                                     <Button
                                         variant="outline"
                                         className="flex-1 border-white/10 bg-white/5 font-black uppercase tracking-widest h-12 hover:bg-white/10"
-                                        onClick={() => { setAdPhase("none"); setSelectedGame(null); }}
+                                        onClick={handleCloseAd}
                                     >
                                         Cancelar
                                     </Button>
                                     <Button
                                         className="flex-1 bg-primary text-black font-black uppercase tracking-widest h-12 shadow-lg shadow-primary/20 group"
-                                        onClick={() => window.location.href = getGameUrl(selectedGame.slug)}
+                                        onClick={() => {
+                                            window.open(selectedGame.directUrl, "_blank");
+                                            handleCloseAd();
+                                        }}
                                     >
                                         Pular Ad
                                         <ChevronRight className="w-4 h-4 ml-2 group-hover:translate-x-1 transition-transform" />
@@ -403,7 +397,7 @@ export default function Arcade() {
                             </div>
 
                             <p className="text-[9px] text-muted-foreground uppercase font-black tracking-widest opacity-40">
-                                Powered by Gamezop • SPG Arcade Alliance
+                                SPG Arcade Alliance
                             </p>
                         </div>
                     </motion.div>
@@ -411,24 +405,4 @@ export default function Arcade() {
             </AnimatePresence>
         </div>
     );
-}
-
-function Brain(props: any) {
-    return (
-        <svg
-            {...props}
-            xmlns="http://www.w3.org/2000/svg"
-            width="24"
-            height="24"
-            viewBox="0 0 24 24"
-            fill="none"
-            stroke="currentColor"
-            strokeWidth="2"
-            strokeLinecap="round"
-            strokeLinejoin="round"
-        >
-            <path d="M9.5 2A2.5 2.5 0 0 1 12 4.5v15a2.5 2.5 0 0 1-4.96.44 2.5 2.5 0 0 1-2.96-3.08 3 3 0 0 1-.34-5.58 2.5 2.5 0 0 1 1.32-4.24 2.5 2.5 0 0 1 4.44-2.54Z" />
-            <path d="M14.5 2A2.5 2.5 0 0 0 12 4.5v15a2.5 2.5 0 0 0 4.96.44 2.5 2.5 0 0 0 2.96-3.08 3 3 0 0 0 .34-5.58 2.5 2.5 0 0 0-1.32-4.24 2.5 2.5 0 0 0-4.44-2.54Z" />
-        </svg>
-    )
 }

@@ -1,10 +1,10 @@
 import {
   users, players, matches, rewards, playerRewards, seasons, challenges, activities, reactions, configs, globalMessages, privateMessages, userBlocks, gloryTopups,
-  quests, playerQuests,
+  quests, playerQuests, arcadeGames,
   type User, type InsertUser, type Player, type InsertPlayer, type Match, type InsertMatch,
   type Reward, type InsertReward, type Config, type InsertConfig, type Activity, type Reaction,
   type GlobalMessage, type PrivateMessage, type GloryTopup, type InsertGloryTopup,
-  type Quest, type PlayerQuest, type InsertQuest, calculateRank
+  type Quest, type PlayerQuest, type InsertQuest, type ArcadeGame, type InsertArcadeGame, calculateRank
 } from "@shared/schema";
 import { db } from "./db";
 import { eq, and, or, sql, desc, ne } from "drizzle-orm";
@@ -104,6 +104,12 @@ export interface IStorage {
   getPlayerQuests(playerId: number): Promise<(PlayerQuest & { quest: Quest })[]>;
   updateQuestProgress(playerId: number, questType: string, amount?: number, isAbsolute?: boolean): Promise<void>;
   claimQuestReward(playerId: number, questId: number): Promise<{ success: boolean; message: string; points: number; glory: number }>;
+
+  // Arcade methods
+  getArcadeGames(): Promise<ArcadeGame[]>;
+  createArcadeGame(game: InsertArcadeGame): Promise<ArcadeGame>;
+  updateArcadeGame(id: number, game: Partial<ArcadeGame>): Promise<ArcadeGame>;
+  deleteArcadeGame(id: number): Promise<void>;
 }
 
 export class DatabaseStorage implements IStorage {
@@ -1205,6 +1211,29 @@ export class DatabaseStorage implements IStorage {
         eq(userBlocks.blockerId, playerId), eq(userBlocks.blockerZone, zoneId)
       )
     );
+  }
+
+  // Arcade methods implementation
+  async getArcadeGames(): Promise<ArcadeGame[]> {
+    return await db.select().from(arcadeGames).orderBy(desc(arcadeGames.createdAt));
+  }
+
+  async createArcadeGame(game: InsertArcadeGame): Promise<ArcadeGame> {
+    const [newGame] = await db.insert(arcadeGames).values(game).returning();
+    return newGame;
+  }
+
+  async updateArcadeGame(id: number, update: Partial<ArcadeGame>): Promise<ArcadeGame> {
+    const [updatedGame] = await db.update(arcadeGames)
+      .set(update)
+      .where(eq(arcadeGames.id, id))
+      .returning();
+    if (!updatedGame) throw new Error("Arcade game not found");
+    return updatedGame;
+  }
+
+  async deleteArcadeGame(id: number): Promise<void> {
+    await db.delete(arcadeGames).where(eq(arcadeGames.id, id));
   }
 }
 

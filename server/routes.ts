@@ -1,7 +1,7 @@
 import type { Express } from "express";
 import { createServer, type Server } from "http";
 import { storage } from "./storage";
-import { insertPlayerSchema, insertMatchSchema, insertChallengeSchema, calculateRank } from "@shared/schema";
+import { insertPlayerSchema, insertMatchSchema, insertChallengeSchema, insertArcadeGameSchema, calculateRank } from "@shared/schema";
 import { getHeroDetails } from "./mlbb-api";
 import asyncHandler from "express-async-handler";
 import multer from "multer";
@@ -1227,6 +1227,34 @@ export async function registerRoutes(
 
     await storage.markMessagesAsRead(senderId, senderZone, receiverId, receiverZone);
     res.json({ success: true });
+  }));
+
+  // Arcade Routes
+  app.get("/api/arcade/games", asyncHandler(async (_req, res) => {
+    const games = await storage.getArcadeGames();
+    res.json(games);
+  }));
+
+  app.post("/api/arcade/games", requireAdmin, asyncHandler(async (req, res) => {
+    const result = insertArcadeGameSchema.safeParse(req.body);
+    if (!result.success) {
+      res.status(400).json({ error: result.error });
+      return;
+    }
+    const game = await storage.createArcadeGame(result.data);
+    res.json(game);
+  }));
+
+  app.patch("/api/arcade/games/:id", requireAdmin, asyncHandler(async (req, res) => {
+    const gameId = parseInt(req.params.id as string);
+    const updated = await storage.updateArcadeGame(gameId, req.body);
+    res.json(updated);
+  }));
+
+  app.delete("/api/arcade/games/:id", requireAdmin, asyncHandler(async (req, res) => {
+    const gameId = parseInt(req.params.id as string);
+    await storage.deleteArcadeGame(gameId);
+    res.json({ success: true, message: "Jogo removido do arcade." });
   }));
 
   return httpServer;

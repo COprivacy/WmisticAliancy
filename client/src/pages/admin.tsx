@@ -28,12 +28,15 @@ import {
   Trash2,
   AlertTriangle,
   CreditCard,
-  Coins
+  Coins,
+  Gamepad2,
+  Plus,
+  Link2
 } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import { useQuery, useMutation } from "@tanstack/react-query";
 import { apiRequest, queryClient } from "@/lib/queryClient";
-import { Match, Player, Reward } from "@shared/schema";
+import { Match, Player, Reward, ArcadeGame } from "@shared/schema";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Input } from "@/components/ui/input";
@@ -114,6 +117,23 @@ export default function Admin() {
     queryKey: ["/api/glory/topups"], // This needs to be /api/admin/glory/topups probably
   });
 
+  const { data: arcadeGamesQuery } = useQuery<ArcadeGame[]>({
+    queryKey: ["/api/arcade/games"],
+  });
+
+  const arcadeGameMutation = useMutation({
+    mutationFn: async (data: any) => {
+      if (data.id) {
+        await apiRequest("PATCH", `/api/arcade/games/${data.id}`, data);
+      } else {
+        await apiRequest("POST", "/api/arcade/games", data);
+      }
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/arcade/games"] });
+    }
+  });
+
   const [selectedPlayerId, setSelectedPlayerId] = useState<number | null>(null);
   const [selectedRewardId, setSelectedRewardId] = useState<number | null>(null);
   const [rewardDuration, setRewardDuration] = useState<string>(""); // Days
@@ -141,6 +161,14 @@ export default function Admin() {
     "Top 10": "none"
   });
   const [isSavingRelic, setIsSavingRelic] = useState(false);
+
+  // Arcade States
+  const [arcadeGameName, setArcadeGameName] = useState("");
+  const [arcadeGameImage, setArcadeGameImage] = useState("");
+  const [arcadeGameCategory, setArcadeGameCategory] = useState("");
+  const [arcadeGameUrl, setArcadeGameUrl] = useState("");
+  const [arcadeGameDesc, setArcadeGameDesc] = useState("");
+  const [editingArcadeGame, setEditingArcadeGame] = useState<ArcadeGame | null>(null);
 
   useEffect(() => {
     if (seasonConfig?.prizes) {
@@ -338,7 +366,7 @@ export default function Admin() {
       </div>
 
       <Tabs defaultValue="reports" className="w-full">
-        <TabsList className="bg-white/5 border border-white/5 h-16 p-2 rounded-2xl w-full max-w-4xl mx-auto grid grid-cols-5 gap-2">
+        <TabsList className="bg-white/5 border border-white/5 h-16 p-2 rounded-2xl w-full max-w-5xl mx-auto grid grid-cols-7 gap-2">
           <TabsTrigger value="reports" className="rounded-xl data-[state=active]:bg-primary data-[state=active]:text-primary-foreground uppercase text-[10px] font-black tracking-widest ">
             <History className="w-3 h-3 mr-2" />
             Relatórios ({stats.pendingReports})
@@ -362,6 +390,10 @@ export default function Admin() {
           <TabsTrigger value="topups" className="rounded-xl data-[state=active]:bg-primary data-[state=active]:text-primary-foreground uppercase text-[10px] font-black tracking-widest">
             <CreditCard className="w-3 h-3 mr-2" />
             Recargas
+          </TabsTrigger>
+          <TabsTrigger value="arcade" className="rounded-xl data-[state=active]:bg-primary data-[state=active]:text-primary-foreground uppercase text-[10px] font-black tracking-widest">
+            <Gamepad2 className="w-3 h-3 mr-2" />
+            Arcade
           </TabsTrigger>
         </TabsList>
 
@@ -1435,6 +1467,214 @@ export default function Admin() {
               </CardContent>
             </Card>
           </TabsContent>
+
+          <TabsContent value="arcade" className="space-y-8">
+            <Card className="bg-white/5 border-white/10 rounded-[2.5rem] overflow-hidden">
+              <CardHeader>
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-3">
+                    <div className="p-2 rounded-2xl bg-primary/20 text-primary">
+                      <Gamepad2 className="w-6 h-6" />
+                    </div>
+                    <div>
+                      <CardTitle className="uppercase tracking-widest font-serif text-xl">Gerenciar Arcade</CardTitle>
+                      <CardDescription className="uppercase text-[10px] font-black opacity-60 tracking-widest">Adicione, edite ou remova jogos do catálogo</CardDescription>
+                    </div>
+                  </div>
+                  <Badge variant="outline" className="text-primary border-primary/20">{(arcadeGamesQuery ?? []).length} jogos</Badge>
+                </div>
+              </CardHeader>
+              <CardContent className="space-y-8">
+                {/* Add / Edit Form */}
+                <div className="bg-white/5 p-6 rounded-[2rem] border border-white/5 space-y-6">
+                  <h4 className="text-xs font-black uppercase tracking-[0.3em] text-primary flex items-center gap-2">
+                    <Plus className="w-4 h-4" />
+                    {editingArcadeGame ? "Editar Jogo" : "Adicionar Novo Jogo"}
+                  </h4>
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div className="space-y-2">
+                      <Label className="text-[10px] uppercase font-black tracking-[0.2em]">Nome do Jogo *</Label>
+                      <Input
+                        value={arcadeGameName}
+                        onChange={(e) => setArcadeGameName(e.target.value)}
+                        placeholder="Ex: Bubble Shooter"
+                        className="bg-black/20 border-white/10 h-12"
+                      />
+                    </div>
+                    <div className="space-y-2">
+                      <Label className="text-[10px] uppercase font-black tracking-[0.2em]">Categoria *</Label>
+                      <Input
+                        value={arcadeGameCategory}
+                        onChange={(e) => setArcadeGameCategory(e.target.value)}
+                        placeholder="Ex: Puzzle, Ação, Corrida, Esportes"
+                        className="bg-black/20 border-white/10 h-12"
+                      />
+                    </div>
+                    <div className="space-y-2">
+                      <Label className="text-[10px] uppercase font-black tracking-[0.2em]">URL da Imagem/Ícone *</Label>
+                      <Input
+                        value={arcadeGameImage}
+                        onChange={(e) => setArcadeGameImage(e.target.value)}
+                        placeholder="https://example.com/game-icon.png"
+                        className="bg-black/20 border-white/10 h-12"
+                      />
+                    </div>
+                    <div className="space-y-2">
+                      <Label className="text-[10px] uppercase font-black tracking-[0.2em] flex items-center gap-2">
+                        <Link2 className="w-3 h-3" />
+                        Link Direto do Jogo *
+                      </Label>
+                      <Input
+                        value={arcadeGameUrl}
+                        onChange={(e) => setArcadeGameUrl(e.target.value)}
+                        placeholder="https://link-direto-do-jogo.com/play"
+                        className="bg-black/20 border-white/10 h-12"
+                      />
+                    </div>
+                    <div className="md:col-span-2 space-y-2">
+                      <Label className="text-[10px] uppercase font-black tracking-[0.2em]">Descrição (Opcional)</Label>
+                      <Input
+                        value={arcadeGameDesc}
+                        onChange={(e) => setArcadeGameDesc(e.target.value)}
+                        placeholder="Uma breve descrição do jogo..."
+                        className="bg-black/20 border-white/10 h-12"
+                      />
+                    </div>
+                  </div>
+
+                  {/* Preview */}
+                  {arcadeGameImage && (
+                    <div className="flex items-center gap-4 p-4 bg-black/20 rounded-2xl border border-white/5">
+                      <img src={arcadeGameImage} alt="Preview" className="w-16 h-16 rounded-xl object-cover border border-white/10" />
+                      <div>
+                        <p className="font-black uppercase text-sm">{arcadeGameName || "Nome do Jogo"}</p>
+                        <p className="text-[10px] text-muted-foreground uppercase font-bold">{arcadeGameCategory || "Categoria"}</p>
+                      </div>
+                    </div>
+                  )}
+
+                  <div className="flex gap-3">
+                    <Button
+                      className="flex-1 h-14 bg-primary text-primary-foreground font-black uppercase tracking-widest rounded-2xl shadow-lg shadow-primary/20"
+                      disabled={!arcadeGameName || !arcadeGameImage || !arcadeGameCategory || !arcadeGameUrl || arcadeGameMutation.isPending}
+                      onClick={async () => {
+                        try {
+                          if (editingArcadeGame) {
+                            await apiRequest("PATCH", `/api/arcade/games/${editingArcadeGame.id}`, {
+                              name: arcadeGameName,
+                              image: arcadeGameImage,
+                              category: arcadeGameCategory,
+                              directUrl: arcadeGameUrl,
+                              description: arcadeGameDesc || null,
+                            });
+                            toast({ title: "Jogo Atualizado!", description: `${arcadeGameName} foi editado com sucesso.` });
+                          } else {
+                            await apiRequest("POST", "/api/arcade/games", {
+                              name: arcadeGameName,
+                              image: arcadeGameImage,
+                              category: arcadeGameCategory,
+                              directUrl: arcadeGameUrl,
+                              description: arcadeGameDesc || null,
+                            });
+                            toast({ title: "Jogo Adicionado!", description: `${arcadeGameName} agora aparece no Arcade.` });
+                          }
+                          queryClient.invalidateQueries({ queryKey: ["/api/arcade/games"] });
+                          setArcadeGameName("");
+                          setArcadeGameImage("");
+                          setArcadeGameCategory("");
+                          setArcadeGameUrl("");
+                          setArcadeGameDesc("");
+                          setEditingArcadeGame(null);
+                        } catch (err: any) {
+                          toast({ title: "Erro", description: err.message || "Falha ao salvar jogo.", variant: "destructive" });
+                        }
+                      }}
+                    >
+                      {arcadeGameMutation.isPending ? <Loader2 className="w-5 h-5 animate-spin" /> : editingArcadeGame ? "SALVAR EDIÇÃO" : "ADICIONAR JOGO"}
+                    </Button>
+                    {editingArcadeGame && (
+                      <Button
+                        variant="outline"
+                        className="h-14 px-8 border-white/10 font-black uppercase tracking-widest rounded-2xl"
+                        onClick={() => {
+                          setEditingArcadeGame(null);
+                          setArcadeGameName("");
+                          setArcadeGameImage("");
+                          setArcadeGameCategory("");
+                          setArcadeGameUrl("");
+                          setArcadeGameDesc("");
+                        }}
+                      >
+                        Cancelar
+                      </Button>
+                    )}
+                  </div>
+                </div>
+
+                {/* Game List */}
+                <div className="space-y-4">
+                  <h4 className="text-xs font-black uppercase tracking-[0.3em] text-muted-foreground">Jogos Cadastrados</h4>
+                  {!arcadeGamesQuery || arcadeGamesQuery.length === 0 ? (
+                    <div className="p-16 text-center border border-dashed border-white/10 rounded-[2rem] bg-white/5">
+                      <Gamepad2 className="w-10 h-10 text-muted-foreground/20 mx-auto mb-4" />
+                      <p className="text-muted-foreground uppercase tracking-widest text-xs font-bold">Nenhum jogo cadastrado ainda.</p>
+                      <p className="text-[10px] text-muted-foreground/40 uppercase mt-1">Use o formulário acima para adicionar o primeiro!</p>
+                    </div>
+                  ) : (
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                      {arcadeGamesQuery.map((game: ArcadeGame) => (
+                        <div key={game.id} className="flex items-center gap-4 p-4 rounded-2xl bg-white/5 border border-white/5 group hover:border-primary/20 transition-all">
+                          <img src={game.image} alt={game.name} className="w-16 h-16 rounded-xl object-cover border border-white/10 flex-shrink-0" />
+                          <div className="flex-1 min-w-0">
+                            <h5 className="font-black uppercase text-sm truncate">{game.name}</h5>
+                            <div className="flex items-center gap-2 mt-0.5">
+                              <Badge variant="outline" className="text-[8px] h-5 border-primary/20 text-primary uppercase font-black">{game.category}</Badge>
+                            </div>
+                            <p className="text-[9px] text-muted-foreground/60 truncate mt-1 font-mono">{game.directUrl}</p>
+                          </div>
+                          <div className="flex gap-2 flex-shrink-0">
+                            <Button
+                              size="sm"
+                              variant="outline"
+                              className="h-8 w-8 p-0 rounded-lg border-white/10"
+                              onClick={() => {
+                                setEditingArcadeGame(game);
+                                setArcadeGameName(game.name);
+                                setArcadeGameImage(game.image);
+                                setArcadeGameCategory(game.category);
+                                setArcadeGameUrl(game.directUrl);
+                                setArcadeGameDesc(game.description || "");
+                              }}
+                            >
+                              <Edit2 className="w-3 h-3" />
+                            </Button>
+                            <Button
+                              size="sm"
+                              variant="outline"
+                              className="h-8 w-8 p-0 rounded-lg border-rose-500/20 text-rose-500 hover:bg-rose-500/10"
+                              onClick={async () => {
+                                if (confirm(`Remover "${game.name}" do Arcade?`)) {
+                                  try {
+                                    await apiRequest("DELETE", `/api/arcade/games/${game.id}`);
+                                    queryClient.invalidateQueries({ queryKey: ["/api/arcade/games"] });
+                                    toast({ title: "Jogo Removido", description: `${game.name} foi retirado do catálogo.` });
+                                  } catch (err) {
+                                    toast({ title: "Erro", description: "Falha ao remover jogo.", variant: "destructive" });
+                                  }
+                                }
+                              }}
+                            >
+                              <Trash2 className="w-3 h-3" />
+                            </Button>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                </div>
+              </CardContent>
+            </Card>
+          </TabsContent>
         </div>
       </Tabs>
 
@@ -1506,6 +1746,8 @@ export default function Admin() {
           </DialogFooter>
         </DialogContent>
       </Dialog >
+
+      {/* ARCADE MANAGEMENT TAB CONTENT - placed outside so it uses full width */}
     </div >
   );
 }
