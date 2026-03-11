@@ -54,17 +54,11 @@ export default function Arcade() {
         setSelectedGame(null);
     };
 
-    // Countdown logic for the redirect ad
+    // Countdown logic — only counts down, no auto-redirect
     useEffect(() => {
-        if (adPhase === "opening" && selectedGame) {
-            if (countdown > 0) {
-                const timer = setTimeout(() => setCountdown(countdown - 1), 1000);
-                return () => clearTimeout(timer);
-            } else {
-                // Auto-redirect when countdown ends
-                window.open(selectedGame.directUrl, "_blank");
-                handleCloseAd();
-            }
+        if (adPhase === "opening" && selectedGame && countdown > 0) {
+            const timer = setTimeout(() => setCountdown(countdown - 1), 1000);
+            return () => clearTimeout(timer);
         }
     }, [adPhase, countdown, selectedGame]);
 
@@ -347,53 +341,77 @@ export default function Arcade() {
                             </div>
 
                             <div className="flex flex-col items-center gap-6">
-                                <div className="relative w-20 h-20 flex items-center justify-center">
-                                    <svg className="absolute inset-0 w-full h-full -rotate-90">
-                                        <circle
-                                            cx="40"
-                                            cy="40"
-                                            r="36"
-                                            fill="transparent"
-                                            stroke="currentColor"
-                                            strokeWidth="4"
-                                            className="text-white/5"
-                                        />
-                                        <motion.circle
-                                            cx="40"
-                                            cy="40"
-                                            r="36"
-                                            fill="transparent"
-                                            stroke="currentColor"
-                                            strokeWidth="4"
-                                            strokeDasharray="226.2"
-                                            initial={{ strokeDashoffset: 0 }}
-                                            animate={{ strokeDashoffset: 226.2 }}
-                                            transition={{ duration: 5, ease: "linear" }}
-                                            className="text-primary"
-                                        />
-                                    </svg>
-                                    <span className="text-3xl font-black font-serif italic">{countdown}</span>
-                                </div>
-
-                                <div className="flex gap-4 w-full">
-                                    <Button
-                                        variant="outline"
-                                        className="flex-1 border-white/10 bg-white/5 font-black uppercase tracking-widest h-12 hover:bg-white/10"
-                                        onClick={handleCloseAd}
+                                {countdown > 0 ? (
+                                    /* Countdown in progress */
+                                    <>
+                                        <div className="relative w-20 h-20 flex items-center justify-center">
+                                            <svg className="absolute inset-0 w-full h-full -rotate-90">
+                                                <circle
+                                                    cx="40"
+                                                    cy="40"
+                                                    r="36"
+                                                    fill="transparent"
+                                                    stroke="currentColor"
+                                                    strokeWidth="4"
+                                                    className="text-white/5"
+                                                />
+                                                <motion.circle
+                                                    cx="40"
+                                                    cy="40"
+                                                    r="36"
+                                                    fill="transparent"
+                                                    stroke="currentColor"
+                                                    strokeWidth="4"
+                                                    strokeDasharray="226.2"
+                                                    initial={{ strokeDashoffset: 0 }}
+                                                    animate={{ strokeDashoffset: 226.2 }}
+                                                    transition={{ duration: 5, ease: "linear" }}
+                                                    className="text-primary"
+                                                />
+                                            </svg>
+                                            <span className="text-3xl font-black font-serif italic">{countdown}</span>
+                                        </div>
+                                        <p className="text-[10px] text-muted-foreground uppercase font-black tracking-widest opacity-50 animate-pulse">
+                                            Aguarde o anúncio terminar...
+                                        </p>
+                                        <Button
+                                            variant="outline"
+                                            className="w-full border-white/10 bg-white/5 font-black uppercase tracking-widest h-12 hover:bg-white/10"
+                                            onClick={handleCloseAd}
+                                        >
+                                            Cancelar
+                                        </Button>
+                                    </>
+                                ) : (
+                                    /* Ad finished — show play button */
+                                    <motion.div
+                                        initial={{ opacity: 0, scale: 0.9 }}
+                                        animate={{ opacity: 1, scale: 1 }}
+                                        className="w-full space-y-4"
                                     >
-                                        Cancelar
-                                    </Button>
-                                    <Button
-                                        className="flex-1 bg-primary text-black font-black uppercase tracking-widest h-12 shadow-lg shadow-primary/20 group"
-                                        onClick={() => {
-                                            window.open(selectedGame.directUrl, "_blank");
-                                            handleCloseAd();
-                                        }}
-                                    >
-                                        Pular Ad
-                                        <ChevronRight className="w-4 h-4 ml-2 group-hover:translate-x-1 transition-transform" />
-                                    </Button>
-                                </div>
+                                        <p className="text-[10px] text-emerald-400 uppercase font-black tracking-widest text-center">
+                                            ✅ Anúncio concluído! Clique abaixo para jogar.
+                                        </p>
+                                        <div className="flex gap-4 w-full">
+                                            <Button
+                                                variant="outline"
+                                                className="flex-1 border-white/10 bg-white/5 font-black uppercase tracking-widest h-14 hover:bg-white/10"
+                                                onClick={handleCloseAd}
+                                            >
+                                                Voltar
+                                            </Button>
+                                            <Button
+                                                className="flex-1 bg-primary text-black font-black uppercase tracking-widest h-14 shadow-lg shadow-primary/30 group hover:scale-[1.02] transition-transform"
+                                                onClick={() => {
+                                                    window.location.href = selectedGame.directUrl;
+                                                }}
+                                            >
+                                                Jogar Agora
+                                                <ChevronRight className="w-5 h-5 ml-2 group-hover:translate-x-1 transition-transform" />
+                                            </Button>
+                                        </div>
+                                    </motion.div>
+                                )}
                             </div>
 
                             <p className="text-[9px] text-muted-foreground uppercase font-black tracking-widest opacity-40">
