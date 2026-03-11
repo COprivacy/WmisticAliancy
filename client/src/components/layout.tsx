@@ -45,7 +45,7 @@ export default function Layout({ children }: { children: ReactNode }) {
 
       <header className="border-b border-border/50 bg-card/50 backdrop-blur-md sticky top-0 z-50">
         <div className="container mx-auto px-4 h-16 flex items-center justify-between">
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-2 flex-shrink-0 mr-2 sm:mr-4">
             <img src="/logo.png" className="w-8 h-8 object-contain" alt="SPG Logo" />
             <h1 className="text-xl font-bold text-transparent bg-clip-text bg-gradient-to-r from-primary to-yellow-200 uppercase tracking-wider hidden sm:block">
               SUA PARTIDA GAMER
@@ -144,7 +144,7 @@ export default function Layout({ children }: { children: ReactNode }) {
               </div>
             </div>
             <p className="text-xs text-muted-foreground uppercase font-bold tracking-widest leading-loose opacity-60">
-              O maior ecossistema de ranking 1v1 oficial do Mobile Legends no Brasil. Competitividade levada a sério.
+              O maior ecossistema independente de ranking 1v1 de Mobile Legends no Brasil. Competitividade levada a sério.
             </p>
           </div>
 
@@ -179,7 +179,7 @@ export default function Layout({ children }: { children: ReactNode }) {
               </a>
             </div>
             <div className="pt-4 border-t border-white/5">
-                <p className="text-[9px] text-muted-foreground uppercase font-black tracking-widest">Powered by <span className="text-white">SPG Core Engine</span></p>
+              <p className="text-[9px] text-muted-foreground uppercase font-black tracking-widest">Powered by <span className="text-white">SPG Core Engine</span></p>
             </div>
           </div>
         </div>
